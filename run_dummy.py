@@ -24,8 +24,9 @@ def run_all(path_to_file, path_to_savefig,savefig, save_pickle, save_fit_variabl
     pickle_path = None
     if save_pickle:
     	pickle_path = path_to_file+title+'-pickle_'+'-'+which_fit+'.p'
-    
+        
     fit_var_path = None
+    
     if save_fit_variables:
     	fit_var_path = path_to_file+title+'-fit-result-variables_'+which_fit+'.csv'
 

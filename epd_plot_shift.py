@@ -12,6 +12,14 @@ from tkinter import *
 import astropy.units as u
 import numpy as np
 import pandas as pd
+from solo_epd_loader import epd_load
+from sunpy.coordinates import get_horizons_coord
+from savecsv import *
+from tabulate import tabulate
+
+
+
+
 
 def evolt2beta(ekin, which):
     """ This function calculates the plasma beta for particles 
@@ -101,7 +109,24 @@ def light_tt(dist):
     t = t/60.
     return t
 
-def extract_data(df_protons, df_electrons, plotstart, plotend,  t_inj, bgstart = None, bgend = None, bg_distance_from_window = None, bg_period = None, travel_distance = 0,  travel_distance_second_slope = None, fixed_window = None, instrument = 'ept', data_type = 'l2', averaging_mode='none', averaging=2, masking=False, ion_conta_corr=False):
+def posintion_and_traveltime(date):
+    pos = get_horizons_coord('Solar Orbiter', date, 'id')
+    dist = np.round(pos.radius.value, 2)
+    spiral_len = len_of_spiral(400,dist)
+    traveltime_min = traveltime_los(spiral_len, 0.004, 2, dist)
+    traveltime_max = traveltime_los(spiral_len, 10, 2, dist)
+    light_t = light_tt(dist)
+
+    table_data = [["Distance of SolO from the Sun", "[AU]", dist],
+                  ["Length of the Parker Spiral for 400 km/s sw ", "[AU]", spiral_len],
+                  ["Travel time of 4 KeV electrons ", "[min]", traveltime_min],
+                  ["Travel time of 10 MeV electrons ", "[min]", traveltime_max],
+                  ["Travel time of light ", "[min]", light_t]]
+    
+    print(tabulate(table_data))
+    return(table_data)
+
+def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj, bgstart = None, bgend = None, bg_distance_from_window = None, bg_period = None, travel_distance = 0,  travel_distance_second_slope = None, fixed_window = None, instrument = 'ept', data_type = 'l2', averaging_mode='none', averaging=2, masking=False, ion_conta_corr=False, df_protons = None):
     """This function determines an energy spectrum from time series data for any of the Solar Orbiter / EPD 
     sensors uses energy-dependent time windows to determine the flux points for the spectrum. 
     The dependence is determined according to an expected velocity dispersion assuming a certain 
@@ -186,59 +211,82 @@ def extract_data(df_protons, df_electrons, plotstart, plotend,  t_inj, bgstart =
         df_proton_uncertainties = df_protons['Ion_Uncertainty'][plotstart:plotend]
 
         if(data_type == 'll'):
-            channels = [0,1,2,3,4,5,6,7]
+            channels = range(len(df_energies['Electron_Bins_Low_Energy']))
+            e_low = df_energies['Electron_Bins_Low_Energy']
+            e_high = []
 
             for i in channels:
+                e_high.append(e_low[i]+df_energies['Electron_Bins_Width'][i])
                 df_electron_fluxes = df_electron_fluxes.rename(columns={'Ele_Flux_{}'.format(i):'Electron_Flux_{}'.format(i)})
                 df_electron_uncertainties = df_electron_uncertainties.rename(columns={'Ele_Flux_Sigma_{}'.format(i):'Electron_Uncertainty_{}'.format(i)})
 
-            e_low = [0.0329, 0.0411, 0.0537, 0.0733, 0.1013, 0.1425, 0.1997, 0.2821]
-            e_high = [0.0411, 0.0537, 0.0733, 0.1013, 0.1425, 0.1997, 0.2821, 0.3977]
 
         elif(data_type == 'l2'):
+            channels = range(len(df_energies['Electron_Bins_Low_Energy']))
+            e_low = df_energies['Electron_Bins_Low_Energy']
+            e_high = []
+            
+            for i in channels:
+                e_high.append(e_low[i]+df_energies['Electron_Bins_Width'][i])
+                
 
-            channels = range(0,34) 
-
-            e_low = [0.0312, 0.0330, 0.0348, 0.0380, 0.0406, 0.0432, 0.0459, 0.0497, 0.0533, 0.0580, 0.0627, 0.0673, 0.0731, 0.0788, 0.0856, 0.0934, 0.1011, 0.1109, 0.1197, 0.1305, 0.1423, 0.1541, 0.1679, 0.1835, 0.1995, 0.2181, 0.2371, 0.2578, 0.2817, 0.3061, 0.3339, 0.3661, 0.3989, 0.4348]
-            e_high = [0.0348, 0.0369, 0.0380, 0.0406, 0.0432, 0.0459, 0.0497, 0.0533, 0.0580, 0.0627, 0.0673, 0.0731, 0.0788, 0.0856, 0.0934, 0.1011, 0.1109, 0.1197, 0.1305, 0.1423, 0.1541, 0.1679, 0.1835, 0.1995, 0.2181, 0.2371, 0.2578, 0.2817, 0.3061, 0.3339, 0.3661, 0.3989, 0.4348, 0.4714]
-
+            
     elif(instrument == 'het'):
 
         if(data_type == 'll'):
 
-            channels = [0,1,2,3]
+            e_low = df_energies['Electron_Bins_Low_Energy']
+            e_high = []
 
+            channels = range(len(df_energies['Electron_Bins_Low_Energy']))
+            
             for i in channels:
+                e_high.append(e_low[i]+df_energies['Electron_Bins_Width'][i])
                 df_electron_fluxes = df_electron_fluxes.rename(columns={'Ele_Flux_{}'.format(i):'Electron_Flux_{}'.format(i)})
                 df_electron_uncertainties = df_electron_uncertainties.rename(columns={'Ele_Flux_Sigma_{}'.format(i):'Electron_Uncertainty_{}'.format(i)})
 
-            e_low = [0.4533, 1.0530, 2.4010, 5.9930]
-            e_high = [1.0380, 2.4010, 5.9930, 18.8300]
 
         elif(data_type == 'l2'):
+            e_low = df_energies['Electron_Bins_Low_Energy']
+            e_high = []
 
-            channels = [0,1,2,3]
+            channels = range(len(df_energies['Electron_Bins_Low_Energy']))
 
-            e_low = [0.4533, 1.0530, 2.4010, 5.9930]
-            e_high = [1.0380, 2.4010, 5.9930, 18.8300]
+            for i in channels:
+                e_high.append(e_low[i]+df_energies['Electron_Bins_Width'][i])
 
             #28.02 changing this part
     elif(instrument == 'step'):
         if(data_type == 'l2'):
+            e_low = df_energies['Bins_Low_Energy']
+            e_high = []
 
-            channels = range(0,48)
+            channels = range(len(df_energies['Bins_Low_Energy']))
+            for i in channels:
+                    e_high.append(e_low[i]+df_energies['Bins_Width'][i])
+                    
 
             #df_electron_fluxes = df_electrons['Electron_Flux'][plotstart:plotend]
             #df_electron_uncertainties = df_electrons['Electron_Uncertainty'][plotstart:plotend]
 
-            step_data = make_step_electron_flux(df_electrons, mask_conta=masking)
-            print(step_data[0].index)
-            
-            df_electron_fluxes = step_data[0][plotstart:plotend]
-            df_electron_uncertainties = step_data[1][plotstart:plotend]
+            if 'Electron_Avg_Flux_0' in df_electrons.columns:
+                df_electron_fluxes = pd.DataFrame()
+                df_electron_uncertainties = pd.DataFrame()
 
-            e_low = step_data[2]
-            e_high = step_data[3]
+                for i in channels:
+                    e_high.append(e_low[i]+df_energies['Bins_Width'][i])
+
+                    df_electron_fluxes['Electron_Flux_'+str(i)] = df_electrons['Electron_Avg_Flux_'+str(i)]
+                    df_electron_uncertainties['Electron_Uncertainty_'+str(i)] = df_electrons['Electron_Avg_Uncertainty_'+str(i)]
+
+
+            else:
+                step_data = make_step_electron_flux(df_electrons, mask_conta=masking)
+                #print(step_data[0].index)
+            
+                df_electron_fluxes = step_data[0][plotstart:plotend]
+                df_electron_uncertainties = step_data[1][plotstart:plotend]
+
 
 
         # Cleans up negative flux values in STEP data.
@@ -533,7 +581,7 @@ def extract_data(df_protons, df_electrons, plotstart, plotend,  t_inj, bgstart =
 # Workaround for STEP data, there's probably a better way in Python to handle this.
 def extract_step_data(df_particles,  plotstart, plotend, t_inj, bgstart = None, bgend = None, bg_distance_from_window = None, bg_period = None, travel_distance = 0, travel_distance_second_slope = None, fixed_window = None, instrument = 'step', data_type = 'l2', averaging_mode='none', averaging=2, masking=False, ion_conta_corr=False):
 
-    return extract_data(df_particles, df_particles,  plotstart, plotend,  t_inj, bgstart, bgend, bg_distance_from_window, bg_period, travel_distance, travel_distance_second_slope, fixed_window, instrument = instrument, data_type = data_type, averaging_mode=averaging_mode, averaging=averaging, masking=masking, ion_conta_corr=ion_conta_corr)
+    return extract_electron_data(df_particles, df_particles,  plotstart, plotend,  t_inj, bgstart, bgend, bg_distance_from_window, bg_period, travel_distance, travel_distance_second_slope, fixed_window, instrument = instrument, data_type = data_type, averaging_mode=averaging_mode, averaging=averaging, masking=masking, ion_conta_corr=ion_conta_corr)
 
 def make_step_electron_flux(stepdata, mask_conta=True):
     """
@@ -576,11 +624,15 @@ def make_step_electron_flux(stepdata, mask_conta=True):
 
     if mask_conta:
 
-        C_INT = stepdata['Integral_Rate']
-        C_MAG = stepdata['Magnet_Rate']
-        clean = (C_INT - C_MAG) > 5*np.sqrt(C_INT)
-        step_flux = step_flux.mask(clean)
-        step_unc = step_unc.mask(clean)
+        # C_INT = stepdata['Integral_Rate']
+        # C_MAG = stepdata['Magnet_Rate']
+        # clean = (C_INT - C_MAG) > 5*np.sqrt(C_INT)
+        # step_flux = step_flux.mask(clean)
+        # step_unc = step_unc.mask(clean)
+        clean = (F_INT-F_MAG)> 2 * U_INT # call 2 conta_threshold
+        step_flux = step_flux.mask(~clean)
+        step_unc = step_unc.mask(~clean)    
+        
     step_data = pd.concat([step_flux, step_unc], axis=1, keys=param_list)
 
     df_electron_fluxes = step_data['Electron_Flux']
