@@ -126,7 +126,7 @@ def posintion_and_traveltime(date):
     print(tabulate(table_data))
     return(table_data)
 
-def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj, bgstart = None, bgend = None, bg_distance_from_window = None, bg_period = None, travel_distance = 0,  travel_distance_second_slope = None, fixed_window = None, instrument = 'ept', data_type = 'l2', averaging_mode='none', averaging=2, masking=True, ion_conta_corr=False, df_protons = None):
+def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj, bgstart = None, bgend = None, bg_distance_from_window = 120, bg_period = 60, travel_distance = 0,  travel_distance_second_slope = None, fixed_window = None, instrument = 'ept', data_type = 'l2', averaging_mode='none', averaging=2, masking=True, ion_conta_corr=False, df_protons = None):
     """This function determines an energy spectrum from time series data for any of the Solar Orbiter / EPD 
     sensors uses energy-dependent time windows to determine the flux points for the spectrum. 
     The dependence is determined according to an expected velocity dispersion assuming a certain 
@@ -197,9 +197,14 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
 
     """
 
-    #if bgstart is not None or bgend is not None: 
-     #   if bg_distance_from_window is not None or bg_period is not None:
-      #      raise Exception("Please specify either bg_start and bg_end or bg_distance_from_window and bg_period.")
+    if bgstart is not None or bgend is not None: 
+        if bg_distance_from_window is not None or bg_period is not None:
+            raise Exception("Please specify either bg_start and bg_end or bg_distance_from_window and bg_period.")
+        
+    if bgstart is None or bgend is None: 
+        if bg_distance_from_window is None or bg_period is None:
+            raise Exception("Please specify either bg_start and bg_end or bg_distance_from_window and bg_period.")
+    
         
     
     # Takes proton and electron flux and uncertainty values from original data.
@@ -471,10 +476,11 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
     n = 0
     
     for channel in channels:
-        b_f = df_electron_fluxes['Electron_Flux_{}'.format(channel)][bgstart[n]:bgend[n]]
-    
+        b_f = df_electron_fluxes['Electron_Flux_{}'.format(channel)][searchstart[n]:searchend[n]]
+        # I think here is where I check if the BG is zero. Can temporarely change this. This was if len(b_f) ==0: bg_flux = np.nan list_bg_fluxes.append(bg_flux) Change back when needed
         if len(b_f) ==0:
             bg_flux = np.nan
+            #bg_flux = df_electron_fluxes['Electron_Flux_{}'.format(channel)][bgstart[n]:bgend[n]].min()
             list_bg_fluxes.append(bg_flux)
         if len(b_f)!= 0:
             bg_flux = df_electron_fluxes['Electron_Flux_{}'.format(channel)][bgstart[n]:bgend[n]].mean(skipna=True)
@@ -520,6 +526,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
 
         bg_std = df_electron_fluxes['Electron_Flux_{}'.format(channel)][bgstart[n]:bgend[n]].std()
         
+    
         list_bg_std.append(bg_std)
         
         f_a = df_electron_fluxes['Electron_Flux_{}'.format(channel)][searchstart[n]:searchend[n]]
@@ -537,6 +544,8 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
     for i in range(0,len(list_flux_peaks)):
 
         list_bg_subtracted_peaks.append(list_flux_peaks[i]-list_bg_fluxes[i])
+
+
         list_peak_significance.append(list_bg_subtracted_peaks[i]/list_bg_std[i])
         #sometimes the background can be higher than the peak to need to delete those values (set to nan)
         if list_bg_subtracted_peaks[i]<list_bg_fluxes[i]:
@@ -688,9 +697,10 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
                 uncertainty value of that energy channel are set to nan and therefore 
                 excluded from the spectrum. Defaults to 0.5.
     """
-    
+    #print(args)
     peak_sig = args[1]['Peak_significance']
     rel_err = args[1]['rel_backsub_peak_err']
+    #Bg_subtracted_peak = args[1]['Bg_subtracted_peak']
     
     #hours = mdates.HourLocator(interval = 1)
     df_electron_fluxes = args[0]
@@ -774,7 +784,16 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
                 ax.axvline(df_info['Peak_timestamp'][n-1], linestyle='-.', linewidth=2, color='blue')
             if (peak_sig[n-1] >= sigma) and (rel_err[n-1] <= rel_err_threshold) and (df_info['frac_nonan'][n-1] > frac_nan_threshold):
                 ax.axvline(df_info['Peak_timestamp'][n-1], color='green')
+            if bg_subtraction == True:
+                if (np.isnan(peak_sig[n-1]))  and (~np.isnan(df_info['Bg_subtracted_peak'][n-1])): # no background
+                    ax.axvline(df_info['Peak_timestamp'][n-1], linestyle='-', linewidth=2, color='purple')
+            if bg_subtraction == False:
+                if (np.isnan(peak_sig[n-1]))  and df_info['Flux_average'][n-1]!=0.: # no background
+                    ax.axvline(df_info['Peak_timestamp'][n-1], linestyle='-', linewidth=2, color='purple')
             
+
+        #print(peak_sig[n-1])
+        #print(type(peak_sig[n-1]))
         # Background measurement area.
         ax.axvspan(df_info['Bg_start'][n-1], df_info['Bg_end'][n-1], color='gray', alpha=0.25)
 

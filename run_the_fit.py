@@ -22,15 +22,22 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	"""_summary_
 
 	Args:
-		path (_type_): _description_
-		date (_type_): _description_
-		averaging (_type_): _description_
-		fit_type (_type_): _description_
-		step (bool, optional): _description_. Defaults to True.
-		ept (bool, optional): _description_. Defaults to True.
-		het (bool, optional): _description_. Defaults to True.
-		which_fit (str, optional): _description_. Defaults to 'best'.
-		sigma (int, optional): _description_. Defaults to 3.
+		path (string): The path to the folder where the data is stored and where the fit and the variable files will be saved.
+		date (datetime or string): dt.datetime(yyyy, mm, dd) or 'yyyy-mm-dd'
+		averaging (int): the averaging of the data
+		fit_type (string): fit_type options: 'step', 'ept', 'het', 'step_ept', 'step_ept_het', 'ept_het'
+		step (bool, optional): True if you wish to include STEP data in the plot. Not the fit, just the plot. Defaults to True.
+		ept (bool, optional): True if you wish to include EPT data in the plot. Not the fit, just the plot. . Defaults to True.
+		het (bool, optional): True if you wish to include HET data in the plot. Not the fit, just the plot. . Defaults to True.
+		which_fit (str, optional): which_fit options: 'single' will force a single pl fit to the data
+		  			'broken' will force a broken pl fit to the data but ONLY if the break point is within the energy range otherwise a sigle pl fit will be produced instead
+		  			'best_sb' will choose automatically the best fit type between single and broken by comparing the redchis of the fits
+		    		'cut' will produce a single pl fit with an exponential cutoff point. If the cutoff point is outside of the energy range a broken or single pl will be fit instead
+			  		'broken_cut' will produce a broken pl fit with an exponential cutoff point. If the cutoff point is outside of the energy range a broken or single pl will be fit instead
+				  	'best_cb'. Defaults to 'best'.
+					'triple' will force a triple pl fit. If this is not possible, the function will check which is the next best option.
+					'best' will choose automatically the best fit type by comparing the redchis of the fits.
+		sigma (int, optional): standard deviation from the background. Defaults to 3.
 		rel_err (float, optional): _description_. Defaults to 0.5.
 		frac_nan_threshold (float, optional): _description_. Defaults to 0.9.
 		fit_to (str, optional): _description_. Defaults to 'peak'.
