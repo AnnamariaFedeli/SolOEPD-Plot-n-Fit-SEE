@@ -126,16 +126,15 @@ def posintion_and_traveltime(date):
     print(tabulate(table_data))
     return(table_data)
 
-def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj, bgstart = None, bgend = None, bg_distance_from_window = None, bg_period = None, travel_distance = 0,  travel_distance_second_slope = None, fixed_window = None, instrument = 'ept', data_type = 'l2', averaging_mode='none', averaging=2, masking=False, ion_conta_corr=False, df_protons = None):
+def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj, bgstart = None, bgend = None, bg_distance_from_window = None, bg_period = None, travel_distance = 0,  travel_distance_second_slope = None, fixed_window = None, instrument = 'ept', data_type = 'l2', averaging_mode='none', averaging=2, masking=True, ion_conta_corr=False, df_protons = None):
     """This function determines an energy spectrum from time series data for any of the Solar Orbiter / EPD 
     sensors uses energy-dependent time windows to determine the flux points for the spectrum. 
     The dependence is determined according to an expected velocity dispersion assuming a certain 
     solar injection time (t_inj) and a traval distance (travel_distance).
 
     Args:
-        df_protons (pandas DataFrame): contains proton (ion) data if instrument is 'het' ('ept'). 
-        If you are using step data epd_load will create a dataframe with only electron data so, use a double df_electron input for step.
         df_electrons (pandas DataFrame): contains electron data 
+        df_energies (pandas DataFrame): contains information about the energy channels of both proton (for EPT and HET) and electron data
         plotstart (string): start time of the time series plot, e.g. '2020-11-18-0000'
         plotend (string): end time of the time series plot, e.g., '2020-11-18-2230'
         t_inj (string): solar injection time e.g. '2020-11-18-1230'
@@ -172,12 +171,14 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         data_type (str, optional): which data level (e.g., low latency (ll) or level2 (l2)) is used. 
                 This affects the number of energy channels. Defaults to 'l2'.
         averaging_mode (str, optional): averaging of the data, 'mean', 'rolling_window', 
-                or 'none'. Defaults to 'none'.
+                or 'none'. Defaults to None.
         averaging (int, optional): number of minutes used for averaging. Defaults to 2.
         masking (bool, optional): Refers only to STEP data. If true, time intervals with significant 
                 (5 sigma) ion contamination are masked. Defaults to False.
         ion_conta_corr (bool, optional): Refers only to EPT data. If true, ion contamination
                 correction is applied. Defaults to False.
+        df_protons (pandas DataFrame, optional): contains proton (ion) data. Use only with EPT and HET data.
+                Defauts to None. 
 
     Raises:
         Exception: If either bgstart or bgend are not None (so a value has been specified)
@@ -276,8 +277,8 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
                 for i in channels:
                     e_high.append(e_low[i]+df_energies['Bins_Width'][i])
 
-                    df_electron_fluxes['Electron_Flux_'+str(i)] = df_electrons['Electron_Avg_Flux_'+str(i)]
-                    df_electron_uncertainties['Electron_Uncertainty_'+str(i)] = df_electrons['Electron_Avg_Uncertainty_'+str(i)]
+                    df_electron_fluxes['Electron_Flux_'+str(i)] = df_electrons['Electron_Avg_Flux_'+str(i)][plotstart:plotend]
+                    df_electron_uncertainties['Electron_Uncertainty_'+str(i)] = df_electrons['Electron_Avg_Uncertainty_'+str(i)][plotstart:plotend]
 
 
             else:
@@ -962,7 +963,7 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
     df_rel_err = df_info.where((df_info['rel_backsub_peak_err'] > rel_err_threshold), np.nan)
 
     # Plots either the background subtracted or raw flux peaks average depending on choice.
-    print(df_info['Bg_subtracted_average'])
+    #print(df_info['Bg_subtracted_average'])
     if(bg_subtraction):
         f, ax = plt.subplots(figsize=(13,10)) 
         ax.errorbar(x=df_info['Primary_energy'], y=df_info['Bg_subtracted_average'], yerr=df_info['Backsub_peak_uncertainty'],
