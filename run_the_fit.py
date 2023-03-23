@@ -15,11 +15,47 @@ from combining_files import *
 # <--------------------------------------------------------------- ALL NECESSARY INPUTS HERE ----------------------------------------------------------------->
 
 # INITIAL INPUTS TO LOAD FILES
-# The path to the folder where the data is storaged
+# The path to the folder where the data is stored
 # this path is also used to create new files for all and contaminated data.
 #                C:\Users\Omistaja\Desktop\SRL\2021SRL\epd_plot-main\solo_loader-main-shift\csv\18-Nov-20 1420-two-slopes
 def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True):
-		
+	"""_summary_
+
+	Args:
+		path (_type_): _description_
+		date (_type_): _description_
+		averaging (_type_): _description_
+		fit_type (_type_): _description_
+		step (bool, optional): _description_. Defaults to True.
+		ept (bool, optional): _description_. Defaults to True.
+		het (bool, optional): _description_. Defaults to True.
+		which_fit (str, optional): _description_. Defaults to 'best'.
+		sigma (int, optional): _description_. Defaults to 3.
+		rel_err (float, optional): _description_. Defaults to 0.5.
+		frac_nan_threshold (float, optional): _description_. Defaults to 0.9.
+		fit_to (str, optional): _description_. Defaults to 'peak'.
+		slope (_type_, optional): _description_. Defaults to None.
+		e_min (_type_, optional): _description_. Defaults to None.
+		e_max (_type_, optional): _description_. Defaults to None.
+		g1_guess (float, optional): _description_. Defaults to -1.9.
+		g2_guess (float, optional): _description_. Defaults to -2.5.
+		g3_guess (int, optional): _description_. Defaults to -4.
+		c1_guess (int, optional): _description_. Defaults to 1000.
+		alpha_guess (int, optional): _description_. Defaults to 10.
+		beta_guess (int, optional): _description_. Defaults to 10.
+		break_guess_low (float, optional): _description_. Defaults to 0.6.
+		break_guess_high (float, optional): _description_. Defaults to 1.2.
+		cut_guess (float, optional): _description_. Defaults to 1.2.
+		use_random (bool, optional): _description_. Defaults to True.
+		iterations (int, optional): _description_. Defaults to 20.
+		leave_out_1st_het_chan (bool, optional): _description_. Defaults to True.
+		shift_step_data (bool, optional): _description_. Defaults to False.
+		shift_factor (_type_, optional): _description_. Defaults to None.
+		save_fig (bool, optional): _description_. Defaults to True.
+		save_pickle (bool, optional): _description_. Defaults to False.
+		save_fit_variables (bool, optional): _description_. Defaults to True.
+		save_fitrun (bool, optional): _description_. Defaults to True.
+	"""
 		
 	#folder = '20210507-1852/2min/sun/'
 
