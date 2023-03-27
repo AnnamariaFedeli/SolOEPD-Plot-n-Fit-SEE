@@ -1003,6 +1003,8 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
         ax.tick_params(axis="x",direction="in", which='both', pad=-15)
         ax.tick_params(labelbottom=False, labeltop=False, labelleft=True, labelright=False, bottom=True, top=True, left=False, right=False)
         
+        ax.get_xaxis().set_visible(True)
+        plt.xlabel("")
     
     # Saves figure, if enabled.
     if(path[len(path)-1] != '/'):
