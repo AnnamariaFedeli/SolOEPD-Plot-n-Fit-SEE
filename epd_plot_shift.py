@@ -16,6 +16,153 @@ from solo_epd_loader import epd_load
 from sunpy.coordinates import get_horizons_coord
 from savecsv import *
 from tabulate import tabulate
+from seppy.loader.solo import mag_load
+from pandas.tseries.frequencies import to_offset
+from tqdm.auto import tqdm
+
+def unit_vector(vector):
+    """ Returns the unit vector of the vector.  """
+    return vector / np.linalg.norm(vector)
+
+def angle_between(v1, v2):
+    """ Returns the angle in radians between vectors 'v1' and 'v2'::
+
+        >>> angle_between((1, 0, 0), (0, 1, 0))
+        1.5707963267948966
+        >>> angle_between((1, 0, 0), (1, 0, 0))
+        0.0
+        >>> angle_between((1, 0, 0), (-1, 0, 0))
+        3.141592653589793
+    """
+    v1_u = unit_vector(v1)
+    v2_u = unit_vector(v2)
+    return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
+def calc_pa_coverage(instrument, mag_data):
+    print(f'Calculating PA coverage for {instrument}...')
+    if instrument not in ['ept', 'EPT', 'het', 'HET', 'step', 'STEP']:
+        print("instrument not known, select 'EPT', 'HET', or 'STEP' ")
+        coverage = pd.DataFrame(mag_data.index)
+    else:
+        if instrument.lower() == 'ept':
+            opening = 30
+        if instrument.lower() == 'het':
+            opening = 43
+        if instrument.lower() == 'step':
+            print("Opening of STEP just a placeholder! Replace with real value! This affects the 'min' and 'max' values of the pitch-angle, not the 'center' ones.")
+            opening = 10
+        mag_vec = np.array([mag_data.Bx.values, mag_data.By.values, mag_data.Bz.values])
+
+        if instrument.lower() in ['ept', 'het']:
+            # pointing directions of EPT in XYZ/SRF coordinates (!) (arrows point into the sensor)
+            pointing_sun = np.array([-0.81915206, 0.57357645, 0.])
+            pointing_asun = np.array([0.81915206, -0.57357645, 0.])
+            pointing_north = np.array([0.30301532, 0.47649285, -0.8253098])
+            pointing_south = np.array([-0.30301532, -0.47649285, 0.8253098])
+            pa_sun = np.ones(len(mag_data.Bx.values)) * np.nan
+            pa_asun = np.ones(len(mag_data.Bx.values)) * np.nan
+            pa_north = np.ones(len(mag_data.Bx.values)) * np.nan
+            pa_south = np.ones(len(mag_data.Bx.values)) * np.nan
+
+            for i in tqdm(range(len(mag_data.Bx.values))):
+                pa_sun[i] = np.rad2deg(angle_between(pointing_sun, mag_vec[:, i]))
+                pa_asun[i] = np.rad2deg(angle_between(pointing_asun, mag_vec[:, i]))
+                pa_north[i] = np.rad2deg(angle_between(pointing_north, mag_vec[:, i]))
+                pa_south[i] = np.rad2deg(angle_between(pointing_south, mag_vec[:, i]))
+
+        if instrument.lower() == 'step':
+            # Particle flow direction (unit vector) in spacecraft XYZ coordinates for each STEP pixel ('XYZ_Pixels')
+            pointing_step = np.array([[-0.8412, 0.4396,  0.3149],
+                                      [-0.8743, 0.457 ,  0.1635],
+                                      [-0.8862, 0.4632, -0.    ],
+                                      [-0.8743, 0.457 , -0.1635],
+                                      [-0.8412, 0.4396, -0.315 ],
+                                      [-0.7775, 0.5444,  0.3149],
+                                      [-0.8082, 0.5658,  0.1635],
+                                      [-0.8191, 0.5736,  0.    ],
+                                      [-0.8082, 0.5659, -0.1634],
+                                      [-0.7775, 0.5444, -0.3149],
+                                      [-0.7008, 0.6401,  0.3149],
+                                      [-0.7284, 0.6653,  0.1634],
+                                      [-0.7384, 0.6744, -0.    ],
+                                      [-0.7285, 0.6653, -0.1635],
+                                      [-0.7008, 0.6401, -0.315 ]])
+            pa_step = np.ones((len(mag_data.Bx.values), pointing_step.shape[0])) * np.nan
+
+            for i in tqdm(range(len(mag_data.Bx.values))):
+                for j in range(pointing_step.shape[0]):
+                    pa_step[i, j] = np.rad2deg(angle_between(pointing_step[j], mag_vec[:, i]))
+
+    if instrument.lower() in ['ept', 'het']:
+        sun_min = pa_sun - opening/2
+        sun_max = pa_sun + opening/2
+        asun_min = pa_asun - opening/2
+        asun_max = pa_asun + opening/2
+        north_min = pa_north - opening/2
+        north_max = pa_north + opening/2
+        south_min = pa_south - opening/2
+        south_max = pa_south + opening/2
+        cov_sun = pd.DataFrame({'min': sun_min, 'center': pa_sun, 'max': sun_max}, index=mag_data.index)
+        cov_asun = pd.DataFrame({'min': asun_min, 'center': pa_asun, 'max': asun_max}, index=mag_data.index)
+        cov_north = pd.DataFrame({'min': north_min, 'center': pa_north, 'max': north_max}, index=mag_data.index)
+        cov_south = pd.DataFrame({'min': south_min, 'center': pa_south, 'max': south_max}, index=mag_data.index)
+        keys = [('sun'), ('asun'), ('north'), ('south')]
+        coverage = pd.concat([cov_sun, cov_asun, cov_north, cov_south], keys=keys, axis=1)
+
+    if instrument.lower() == 'step':
+        pa_step_min = pa_step - opening/2
+        pa_step_max = pa_step + opening/2
+
+        cov = {}
+        for i in range(pa_step.shape[1]):
+            cov[f'Pixel_{i+1}'] = pd.DataFrame({'min': pa_step_min[:, i], 'center': pa_step[:, i], 'max': pa_step_max[:, i]}, index=mag_data.index)
+        coverage = pd.concat(cov, keys=cov.keys(), axis=1)
+
+    coverage[coverage > 180] = 180
+    coverage[coverage < 0] = 0
+    return coverage
+
+def solo_mag_loader(sdate, edate, level='l2', type='normal', frame='rtn', av=None, path=None):
+    """
+    to do: implement higher resultion averaging ('1S' (seconds)) for burst data
+    loads SolO/MAG data from soar using function mag_load() from Jan: 
+    autodownloads if files are not there
+
+    Parameters
+    ----------
+    sdate : int
+        20210417
+    edate : int
+        20210418
+    level : str, optional
+        by default 'l2'
+    type : str, optional
+        'burst', 'normal-1-minute', by default 'normal'
+    frame : str, optional
+        'srf', by default 'rtn'
+    av : int or None, optional
+        number of minutes to average, by default None
+
+    Returns
+    -------
+    [type]
+        [description]
+    """    
+    print('Loading MAG...')
+    mag_data = mag_load(sdate, edate, level=level, data_type=type, frame=frame, path=path)
+    #mag_data = mag_load(sdate, edate, level=level, frame=frame, path=path)
+    if frame == 'rtn':
+        mag_data.rename(columns={'B_RTN_0':'B_r', 'B_RTN_1':'B_t', 'B_RTN_2':'B_n'}, inplace=True)
+    if frame == 'srf':
+        mag_data.rename(columns={'B_SRF_0':'Bx', 'B_SRF_1':'By', 'B_SRF_2':'Bz'}, inplace=True)
+    if av is not None:
+        mav = f'{av}min' 
+        mag_offset = f'{av/2}min' 
+        mag_data = mag_data.resample(mav,label='left').mean()
+        mag_data.index = mag_data.index + to_offset(mag_offset)
+
+    return mag_data
+
 
 
 
@@ -662,7 +809,7 @@ def average_flux_error(flux_err: pd.DataFrame) -> pd.Series:
 
     return np.sqrt((flux_err ** 2).sum(axis=0)) / len(flux_err.values)
 
-def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', frac_nan_threshold=0.4, rel_err_threshold=0.5):
+def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', frac_nan_threshold=0.4, rel_err_threshold=0.5, plot_pa=False, coverage=None, sensor = 'ept', viewing='sun'):
     """Creates a timeseries plot showing the particle flux for each energy channel of
         the instrument (STEP, EPT, HET). The timeseries plot shows also the peak window and
         background window. The peak is marked with different color lines:
@@ -696,6 +843,10 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
                 low enough in the search period interval. If not, the flux and 
                 uncertainty value of that energy channel are set to nan and therefore 
                 excluded from the spectrum. Defaults to 0.5.
+        plot_pa (bool, optional): include pitch angles in the plot. Defaults to False.
+        coverage (pandas dataframe or None, optional): dataframe to be used to plot the pitch angles. Defaults to None.
+        sensor (str, optional): sensor used for plotting the pitch angles. Defaults to 'ept'.
+        viewing (str, optional): viewing direction of EPT or HET, used for plotting the pitch angles of these telescopes. Defaults to 'sun'. Is ignored if sensor=='step'
     """
     #print(args)
     peak_sig = args[1]['Peak_significance']
@@ -763,9 +914,18 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
     # Loop through selected energy channels and create a subplot for each.
     n=1
     for channel in df_info['Energy_channel']:
-
-        ax = fig.add_subplot(len(df_info['Energy_channel']),1,n)
-        ax = df_electron_fluxes['Electron_Flux_{}'.format(channel)].plot(logy=True, figsize=(20,25), color='red', drawstyle='steps-mid')
+        color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
+        npanels = len(df_info['Energy_channel'])
+        if plot_pa: 
+            npanels = npanels + 1
+        ax = fig.add_subplot(npanels,1,n)
+        if sensor == 'step':
+            fsize = (20,60)
+        if sensor == 'ept':
+            fsize = (20,40)
+        if sensor == 'het':
+            fsize = (20,12)
+        ax = df_electron_fluxes['Electron_Flux_{}'.format(channel)].plot(logy=True, figsize=fsize, color=color[viewing], drawstyle='steps-mid')
 
         plt.text(0.025,0.7, str(energy_bin[0][channel]) + " - " + str(energy_bin[1][channel]) + " MeV", transform=ax.transAxes, size=13)
 
@@ -799,16 +959,51 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
 
         ax.get_xaxis().set_visible(False)
 
-        if(n == len(df_info['Energy_channel'])):
+        if(n == len(df_info['Energy_channel']) and plot_pa==False):
 
             ax.get_xaxis().set_visible(True)
 
-        plt.xlabel("")
+            plt.xlabel("")
         #ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
         #ax.xaxis.set_minor_locator(hours)
 
         n+=1
+    if plot_pa:  # add a panel that shows the pitch angle of the telescope
+        ax = fig.add_subplot(npanels,1,n)
+        if sensor in ['HET', 'het', 'EPT', 'ept']: 
+            #for direction in ['sun', 'asun', 'north', 'south']: 
+            col = color[viewing]
+            # fill the minimum-maximum range of the pitch angle coverage
+            ax.fill_between(coverage.index, coverage[viewing]['min'], coverage[viewing]['max'], alpha=0.5, color=col, edgecolor=col, linewidth=0.0, step='mid')
+            # plot the central pitch angle as a thin line
+            ax.plot(coverage.index, coverage[viewing]['center'], linewidth=0.7, label=viewing, color=col, drawstyle='steps-mid')
 
+        if sensor in ['STEP', 'step']:
+            col_list = plt.cm.viridis(np.linspace(0.,0.95,16))
+            for p in range(1, 16):  # loop over 15 sectors/pixels
+                # plot the central pitch angle as a thin line
+                ax.plot(coverage.index, coverage[f'Pixel_{p}']['center'], color = col_list[p-1], linewidth=1, label=f'Pixel_{p}', drawstyle='steps-mid')
+
+        ax.axhline(y=90, color='gray', linewidth=0.8, linestyle='--')
+        ax.axhline(y=45, color='gray', linewidth=0.8, linestyle='--')
+        ax.axhline(y=135, color='gray', linewidth=0.8, linestyle='--')
+
+
+        # ax.set_ylim([0, 180])
+        # ax.yaxis.set_ticks(np.arange(0, 180+45, 45))
+        # ax.set_xlim([coverage.index[0], coverage.index[-1]])
+        # ax.set_ylabel('Pitch angle / °')
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
+
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), title=instrument)
+        ax.set_ylim([0, 180])
+        ax.yaxis.set_ticks(np.arange(0, 180+45, 45))
+        ax.set_xlim([coverage.index[0], coverage.index[-1]])
+        ax.set_ylabel('PA / °')
+        ax.tick_params(axis="x",direction="in", which='both', pad=-15)
+        ax.tick_params(labelbottom=False, labeltop=False, labelleft=True, labelright=False, bottom=True, top=True, left=False, right=False)
+        
+    
     # Saves figure, if enabled.
     if(path[len(path)-1] != '/'):
 
