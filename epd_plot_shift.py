@@ -903,73 +903,78 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
 
     # Plotting part.
     # Initialized the main figure.
-    fig = plt.figure()
-    plt.xticks([])
-    plt.yticks([])
-    plt.ylabel("Flux \n [1/s cm$^2$ sr MeV]", labelpad=40)
-    plt.xlabel("Time", labelpad=45)
-    plt.title(title_string)
+    # fig = plt.figure()
+    color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
+    npanels = len(df_info['Energy_channel'])
+    if plot_pa: 
+        npanels = npanels + 1
+
+    if sensor == 'step':
+        fsize = (20,60)
+    if sensor == 'ept':
+        fsize = (20,48)
+    if sensor == 'het':
+        fsize = (20,12)
+    fig, axes = plt.subplots(npanels, sharex=True, figsize=fsize)
+    # plt.xticks([])
+    # plt.yticks([])
+    # plt.ylabel("Flux \n [1/s cm$^2$ sr MeV]", labelpad=40)
+    fig.supylabel("Flux [1/s cm$^2$ sr MeV]", size=20)
+    axes[0].set_title(title_string, size=20)
  
 
     # Loop through selected energy channels and create a subplot for each.
-    n=1
+    # n=1
+    n=0
     for channel in df_info['Energy_channel']:
-        color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
-        npanels = len(df_info['Energy_channel'])
-        if plot_pa: 
-            npanels = npanels + 1
-        ax = fig.add_subplot(npanels,1,n)
-        if sensor == 'step':
-            fsize = (20,60)
-        if sensor == 'ept':
-            fsize = (20,40)
-        if sensor == 'het':
-            fsize = (20,12)
-        ax = df_electron_fluxes['Electron_Flux_{}'.format(channel)].plot(logy=True, figsize=fsize, color=color[viewing], drawstyle='steps-mid')
-
+        #ax = fig.add_subplot(npanels,1,n)
+        #ax = df_electron_fluxes['Electron_Flux_{}'.format(channel)].plot(logy=True, figsize=fsize, color=color[viewing], drawstyle='steps-mid')
+        ax = axes[n]
+        ax.plot(df_electron_fluxes.index, df_electron_fluxes['Electron_Flux_{}'.format(channel)], color=color[viewing], drawstyle='steps-mid')
+        ax.set_yscale('log')
         plt.text(0.025,0.7, str(energy_bin[0][channel]) + " - " + str(energy_bin[1][channel]) + " MeV", transform=ax.transAxes, size=13)
 
         # Search area vertical lines.
-        ax.axvline(search_area[0][n-1], color='black')
-        ax.axvline(search_area[1][n-1], color='black')
-        
+        ax.axvline(search_area[0][n], color='black')
+        ax.axvline(search_area[1][n], color='black')
+        ax.set_xlim(df_electron_fluxes.index[0], df_electron_fluxes.index[-1])
         
         # Peak vertical line.
-        if df_info['Peak_timestamp'][n-1] is not pd.NaT:
-            if  (rel_err[n-1] > rel_err_threshold): # if the relative error too large, we exlcude the channel
-                ax.axvline(df_info['Peak_timestamp'][n-1], linestyle=':', linewidth=4, color='orange')
-            if df_info['frac_nonan'][n-1] < frac_nan_threshold:  # we only plot a line if the fraction of non-nan data points in the search interval is larger than frac_nan_threshold
-                ax.axvline(df_info['Peak_timestamp'][n-1], linestyle='--', linewidth=3, color='gray')
-            if (peak_sig[n-1] < sigma): # if the peak is not significant, we discard the energy channel
-                ax.axvline(df_info['Peak_timestamp'][n-1], linestyle='-.', linewidth=2, color='blue')
-            if (peak_sig[n-1] >= sigma) and (rel_err[n-1] <= rel_err_threshold) and (df_info['frac_nonan'][n-1] > frac_nan_threshold):
-                ax.axvline(df_info['Peak_timestamp'][n-1], color='green')
+        if df_info['Peak_timestamp'][n] is not pd.NaT:
+            if  (rel_err[n] > rel_err_threshold): # if the relative error too large, we exlcude the channel
+                ax.axvline(df_info['Peak_timestamp'][n], linestyle=':', linewidth=4, color='orange')
+            if df_info['frac_nonan'][n] < frac_nan_threshold:  # we only plot a line if the fraction of non-nan data points in the search interval is larger than frac_nan_threshold
+                ax.axvline(df_info['Peak_timestamp'][n], linestyle='--', linewidth=3, color='gray')
+            if (peak_sig[n] < sigma): # if the peak is not significant, we discard the energy channel
+                ax.axvline(df_info['Peak_timestamp'][n], linestyle='-.', linewidth=2, color='blue')
+            if (peak_sig[n] >= sigma) and (rel_err[n] <= rel_err_threshold) and (df_info['frac_nonan'][n] > frac_nan_threshold):
+                ax.axvline(df_info['Peak_timestamp'][n], color='green')
             if bg_subtraction == True:
-                if (np.isnan(peak_sig[n-1]))  and (~np.isnan(df_info['Bg_subtracted_peak'][n-1])): # no background
-                    ax.axvline(df_info['Peak_timestamp'][n-1], linestyle='-', linewidth=2, color='purple')
+                if (np.isnan(peak_sig[n]))  and (~np.isnan(df_info['Bg_subtracted_peak'][n])): # no background
+                    ax.axvline(df_info['Peak_timestamp'][n], linestyle='-', linewidth=2, color='purple')
             if bg_subtraction == False:
-                if (np.isnan(peak_sig[n-1]))  and df_info['Flux_average'][n-1]!=0.: # no background
-                    ax.axvline(df_info['Peak_timestamp'][n-1], linestyle='-', linewidth=2, color='purple')
+                if (np.isnan(peak_sig[n]))  and df_info['Flux_average'][n]!=0.: # no background
+                    ax.axvline(df_info['Peak_timestamp'][n], linestyle='-', linewidth=2, color='purple')
             
 
         #print(peak_sig[n-1])
         #print(type(peak_sig[n-1]))
         # Background measurement area.
-        ax.axvspan(df_info['Bg_start'][n-1], df_info['Bg_end'][n-1], color='gray', alpha=0.25)
+        ax.axvspan(df_info['Bg_start'][n], df_info['Bg_end'][n], color='gray', alpha=0.25)
 
         ax.get_xaxis().set_visible(False)
 
-        if(n == len(df_info['Energy_channel']) and plot_pa==False):
+        if(n == len(df_info['Energy_channel'])-1 and plot_pa==False):
 
             ax.get_xaxis().set_visible(True)
-
-            plt.xlabel("")
-        #ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
-        #ax.xaxis.set_minor_locator(hours)
+            ax.set_xlabel("Time", labelpad=45)
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
+            #ax.xaxis.set_minor_locator(hours)
 
         n+=1
     if plot_pa:  # add a panel that shows the pitch angle of the telescope
-        ax = fig.add_subplot(npanels,1,n)
+        # ax = fig.add_subplot(npanels,1,n)
+        ax = axes[n]
         if sensor in ['HET', 'het', 'EPT', 'ept']: 
             #for direction in ['sun', 'asun', 'north', 'south']: 
             col = color[viewing]
@@ -988,23 +993,15 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
         ax.axhline(y=45, color='gray', linewidth=0.8, linestyle='--')
         ax.axhline(y=135, color='gray', linewidth=0.8, linestyle='--')
 
-
-        # ax.set_ylim([0, 180])
-        # ax.yaxis.set_ticks(np.arange(0, 180+45, 45))
-        # ax.set_xlim([coverage.index[0], coverage.index[-1]])
-        # ax.set_ylabel('Pitch angle / °')
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
-
+       
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), title=instrument)
         ax.set_ylim([0, 180])
         ax.yaxis.set_ticks(np.arange(0, 180+45, 45))
-        ax.set_xlim([coverage.index[0], coverage.index[-1]])
-        ax.set_ylabel('PA / °')
-        ax.tick_params(axis="x",direction="in", which='both', pad=-15)
-        ax.tick_params(labelbottom=False, labeltop=False, labelleft=True, labelright=False, bottom=True, top=True, left=False, right=False)
-        
-        ax.get_xaxis().set_visible(True)
-        plt.xlabel("")
+        ax.set_ylabel('PA / °', size=13)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
+        plt.tick_params(axis='x', which='major', labelsize=16)
+        plt.tick_params(axis='y', which='major', labelsize=13)
+        ax.set_xlabel("Time", labelpad=45, size=16)
     
     # Saves figure, if enabled.
     if(path[len(path)-1] != '/'):
