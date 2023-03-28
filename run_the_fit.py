@@ -20,7 +20,7 @@ import combining_files as comb
 # The path to the folder where the data is stored
 # this path is also used to create new files for all and contaminated data.
 #                C:\Users\Omistaja\Desktop\SRL\2021SRL\epd_plot-main\solo_loader-main-shift\csv\18-Nov-20 1420-two-slopes
-def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True):
+def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction=None, which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True):
 	"""_summary_
 
 	Args:
@@ -81,8 +81,8 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	separator = ';'
 
 	step_file_name = 'electron_data-'+date_string+'-STEP-L2-'+averaging+'_averaging.csv'
-	ept_file_name = 'electron_data-'+date_string+'-EPT-L2-'+averaging+'_averaging-ion_corr.csv'
-	het_file_name = 'electron_data-'+date_string+'-HET-L2-'+averaging+'_averaging.csv'
+	ept_file_name = 'electron_data-'+date_string+'-EPT-' + direction+ '-L2-'+averaging+'_averaging-ion_corr.csv'
+	het_file_name = 'electron_data-'+date_string+'-HET-'+ direction+'-L2-'+averaging+'_averaging.csv'
 
 
 	# You can choose the sigma threshold value below which the data points will not be included in the fit
@@ -153,7 +153,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 
 	fit_to_comb = fit_to[0].upper()+fit_to[1:]
 
-	direction = 'sun'
+	direction = direction #'sun'
 	intensity_label = 'Flux\n/(s cm² sr MeV)'
 	energy_label = 'primary energy (MeV)'
 	peak_info = fit_to+' spec'+'\n'+window_type
@@ -190,8 +190,8 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		step_ept_data = pd.read_csv(path+date_string+'-step_ept-l2-'+averaging+'.csv', sep = separator)
 
 	if ept and het:
-		ept_het_data = comb.combine_data([ept_data, het_data], path+date_string+'-ept_het-l2-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
-		ept_het_data = pd.read_csv(path+date_string+'-ept_het-l2-'+averaging+'.csv', sep = separator)
+		ept_het_data = comb.combine_data([ept_data, het_data], path+date_string+'-ept_het-'+direction+'-l2-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
+		ept_het_data = pd.read_csv(path+date_string+'-ept_het-'+direction+'-l2-'+averaging+'.csv', sep = separator)
 
 	# saving the contaminated data so it can be plotted separately
 	# then deleting it from the data so it doesn't overlap
