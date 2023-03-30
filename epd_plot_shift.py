@@ -867,8 +867,11 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
     instrument = args[4][0]
     data_type = args[4][1]
 
+    if viewing == None or sensor in ['STEP', 'step']:
+        viewing = ''
+
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
-    filename = 'channels-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + '-' + data_type.upper() 
+    filename = 'channels-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + '-' +viewing+ '-' + data_type.upper() 
     
     if(df_info['Averaging'][0]=='Mean'):
 
@@ -1044,14 +1047,17 @@ def plot_check(args, bg_subtraction=False, savefig=False, key=''):
 
     plt.show()
 
-def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5):
-
+def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None):
+    color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
     df_info = args[1]
     instrument = args[4][0]
     data_type = args[4][1]
-    
+    if direction == None or instrument in ['STEP', 'step']:
+        viewing = ''
+    else:
+        viewing = f'-{direction}' 
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
-    filename = 'spectrum-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + '-' + data_type.upper() 
+    filename = 'spectrum-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + viewing+ '-' + data_type.upper() 
     
     if(df_info['Averaging'][0]=='Mean'):
 
@@ -1092,22 +1098,24 @@ def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key=''
     #print(df_info['Flux_peak'])
     if(bg_subtraction):
         f, ax = plt.subplots(figsize=(13,10)) 
+        if direction == '':
+            direction = 'sun'
         ax.errorbar(x=df_info['Primary_energy'], y=df_info['Bg_subtracted_peak'], yerr=df_info['Backsub_peak_uncertainty'],
-                    xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], color='red', fmt='o', ecolor='red', zorder=0, label='Flux peaks')
+                    xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], color=color[direction], fmt='o', ecolor=color[direction], zorder=0, label='Flux peaks')
         ax.plot(df_nan.Primary_energy, df_nan.Bg_subtracted_peak, 'o', markersize=15, c='gray', label='excluded (NaNs)')
         ax.plot(df_no_sig.Primary_energy, df_no_sig.Bg_subtracted_peak, 'o', c='blue', markersize=11, label='excluded (sigma)')
         ax.plot(df_rel_err.Primary_energy, df_rel_err.Bg_subtracted_peak, 'o', c='orange', markersize=6, label='excluded (rel error)')
     elif(bg_subtraction == False):
         f, ax = plt.subplots(figsize=(13,10))
         ax.errorbar(x=df_info['Primary_energy'], y=df_info['Flux_peak'], yerr=df_info['Peak_electron_uncertainty'],
-                    xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], fmt='o', color='red',ecolor='red', zorder=0, label='Flux peaks')
+                    xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], fmt='o', color=color[direction],ecolor=color[direction], zorder=0, label='Flux peaks')
         ax.plot(df_nan.Primary_energy, df_nan.Flux_peak, 'o', markersize=15, c='gray', label='excluded (NaNs)')
         ax.plot(df_no_sig.Primary_energy, df_no_sig.Flux_peak, 'o', markersize=11, c='blue', label='excluded (sigma)')
         ax.plot(df_rel_err.Primary_energy, df_rel_err.Flux_peak, 'o', markersize=6, c='orange', label='excluded (rel error)')
 
     # Plots background flux and background errorbars in same scatterplot.
     ax.errorbar(x=df_info['Primary_energy'], y=df_info['Background_flux'], yerr=df_info['Bg_electron_uncertainty'], xerr=[df_info['Energy_error_low'],df_info['Energy_error_high']],
-                fmt='o', color='red', ecolor='red', alpha=0.15, label='Background flux')
+                fmt='o', color=color[direction], ecolor=color[direction], alpha=0.15, label='Background flux')
 
     ax.set_yscale('log')
     ax.set_xscale('log')
@@ -1137,14 +1145,17 @@ def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key=''
 
     plt.show()
 
-def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5):
-
+def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None):
+    color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
     df_info = args[1]
     instrument = args[4][0]
     data_type = args[4][1]
-    
+    if direction == None or instrument in ['STEP', 'step']:
+        viewing = ''
+    else:
+        viewing = f'-{direction}' 
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
-    filename = 'spectrum-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + '-' + data_type.upper() 
+    filename = 'spectrum-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper()  +viewing+ '-' + data_type.upper() 
     
     if(df_info['Averaging'][0]=='Mean'):
 
@@ -1185,8 +1196,10 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
     #print(df_info['Bg_subtracted_average'])
     if(bg_subtraction):
         f, ax = plt.subplots(figsize=(13,10)) 
+        if direction == '':
+            direction = 'sun'
         ax.errorbar(x=df_info['Primary_energy'], y=df_info['Bg_subtracted_average'], yerr=df_info['Backsub_peak_uncertainty'],
-                    xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], color='red', fmt='o', ecolor='red', zorder=0, label='Flux average')
+                    xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], color=color[direction], fmt='o', ecolor=color[direction], zorder=0, label='Flux average')
         ax.plot(df_nan.Primary_energy, df_nan.Bg_subtracted_average, 'o', markersize=15, c='gray', label='excluded (NaNs)')
         ax.plot(df_no_sig.Primary_energy, df_no_sig.Bg_subtracted_average, 'o', c='blue', markersize=11, label='excluded (sigma)')
         ax.plot(df_rel_err.Primary_energy, df_rel_err.Bg_subtracted_average, 'o', c='orange', markersize=6, label='excluded (rel error)')
@@ -1197,7 +1210,7 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
     elif(bg_subtraction == False):
         f, ax = plt.subplots(figsize=(13,10))
         ax.errorbar(x=df_info['Primary_energy'], y=df_info['Flux_average'], yerr=df_info['Peak_electron_uncertainty'],
-                    xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], fmt='o', color='red',ecolor='red', zorder=0, label='Flux average')
+                    xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], fmt='o', color=color[direction],ecolor=color[direction], zorder=0, label='Flux average')
         ax.plot(df_nan.Primary_energy, df_nan.Flux_average, 'o', markersize=15, c='gray', label='excluded (NaNs)')
         ax.plot(df_no_sig.Primary_energy, df_no_sig.Flux_average, 'o', markersize=11, c='blue', label='excluded (sigma)')
         ax.plot(df_rel_err.Primary_energy, df_rel_err.Flux_average, 'o', markersize=6, c='orange', label='excluded (rel error)')
@@ -1208,7 +1221,7 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
     
     # Plots background flux and background errorbars in same scatterplot.
     ax.errorbar(x=df_info['Primary_energy'], y=df_info['Background_flux'], yerr=df_info['Bg_electron_uncertainty'], xerr=[df_info['Energy_error_low'],df_info['Energy_error_high']],
-                fmt='o', color='red', ecolor='red', alpha=0.15, label='Background flux')
+                fmt='o', color=color[direction], ecolor=color[direction], alpha=0.15, label='Background flux')
     # df_info.plot(kind='scatter', x='Primary_energy', y='Background_flux', c='red', alpha=0.25, ax=ax, label='Background flux')
     # ax.errorbar(x=df_info['Primary_energy'], y=df_info['Background_flux'], yerr=df_info['Bg_electron_uncertainty'], xerr=[df_info['Energy_error_low'],df_info['Energy_error_high']],
     #             fmt='.', ecolor='red', alpha=0.15)
@@ -1242,13 +1255,16 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
     plt.show()
 
 
-def write_to_csv(args, path='', key=''):
+def write_to_csv(args, path='', key='', direction=None):
 
     df_info = args[1]
     instrument = args[4][0]
     data_type = args[4][1]
-    
-    filename = 'electron_data-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + '-' + data_type.upper()
+    if direction == None:
+        viewing = ''
+    else:
+        viewing = f'-{direction}' 
+    filename = 'electron_data-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + viewing+ '-' + data_type.upper()
 
     if(df_info['Averaging'][0] == 'Mean'):
         
