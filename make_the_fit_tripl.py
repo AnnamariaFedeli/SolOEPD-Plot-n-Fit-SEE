@@ -149,18 +149,24 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 		redchi_triple = result_triple.res_var
 		breakp_low    = result_triple.beta[6]	
 		breakp_high   = result_triple.beta[7]
+		g1            = result_triple.beta[1]
+		g2            = result_triple.beta[2]
+		g3            = result_triple.beta[3]
 
 		result_cut_break = pl_fit.cut_break_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=gamma1, gamma2=gamma2, c1=c1, alpha=alpha, E_break=E_break_low, E_cut = E_cut, print_report=False, maxit=10000)
 		redchi_cut_break = result_cut_break.res_var
 
-		if breakp_high > breakp_low:
+		difference = breakp_high-breakp_low
+
+		if breakp_high > breakp_low and difference > 0.01:
 			if breakp_low < e_max and breakp_low > e_min and breakp_high < e_max and breakp_high > e_min:
-				if redchi_triple < redchi_cut_break:
-					which_fit = 'triple'
-					redchi = redchi_triple
-					result = result_triple
-					return([which_fit, redchi, result])
-				
+				if g3 < g2 and g2<g1:
+					if redchi_triple < redchi_cut_break:
+						which_fit = 'triple'
+						redchi = redchi_triple
+						result = result_triple
+						return([which_fit, redchi, result])
+					
 				else:
 					fit = 'broken_cut'
 			else:

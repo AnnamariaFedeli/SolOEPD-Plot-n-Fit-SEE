@@ -13,14 +13,10 @@ from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 import make_the_fit_tripl as fitting
 import savecsv as save
 import combining_files as comb
-
+from datetime import *
 # <--------------------------------------------------------------- ALL NECESSARY INPUTS HERE ----------------------------------------------------------------->
 
-# INITIAL INPUTS TO LOAD FILES
-# The path to the folder where the data is stored
-# this path is also used to create new files for all and contaminated data.
-#                C:\Users\Omistaja\Desktop\SRL\2021SRL\epd_plot-main\solo_loader-main-shift\csv\18-Nov-20 1420-two-slopes
-def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True):
+def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction = 'sun', which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, slope_info = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True):
 	"""_summary_
 
 	Args:
@@ -40,43 +36,38 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 					'triple' will force a triple pl fit. If this is not possible, the function will check which is the next best option.
 					'best' will choose automatically the best fit type by comparing the redchis of the fits.
 		sigma (int, optional): standard deviation from the background. Defaults to 3.
-		rel_err (float, optional): _description_. Defaults to 0.5.
-		frac_nan_threshold (float, optional): _description_. Defaults to 0.9.
-		fit_to (str, optional): _description_. Defaults to 'peak'.
-		slope (_type_, optional): _description_. Defaults to None.
-		e_min (_type_, optional): _description_. Defaults to None.
-		e_max (_type_, optional): _description_. Defaults to None.
-		g1_guess (float, optional): _description_. Defaults to -1.9.
-		g2_guess (float, optional): _description_. Defaults to -2.5.
-		g3_guess (int, optional): _description_. Defaults to -4.
-		c1_guess (int, optional): _description_. Defaults to 1000.
-		alpha_guess (int, optional): _description_. Defaults to 10.
-		beta_guess (int, optional): _description_. Defaults to 10.
-		break_guess_low (float, optional): _description_. Defaults to 0.6.
-		break_guess_high (float, optional): _description_. Defaults to 1.2.
-		cut_guess (float, optional): _description_. Defaults to 1.2.
-		use_random (bool, optional): _description_. Defaults to True.
-		iterations (int, optional): _description_. Defaults to 20.
-		leave_out_1st_het_chan (bool, optional): _description_. Defaults to True.
-		shift_step_data (bool, optional): _description_. Defaults to False.
-		shift_factor (_type_, optional): _description_. Defaults to None.
-		save_fig (bool, optional): _description_. Defaults to True.
-		save_pickle (bool, optional): _description_. Defaults to False.
-		save_fit_variables (bool, optional): _description_. Defaults to True.
-		save_fitrun (bool, optional): _description_. Defaults to True.
+		rel_err (float, optional): The absolute value of the uncertainty of the bg subtracted flux peak divided by the bg subtracted peak. Defaults to 0.5.
+		frac_nan_threshold (float, optional): The pecentage of data withing the search window to condśider the peak reliable (data gap). Defaults to 0.9.
+		fit_to (str, optional): You can fit the data either to the peak value within the search window or the avarage flux calculated within the search window. Defaults to 'peak'.
+		slope (_type_, optional): The type of slope used to find the peak (for the title). Defaults to None.
+		e_min (_type_, optional): The lower energy limit for the fit. Defaults to None.
+		e_max (_type_, optional): The upper energy limit for the fit. Defaults to None.
+		g1_guess (float, optional): The slope of the single pl fit or the first part of a broken/triple pl fit. Defaults to -1.9.
+		g2_guess (float, optional): The slope of the second part of a broken/triple pl fit. gamma2 < gamma1. Defaults to -2.5. 
+		g3_guess (int, optional): The slope of the third part of a broken/triple pl fit. gamma3 < gamma2 < gamma1. Defaults to -4.
+		c1_guess (int, optional): The intensity/flux value at 0.1 MeV. Defaults to 1000.
+		alpha_guess (int, optional): The smoothness of the transition between gamma1 and gamma2. Defaults to 10.
+		beta_guess (int, optional): The smoothness of the transition between gamma3 and gamma2. Defaults to 10.
+		break_guess_low (float, optional): Guess value for the energy correponding to the break in the broken pl and first break for the triple pl. Defaults to 0.6.
+		break_guess_high (float, optional): Guess value for the energy correponding to the second break for the triple pl.. Defaults to 1.2.
+		cut_guess (float, optional): Guess value for the energy corresponding to the exponential cutoff.. Defaults to 1.2.
+		use_random (bool, optional): If True the fitting function will, in addition to the guess values, choose random values from a predifined list of values for each variable. 
+					These values are chosen close to the guess values. Defaults to True.
+		iterations (int, optional): The number of times the function will choose random values to use in the fit to the data. Defaults to 20.
+		leave_out_1st_het_chan (bool, optional): If True, the first HET channel will be left out from the fit. Defaults to True.
+		shift_step_data (bool, optional): If True, STEP data will be shifted (up or down, intensity wise) by a factor equal to shift_factor. Defaults to False.
+		shift_factor (float, optional): Factor to shift STEP data (e.g. 0.8). Defaults to None.
+		slope_info (string, otional): The slope or slopes length (e.g. '1 AU and 1.6 AU'). Defaults to None.
+		save_fig (bool, optional): If True, the image of the fit will be saved to the specified path. Defaults to True.
+		save_pickle (bool, optional): If True, a pickle file from the fit will be saved to the specified path. Defaults to False.
+		save_fit_variables (bool, optional): If True, the variables resulting from the final fit will be saved in a csv file to the specified path. Defaults to True.
+		save_fitrun (bool, optional): If True, the guess variables and other parameters from running the fit fit will be saved in a csv file to the specified path.. Defaults to True.
 	"""
 		
-	#folder = '20210507-1852/2min/sun/'
 
-	date_string = str(date) #'2021-05-07'
+
+	date_string = str(date)
 	averaging = str(averaging)+'min'
-
-	#path = path+folder
-	
-
-	#step = True
-	#ept  = True
-	#het  = True
 
 	separator = ';'
 
@@ -84,66 +75,6 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	ept_file_name = 'electron_data-'+date_string+'-EPT-L2-'+averaging+'_averaging-ion_corr.csv'
 	het_file_name = 'electron_data-'+date_string+'-HET-L2-'+averaging+'_averaging.csv'
 
-
-	# You can choose the sigma threshold value below which the data points will not be included in the fit
-	# You can also choose to leave the first HET channel out from the fit by setting  leave_out_1st_het_chan to True
-	# You can choose to shift step data by a certain factor (I have used 0.8)
-
-	#sigma = sigma
-	#rel_err = 0.5
-	#frac_nan_threshold = 0.9
-	#leave_out_1st_het_chan = True
-	#shift_step_data = False
-	#shift_factor = None #0.8
-
-	# !!! INPUTS FOR THE FIT !!!
-
-	#fit_type = 'step_ept_het' # fit_type options: step, ept, het, step_ept, step_ept_het, ept_het
-	#fit_to = 'peak'   # 'peak' or 'average'for window peak or average
-	window_type = 'One slope D = 1.6 AU' #'two slopes D = 1.191 AU & 1.7 AU'
-	slope = 'slope16'
-
-	# which_fit options: 
-	# 'single' will force a single pl fit to the data
-	# 'broken' will force a broken pl fit to the data but ONLY if the break point is within the energy range otherwise a sigle pl fit will be produced instead
-	# 'best_sb' will choose automatically the best fit type between single and broken by comparing the redchis of the fits
-	# 'best' will choose automatically the best fit type by comparing the redchis of the fits
-	# 'cut' will produce a single pl fit with an exponential cutoff point. If the cutoff point is outside of the energy range a broken or single pl will be fit instead
-	# 'broken_cut' will produce a broken pl fit with an exponential cutoff point. If the cutoff point is outside of the energy range a broken or single pl will be fit instead
-	# maybe option to just check between broken and cut 
-	# 'best_cb' 
-
-
-	#which_fit ='broken_cut' 
-
-	#!!! e_min, e_max, break_guess and cut_guess SHOULD BE IN MeV !!!
-	# step energy range: 0.004323343613-0.07803193193
-	# ept energy range: 0.03295087252-0.452730295
-	# het energy range: 0.6859485403-10.62300288
-	# second het channel: 1.590048112
-	# e_min and e_max can also be None. In this case the MAKE_THE_FIT function will automaically choose the values
-
-	#e_min = None # in MeV
-	#e_max =	None # in MeV
-	#g1_guess = -1.9
-	#g2_guess = -2.5
-	#c1_guess = 1e3
-	#alpha_guess = 7.16
-	#break_guess_low = 0.1#in MeV
-	#cut_guess = 0.12#in MeV
-
-	# if use_random = False the fit will only be made once with the guess values
-	# if use_random = True 
-	# the fitting function will first create a list of reasonable values for each of the fitting parameters 
-	# then randomly select values from the lists and compare the redchis of each fit to find the best one
-	#use_random = True 
-	#iterations = 20
-
-
-	#save_fig = True # save the fit
-	#save_pickle = True # save a pickle file of the odr run
-	#save_fit_variables = True # save the variables from the fit
-	#save_fitrun = True # save all variables used for the fit
 	# <-------------------------------------------------------------- END OF NECESSARY INPUTS ---------------------------------------------------------------->
 
 
@@ -153,17 +84,18 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 
 	fit_to_comb = fit_to[0].upper()+fit_to[1:]
 
-	direction = 'sun'
+	# These should be changed if using ions
+	direction = direction
 	intensity_label = 'Flux\n/(s cm² sr MeV)'
-	energy_label = 'primary energy (MeV)'
-	peak_info = fit_to+' spec'+'\n'+window_type
+	energy_label = 'Energy (MeV)'
+	peak_info = fit_to+' spectrum'   #+'\n'+window_type
 	legend_title = 'Electrons'  # 'mag' or 'foil' or 'Electrons' if there is more than just ept data
 	data_product = 'l2'
 
 	date_str = date_string[8:]+'-'+date_string[5:7]+'-'+date_string[0:4] #DO NOT CHANGE. This is used later for the plot title etc.
 	pos = get_horizons_coord('Solar Orbiter', date_string, 'id')
 	dist = np.round(pos.radius.value, 2)
-	#dist = ''
+	
 
 	# <---------------------------------------------------------------LOADING AND SAVING FILES------------------------------------------------------------------->
 
@@ -214,7 +146,6 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 
 	#-------------------------------------------------------------------------------------------------------------------------------------------------
 	color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
-	prim_e = data['Primary_energy']
 
 
 	pickle_path = None
@@ -231,7 +162,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		
 		save.save_info_fit(fitrun_path, date_string, averaging, direction, data_product, dist, step, ept, het,
 		sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, shift_factor, fit_type, fit_to,
-		window_type, which_fit, e_min, e_max, g1_guess, g2_guess, c1_guess, alpha_guess, break_guess_low, cut_guess,
+		which_fit, e_min, e_max, g1_guess, g2_guess, c1_guess, alpha_guess, break_guess_low, cut_guess,
 		use_random, iterations)
 
 
@@ -304,7 +235,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	spec_flux_c  = contaminated_data['Bg_subtracted_'+fit_to]
 	flux_err_c   = contaminated_data['Backsub_peak_uncertainty']
 
-
+	# visual studio marks the following as not used but they are used if the specific version is uncommented
 	# contaminated data sigma
 	spec_energy_c_sigma = contaminated_data_sigma['Primary_energy']
 	energy_err_low_c_sigma  = contaminated_data_sigma['Energy_error_low']
@@ -475,22 +406,22 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 
 	if save_fig:
 		if make_fit:
-			plt.savefig(path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+slope+'-'+fit_to, dpi=300)
+			plt.savefig(path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to, dpi=300)
 		if make_fit is False:
 			if step and ept and het:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-'+slope+'-step_ept_het', dpi=300)
+				plt.savefig(path+date_string+'-'+averaging+'-no_fit-step_ept_het', dpi=300)
 			if step and ept and het is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-'+slope+'-step_ept', dpi=300)
+				plt.savefig(path+date_string+'-'+averaging+'-no_fit-step_ept', dpi=300)
 			if step and het and ept is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-'+slope+'-step_het', dpi=300)
+				plt.savefig(path+date_string+'-'+averaging+'-no_fit-step_het', dpi=300)
 			if step and ept is False and het is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-'+slope+'-step', dpi=300)
+				plt.savefig(path+date_string+'-'+averaging+'-no_fit-step', dpi=300)
 			if ept and het and step is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-'+slope+'-ept_het', dpi=300)
+				plt.savefig(path+date_string+'-'+averaging+'-no_fit-ept_het', dpi=300)
 			if ept and step is False and het is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-'+slope+'-ept', dpi=300)
+				plt.savefig(path+date_string+'-'+averaging+'-no_fit-ept', dpi=300)
 			if het and ept is False and step is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-'+slope+'-het', dpi=300)
+				plt.savefig(path+date_string+'-'+averaging+'-no_fit-het', dpi=300)
 			
 			
 

@@ -19,6 +19,12 @@ from tabulate import tabulate
 from seppy.loader.solo import mag_load
 from pandas.tseries.frequencies import to_offset
 from tqdm.auto import tqdm
+import os
+
+def create_new_path(path, date):
+    newpath = path+date
+    if not os.path.exists(newpath):
+        os.makedirs(newpath)
 
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
