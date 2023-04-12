@@ -868,7 +868,7 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
     data_type = args[4][1]
 
     if viewing == None or sensor in ['STEP', 'step']:
-        viewing = ''
+        viewing = 'sun'
 
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
     filename = 'channels-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + '-' +viewing+ '-' + data_type.upper() 
@@ -930,6 +930,8 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
     # plt.ylabel("Flux \n [1/s cm$^2$ sr MeV]", labelpad=40)
     fig.supylabel("Flux [1/s cm$^2$ sr MeV]", size=20)
     axes[0].set_title(title_string, size=20)
+
+
  
 
     # Loop through selected energy channels and create a subplot for each.
@@ -1053,7 +1055,8 @@ def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key=''
     instrument = args[4][0]
     data_type = args[4][1]
     if direction == None or instrument in ['STEP', 'step']:
-        viewing = ''
+        viewing = 'sun'
+        direction = 'sun'
     else:
         viewing = f'-{direction}' 
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
@@ -1151,7 +1154,7 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
     instrument = args[4][0]
     data_type = args[4][1]
     if direction == None or instrument in ['STEP', 'step']:
-        viewing = ''
+        viewing = 'sun'
     else:
         viewing = f'-{direction}' 
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
