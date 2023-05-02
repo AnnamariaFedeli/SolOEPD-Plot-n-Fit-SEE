@@ -1264,10 +1264,10 @@ def write_to_csv(args, path='', key='', direction=None):
     instrument = args[4][0]
     data_type = args[4][1]
     if direction == None:
-        viewing = ''
+        viewing = 'sun'
     else:
         viewing = f'-{direction}' 
-    filename = 'electron_data-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + viewing+ '-' + data_type.upper()
+    filename = 'electron_data-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() +'-'+ viewing+ '-' + data_type.upper()
 
     if(df_info['Averaging'][0] == 'Mean'):
         

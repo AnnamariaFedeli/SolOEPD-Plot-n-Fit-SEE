@@ -58,7 +58,6 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		leave_out_1st_het_chan (bool, optional): If True, the first HET channel will be left out from the fit. Defaults to True.
 		shift_step_data (bool, optional): If True, STEP data will be shifted (up or down, intensity wise) by a factor equal to shift_factor. Defaults to False.
 		shift_factor (float, optional): Factor to shift STEP data (e.g. 0.8). Defaults to None.
-		slope_info (string, otional): The slope or slopes length (e.g. '1 AU and 1.6 AU'). Defaults to None.
 		save_fig (bool, optional): If True, the image of the fit will be saved to the specified path. Defaults to True.
 		save_pickle (bool, optional): If True, a pickle file from the fit will be saved to the specified path. Defaults to False.
 		save_fit_variables (bool, optional): If True, the variables resulting from the final fit will be saved in a csv file to the specified path. Defaults to True.
@@ -72,7 +71,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 
 	separator = ';'
 
-	step_file_name = 'electron_data-'+date_string+'-STEP-L2-'+averaging+'_averaging.csv'
+	step_file_name = 'electron_data-'+date_string+'-STEP-'+direction+'-L2-'+averaging+'_averaging.csv'
 	ept_file_name = 'electron_data-'+date_string+'-EPT-' + direction+ '-L2-'+averaging+'_averaging-ion_corr.csv'
 	het_file_name = 'electron_data-'+date_string+'-HET-'+ direction+'-L2-'+averaging+'_averaging.csv'
 
