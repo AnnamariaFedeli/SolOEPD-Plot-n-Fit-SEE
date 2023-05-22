@@ -456,9 +456,26 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
 
             df_proton_fluxes =df_proton_fluxes.resample('{}min'.format(averaging)).mean()
             df_proton_uncertainties = df_proton_uncertainties.resample('{}min'.format(averaging)).apply(average_flux_error)
+# the data product changed so the first energy channel was set to nan. That messes with the matrix calculation of the ion contamination correction so changeod first channel to zero.
+# this should later be changed to a condition so if the first chan is nan then set to zero in case there will be another change with the data.
+
+            #print(df_proton_fluxes.Ion_Flux_0)
+            for i in range(len(df_proton_fluxes.Ion_Flux_0)):
+                df_proton_fluxes.Ion_Flux_0[i] = 0.0
+            #print(df_proton_fluxes.Ion_Flux_0)
+            
+
 
         df_electron_fluxes = df_electron_fluxes.resample('{}min'.format(averaging)).mean()
         df_electron_uncertainties = df_electron_uncertainties.resample('{}min'.format(averaging)).apply(average_flux_error)
+        if instrument == 'ept':
+            for i in range(len(df_electron_fluxes.Electron_Flux_0)):
+                df_electron_fluxes.Electron_Flux_0[i] = 0.0
+        #print(df_electron_fluxes.Electron_Flux_0)
+            
+
+
+        #print('line 463', df_electron_fluxes)
 
     # The rolling window might be broken, but it's not ever used.
     elif(averaging_mode == 'rolling_window'):
@@ -470,6 +487,8 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         ion_cont_corr_matrix = np.loadtxt('EPT_ion_contamination_flux_paco.dat')
         Electron_Flux_cont = np.zeros(np.shape(df_electron_fluxes))
         Electron_Uncertainty_cont = np.zeros(np.shape(df_electron_uncertainties))
+        #print('line 475', df_electron_fluxes)
+        #print(Electron_Flux_cont)
 
         for tt in range(len(df_electron_fluxes)):
 
@@ -477,9 +496,12 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
             Electron_Flux_cont[tt, :] = np.matmul(ion_cont_corr_matrix, df_proton_fluxes.values[tt, :])
             Electron_Uncertainty_cont[tt, :] = np.sqrt(np.matmul(ion_cont_corr_matrix**2, df_proton_uncertainties.values[tt, :]**2 ))
 
+        #print('line 484', df_electron_fluxes)
+        #print(Electron_Flux_cont)
         df_electron_fluxes = df_electron_fluxes - Electron_Flux_cont
         df_electron_uncertainties = np.sqrt(df_electron_uncertainties**2 + Electron_Uncertainty_cont**2 )
-    
+    #print('line 488', df_electron_fluxes)
+
     if(instrument=='ept'):
         ion_string = 'Ion_contamination_correction'
 
@@ -514,7 +536,8 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
     elif(averaging_mode == 'mean'):
         df_info['Averaging'] = ['Mean', 'Resampled to ' + str(averaging) + 'min'] + ['']*(len(channels)-2)
 
-
+    #print('line 519', df_electron_fluxes)
+    
     # Energy bin primary energies; geometric mean.
     # Will be used to calculate beta and velocity of particles.
 
@@ -627,9 +650,12 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
     #list_average_electron_uncertainties = [] change to new unc determination later
 
     n = 0
+    #print(df_electron_fluxes)
+    #print(df_electron_fluxes[searchstart[n]:searchend[n]])
     
     for channel in channels:
         b_f = df_electron_fluxes['Electron_Flux_{}'.format(channel)][searchstart[n]:searchend[n]]
+        #print(b_f)
         # I think here is where I check if the BG is zero. Can temporarely change this. This was if len(b_f) ==0: bg_flux = np.nan list_bg_fluxes.append(bg_flux) Change back when needed
         if len(b_f) ==0:
             bg_flux = np.nan
@@ -1265,6 +1291,7 @@ def write_to_csv(args, path='', key='', direction=None):
     data_type = args[4][1]
     if direction == None:
         viewing = 'sun'
+        
     else:
         viewing = f'-{direction}' 
     filename = 'electron_data-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() +'-'+ viewing+ '-' + data_type.upper()

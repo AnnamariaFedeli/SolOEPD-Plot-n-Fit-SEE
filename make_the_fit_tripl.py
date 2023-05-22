@@ -104,6 +104,9 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 	redchi_broken = result_broken.res_var
 	breakp        = result_broken.beta[4]	
 
+	#print(redchi_single, 'SINGLE RESULT')
+	#print(redchi_broken, 'BROKEN RESULT')
+
 
 
 	
@@ -156,16 +159,24 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 		result_cut_break = pl_fit.cut_break_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=gamma1, gamma2=gamma2, c1=c1, alpha=alpha, E_break=E_break_low, E_cut = E_cut, print_report=False, maxit=10000)
 		redchi_cut_break = result_cut_break.res_var
 
+		#print(redchi_triple, 'RED TRIPLE')
+		#print(redchi_cut_break, 'RED CUT B')
+		
+
 		difference = breakp_high-breakp_low
+
+		redchi_difference = redchi_triple-redchi_cut_break
 
 		if breakp_high > breakp_low and difference > 0.01:
 			if breakp_low < e_max and breakp_low > e_min and breakp_high < e_max and breakp_high > e_min:
 				if g3 < g2 and g2<g1:
-					if redchi_triple < redchi_cut_break:
+					if redchi_triple < redchi_cut_break or redchi_difference<0.2:
 						which_fit = 'triple'
 						redchi = redchi_triple
 						result = result_triple
 						return([which_fit, redchi, result])
+					else:
+						fit = 'broken_cut'
 					
 				else:
 					fit = 'broken_cut'
@@ -174,7 +185,8 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 		else:
 			fit = 'broken_cut'
 
-	
+	#print(fit, 'FIT')
+
 	if fit == 'broken_cut':
 		result_cut_break = pl_fit.cut_break_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=gamma1, gamma2=gamma2, c1=c1, alpha=alpha, E_break=E_break_low, E_cut = E_cut, print_report=False, maxit=10000)
 		redchi_cut_break = result_cut_break.res_var
@@ -511,6 +523,10 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	#first check the redchi and if the break is outside of the energy range using the guess values then compare the random values to these 
 	#if redchi is better, substitute values
 		which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, beta = beta_guess, gamma1=g1_guess, gamma2=g2_guess, gamma3 = g3_guess, E_break_low=break_low_guess, E_break_high = break_high_guess, E_cut = cut_guess, fit = 'best', maxit=10000, e_min = e_min, e_max = e_max)
+		# if for some reason the fit is not doable, the result will be None. In that case you cannot use redchi_guess = which_fit_guess[1] because you cannot call a None value. 
+		# so you need to repeat the fit. Maybe this could be checked already in the function file.
+		#while which_fit_guess is None:
+		#	which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, beta = beta_guess, gamma1=g1_guess, gamma2=g2_guess, gamma3 = g3_guess, E_break_low=break_low_guess, E_break_high = break_high_guess, E_cut = cut_guess, fit = 'best', maxit=10000, e_min = e_min, e_max = e_max)
 		redchi_guess = which_fit_guess[1]
 		print(redchi_guess)
 		redchi_final = redchi_guess
@@ -555,6 +571,10 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 				c1_random = np.random.choice(c1_array,1)[0]
 				
 				which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, beta = beta_random, gamma1=g1_random, gamma2=g2_random, gamma3 = g3_random, E_break_low=break_low_random, E_break_high = break_high_random, E_cut = cut_random, maxit=10000, e_min = e_min, e_max = e_max)
+				print(which_fit_random)
+				#while which_fit_random is None:
+				#	which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, beta = beta_random, gamma1=g1_random, gamma2=g2_random, gamma3 = g3_random, E_break_low=break_low_random, E_break_high = break_high_random, E_cut = cut_random, maxit=10000, e_min = e_min, e_max = e_max)
+				
 				redchi_random = which_fit_random[1]
 				if redchi_random < redchi_final:
 					result_final = which_fit_random[2]
