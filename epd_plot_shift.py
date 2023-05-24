@@ -808,7 +808,7 @@ def make_step_electron_flux(stepdata, mask_conta=True):
     U_MAG = stepdata['Magnet_Uncertainty']
     # from Paco:
     # Ele_Uncertainty = k * sqrt(Integral_Uncertainty^2 + Magnet_Uncertainty^2)
-    step_unc = np.sqrt(U_INT*2 + U_MAG*2) * paco.factors.values
+    step_unc = np.sqrt(U_INT**2 + U_MAG**2) * paco.factors.values
     param_list = ['Electron_Flux', 'Electron_Uncertainty']
 
     if mask_conta:
