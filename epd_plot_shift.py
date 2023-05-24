@@ -1218,7 +1218,7 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
 
     # this is to plot the points that are excluded due to different reasons 
     df_nan = df_info.where((df_info['frac_nonan'] < frac_nan_threshold), np.nan)
-    df_no_sig = df_info.where((df_info['Peak_significance'] < sigma), np.nan)
+    df_no_sig = df_info.where((df_info['Average_significance'] < sigma), np.nan)
     df_rel_err = df_info.where((df_info['rel_backsub_peak_err'] > rel_err_threshold), np.nan)
 
     # Plots either the background subtracted or raw flux peaks average depending on choice.
