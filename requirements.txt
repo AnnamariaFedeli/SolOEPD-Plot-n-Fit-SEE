@@ -3,7 +3,7 @@ astropy
 astroquery
 matplotlib
 notebook
-pandas<2.0
+pandas<1.5
 scipy
 seppy
 solo_epd_loader
