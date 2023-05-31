@@ -1,0 +1,10 @@
+adjustText
+astropy
+astroquery
+matplotlib
+notebook
+pandas<1.5
+scipy
+seppy
+solo_epd_loader
+tabulate
