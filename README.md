@@ -8,7 +8,7 @@
     $ conda create --name solosee python=3.9
     $ conda activate solosee
     ```
-3. [Download this file](https://github.com/jgieseler/SolOEPD-Plot-n-Fit-SEE/archive/refs/heads/main.zip) and extract to a folder of your choice (or clone the repository https://github.com/jgieseler/SolOEPD-Plot-n-Fit-SEE if you know how to use `git`).
+3. [Download this file](https://github.com/AnnamariaFedeli/SolOEPD-Plot-n-Fit-SEE/archive/refs/heads/main.zip) and extract to a folder of your choice (or clone the repository https://github.com/AnnamariaFedeli/SolOEPD-Plot-n-Fit-SEE if you know how to use `git`).
 6. Open your terminal/command line/Anaconda prompt, navigate to the downloaded (extracted) folder `SolOEPD-Plot-n-Fit-SEE` (or `SolOEPD-Plot-n-Fit-SEE-main`) that contains the file `requirements.txt`, and run the following (first command is just to verify that you are in the correct conda environment):
     ``` bash
     $ conda activate solosee
