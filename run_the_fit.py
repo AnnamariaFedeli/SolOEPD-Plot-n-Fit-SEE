@@ -14,7 +14,37 @@ import make_the_fit_tripl as fitting
 import savecsv as save
 import combining_files as comb
 from datetime import *
+import os
+import shutil
 # <--------------------------------------------------------------- ALL NECESSARY INPUTS HERE ----------------------------------------------------------------->
+
+#source_folder = r"E:\demos\files\reports\\"
+#destination_folder = r"E:\demos\files\account\\"
+
+# fetch all files
+#for file_name in os.listdir(source_folder):
+    # construct full file path
+#    source = source_folder + file_name
+#    destination = destination_folder + file_name
+    # copy only files
+#    if os.path.isfile(source):
+#        shutil.copy(source, destination)
+#        print('copied', file_name)
+
+def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run_var_file):
+	fitvariables = path+'fit_variables/'
+	runvariables = path+'run_variables/'
+	newpath = path+date+'/'
+	if not os.path.exists(fitvariables):
+		os.makedirs(fitvariables)
+	if not os.path.exists(runvariables):
+		os.makedirs(runvariables)
+
+	shutil.copy(newpath+fit_var_file, fitvariables+fit_var_file)
+	shutil.copy(newpath+run_var_file, runvariables+run_var_file)
+
+	
+
 
 def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True):
 
@@ -22,7 +52,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 
 	Args:
 		path (string): The path to the folder where the data is stored and where the fit and the variable files will be saved.
-		date (datetime or string): dt.datetime(yyyy, mm, dd) or 'yyyy-mm-dd'
+		date (datetime or string): dt.datetime(yyyy, mm, dd, HH, MM) or 'yyyy-mm-dd-HHMM'
 		averaging (int): the averaging of the data
 		fit_type (string): fit_type options: 'step', 'ept', 'het', 'step_ept', 'step_ept_het', 'ept_het'
 		step (bool, optional): True if you wish to include STEP data in the plot. Not the fit, just the plot. Defaults to True.
@@ -64,9 +94,17 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		save_fitrun (bool, optional): If True, the guess variables and other parameters from running the fit fit will be saved in a csv file to the specified path.. Defaults to True.
 	"""
 		
+	date_string =''
+	folder_time = date
+
+	if type(date) is str:
+		date_string = date[:-5]
+	else:
+		date_string = str(date.date())
+		folder_time = str(date)[:-3].replace(' ', '-').replace(':', '')
 
 
-	date_string = str(date)
+
 	averaging = str(averaging)+'min'
 
 	separator = ';'
@@ -151,15 +189,15 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 
 	pickle_path = None
 	if save_pickle:
-		pickle_path = path+date_string+'-pickle_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.p'
+		pickle_path = path+folder_time+'-pickle_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.p'
 
 	fit_var_path = None
 	if save_fit_variables:
-		fit_var_path = path+date_string+'-fit-result-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
+		fit_var_path = path+folder_time+'-fit-result-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
 
 	fitrun_path = None
 	if save_fitrun:
-		fitrun_path = path+date_string+'-all-fit-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
+		fitrun_path = path+folder_time+'-all-fit-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
 		
 		save.save_info_fit(fitrun_path, date_string, averaging, direction, data_product, dist, step, ept, het,
 		sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, shift_factor, fit_type, fit_to,

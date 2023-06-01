@@ -25,6 +25,8 @@ def create_new_path(path, date):
     newpath = path+date
     if not os.path.exists(newpath):
         os.makedirs(newpath)
+    print("Creating new directory "+newpath)
+
 
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
@@ -768,9 +770,9 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
     return df_electron_fluxes, df_info, [searchstart, searchend], [e_low, e_high], [instrument, data_type]
 
 # Workaround for STEP data, there's probably a better way in Python to handle this.
-def extract_step_data(df_particles,  plotstart, plotend, t_inj, bgstart = None, bgend = None, bg_distance_from_window = None, bg_period = None, travel_distance = 0, travel_distance_second_slope = None, fixed_window = None, instrument = 'step', data_type = 'l2', averaging_mode='none', averaging=2, masking=False, ion_conta_corr=False):
+#def extract_step_data(df_particles,  plotstart, plotend, t_inj, bgstart = None, bgend = None, bg_distance_from_window = None, bg_period = None, travel_distance = 0, travel_distance_second_slope = None, fixed_window = None, instrument = 'step', data_type = 'l2', averaging_mode='none', averaging=2, masking=False, ion_conta_corr=False):
 
-    return extract_electron_data(df_particles, df_particles,  plotstart, plotend,  t_inj, bgstart, bgend, bg_distance_from_window, bg_period, travel_distance, travel_distance_second_slope, fixed_window, instrument = instrument, data_type = data_type, averaging_mode=averaging_mode, averaging=averaging, masking=masking, ion_conta_corr=ion_conta_corr)
+ #   return extract_electron_data(df_particles, df_particles,  plotstart, plotend,  t_inj, bgstart, bgend, bg_distance_from_window, bg_period, travel_distance, travel_distance_second_slope, fixed_window, instrument = instrument, data_type = data_type, averaging_mode=averaging_mode, averaging=averaging, masking=masking, ion_conta_corr=ion_conta_corr)
 
 def make_step_electron_flux(stepdata, mask_conta=True):
     """
@@ -1289,12 +1291,18 @@ def write_to_csv(args, path='', key='', direction=None):
     df_info = args[1]
     instrument = args[4][0]
     data_type = args[4][1]
+    
+    date = str(df_info['Plot_period'][0][:-5])
+    hour = int(df_info['Plot_period'][0][-4:-2])
+    if hour >20:
+        date = str(df_info['Plot_period'][1][:-5])
+        
+
     if direction == None:
         viewing = 'sun'
-        
     else:
         viewing = f'-{direction}' 
-    filename = 'electron_data-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() +'-'+ viewing+ '-' + data_type.upper()
+    filename = 'electron_data-' + date + '-' + instrument.upper() +'-'+ viewing+ '-' + data_type.upper()
 
     if(df_info['Averaging'][0] == 'Mean'):
         
@@ -1309,6 +1317,10 @@ def write_to_csv(args, path='', key='', direction=None):
         if(df_info['Ion_contamination_correction'][0]):
 
             filename = filename + '-ion_corr'
+
+    #print(hour)
+    #print(date)
+
 
     df_info.to_csv(path + filename + str(key) + '.csv',  sep = ';', index=False)
 
