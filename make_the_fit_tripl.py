@@ -408,7 +408,7 @@ def find_c1(spec_e, spec_flux, e_min, e_max):
 	
 	
 
-def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_fit='best', e_min=None, e_max=None, g1_guess=-2., g2_guess=None, g3_guess=None, alpha_guess=5., beta_guess = 5,  break_low_guess=0.065, break_high_guess=0.12, cut_guess = 0.12, c1_guess=None, use_random = False, iterations = 10, path = None, path2 = None):
+def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_fit='best', e_min=None, e_max=None, g1_guess=-2., g2_guess=None, g3_guess=None, alpha_guess=5., beta_guess = 5,  break_low_guess=0.065, break_high_guess=0.12, cut_guess = 0.12, c1_guess=None, use_random = False, iterations = 10, path = None, path2 = None, detailed_legend = False):
 	'''This function fit the data to a single, double or break+cut power law. 
 	The fit type can be chosen between: single,double, cut or best. 
 	The best option checks between all the options and chooses between the three by checking the reduced chisqr.
@@ -850,9 +850,16 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		t_val       = studentt.interval(0.95, dof)[1]
 		errors      = t_val * result_single_pl.sd_beta  #np.sqrt(np.diag(final_fit.cov_beta))
 		gamma1_err  = errors[1]
+
+		if detailed_legend:
+			ax.plot([], [], ' ', label="single pl")
+			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_single, ndigits=2))
+
+
 		ax.plot(xplot, pl_fit.simple_pl([c1, gamma1], xplot), '-', color=color[direction], label=r'$\mathregular{\delta=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err))
 		ax.plot(xplot, pl_fit.simple_pl([c1, gamma1], xplot), '--k', zorder=10)
 
+		
 
 		result_dataframe["Reduced chi sq"] = redchi_single
 		result_dataframe["c1"] = c1
@@ -909,6 +916,12 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			
 		fit_plot = pl_fit.broken_pl_func(result_broken.beta, xplot)
 		fit_plot[fit_plot == 0] = np.nan
+
+		if detailed_legend:
+			ax.plot([], [], ' ', label="broken pl")
+			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_broken, ndigits=2))
+
+
 		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\delta_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2))#, lw=lwd)
 		ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b=}$ '+str(round(breakp_1*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err*1e3, ndigits=0))+' keV')
 	
@@ -949,6 +962,12 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			
 		fit_plot = pl_fit.cut_pl_func(result_cut.beta, xplot)
 		fit_plot[fit_plot == 0] = np.nan
+
+		if detailed_legend:
+			ax.plot([], [], ' ', label="single pl + exp cutoff")
+			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_cut, ndigits=2))
+
+
 		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err))#, lw=lwd)
 		ax.axvline(x=cut, color='purple', linestyle='--', label=r'$\mathregular{E_c=}$ '+str(round(cut*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(cut_err*1e3, ndigits=0))+' keV')
 		
@@ -1002,6 +1021,11 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			
 		fit_plot = pl_fit.cut_break_pl_func(result_cut.beta, xplot)
 		fit_plot[fit_plot == 0] = np.nan
+
+		if detailed_legend:
+			ax.plot([], [], ' ', label="broken pl + exp cutoff")
+			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_cut, ndigits=2))
+
 		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\delta_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2))#, lw=lwd)
 		ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b=}$ '+str(round(breakp_1*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err*1e3, ndigits=0))+' keV')
 		ax.axvline(x=cut, color='purple', linestyle='--', label=r'$\mathregular{E_c=}$ '+str(round(cut*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(cut_err*1e3, ndigits=0))+' keV')
@@ -1036,7 +1060,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		alpha         = result_triple.beta[4]
 		beta          = result_triple.beta[5]
 		dof           = len(spec_e) - len(result_triple.beta)
-		redchi_cut = result_triple.res_var
+		redchi_triple = result_triple.res_var
 		t_val      = studentt.interval(0.95, dof)[1]
 		errors     = t_val * result_triple.sd_beta  #np.sqrt(np.diag(result_cut.cov_beta))
 		breakp_1_err = errors[6]
@@ -1061,11 +1085,16 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			
 		fit_plot = pl_fit.triple_pl_func(result_triple.beta, xplot)
 		fit_plot[fit_plot == 0] = np.nan
+
+		if detailed_legend:
+			ax.plot([], [], ' ', label="triple pl")
+			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_triple, ndigits=2))
+
 		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\delta_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\delta_3=}$%5.2f' %round(gamma3, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma3_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2)+'\n'+r'$\mathregular{\beta=}$%5.2f' %round(beta, ndigits=2))#, lw=lwd)
 		ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b1=}$ '+str(round(breakp_1*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err*1e3, ndigits=0))+' keV')
 		ax.axvline(x=breakp_2, color='purple', linestyle='--', label=r'$\mathregular{E_b2=}$ '+str(round(breakp_2*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_2_err*1e3, ndigits=0))+' keV')
 
-		result_dataframe["Reduced chi sq"] = redchi_cut
+		result_dataframe["Reduced chi sq"] = redchi_triple
 		result_dataframe["c1"] = c1
 		result_dataframe["c1 err"] = errors[0]
 		result_dataframe["Gamma1"] = gamma1
