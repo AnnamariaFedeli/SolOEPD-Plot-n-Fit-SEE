@@ -6,5 +6,5 @@ notebook
 pandas<1.5
 scipy
 seppy
-solo_epd_loader
+solo_epd_loader>=0.2.4
 tabulate
