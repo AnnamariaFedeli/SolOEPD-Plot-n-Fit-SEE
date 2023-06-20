@@ -466,14 +466,14 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
                 df_proton_fluxes.Ion_Flux_0[i] = 0.0
             #print(df_proton_fluxes.Ion_Flux_0)
             
-
-
-        df_electron_fluxes = df_electron_fluxes.resample('{}min'.format(averaging)).mean()
-        df_electron_uncertainties = df_electron_uncertainties.resample('{}min'.format(averaging)).apply(average_flux_error)
-        if instrument == 'ept':
-            for i in range(len(df_electron_fluxes.Electron_Flux_0)):
-                df_electron_fluxes.Electron_Flux_0[i] = 0.0
-        #print(df_electron_fluxes.Electron_Flux_0)
+        # for STEP electrons, the resampling is done independently, e.g. solo_epd_loader.calc_electrons(df, resamle='1min')
+        if(instrument!='step'):
+            df_electron_fluxes = df_electron_fluxes.resample('{}min'.format(averaging)).mean()
+            df_electron_uncertainties = df_electron_uncertainties.resample('{}min'.format(averaging)).apply(average_flux_error)
+            if instrument == 'ept':
+                for i in range(len(df_electron_fluxes.Electron_Flux_0)):
+                    df_electron_fluxes.Electron_Flux_0[i] = 0.0
+            #print(df_electron_fluxes.Electron_Flux_0)
             
 
 
@@ -481,7 +481,9 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
 
     # The rolling window might be broken, but it's not ever used.
     elif(averaging_mode == 'rolling_window'):
-        df_electron_fluxes = df_electron_fluxes.rolling(window=averaging, min_periods=1).mean()
+        # for STEP electrons, the resampling is done independently, but rolling_window is not supported!
+        if(instrument!='step'):
+            df_electron_fluxes = df_electron_fluxes.rolling(window=averaging, min_periods=1).mean()
 
 
     if(ion_conta_corr and (instrument == 'ept')):
