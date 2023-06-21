@@ -21,6 +21,7 @@ from pandas.tseries.frequencies import to_offset
 from tqdm.auto import tqdm
 import os
 
+# Add folder for data and one for plots
 def create_new_path(path, date):
     newpath = path+date
     if not os.path.exists(newpath):
@@ -1303,7 +1304,7 @@ def write_to_csv(args, path='', key='', direction=None):
     if direction == None:
         viewing = 'sun'
     else:
-        viewing = f'-{direction}' 
+        viewing = f'{direction}' 
     filename = 'electron_data-' + date + '-' + instrument.upper() +'-'+ viewing+ '-' + data_type.upper()
 
     if(df_info['Averaging'][0] == 'Mean'):
