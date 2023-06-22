@@ -104,12 +104,12 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 	redchi_broken = result_broken.res_var
 	breakp        = result_broken.beta[4]	
 
-	#print(redchi_single, 'SINGLE RESULT')
-	#print(redchi_broken, 'BROKEN RESULT')
+	print(redchi_single, 'SINGLE RESULT')
+	print(redchi_broken, 'BROKEN RESULT')
+	print('109')
+	print(result_single_pl.beta)
+	print(result_broken.beta)
 
-
-
-	
 	#which_fit = 'single'
 	#redchi = 0
 	#result = ''
@@ -155,12 +155,12 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 		g1            = result_triple.beta[1]
 		g2            = result_triple.beta[2]
 		g3            = result_triple.beta[3]
-
+		print('158')
 		result_cut_break = pl_fit.cut_break_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=gamma1, gamma2=gamma2, c1=c1, alpha=alpha, E_break=E_break_low, E_cut = E_cut, print_report=False, maxit=10000)
 		redchi_cut_break = result_cut_break.res_var
 
-		#print(redchi_triple, 'RED TRIPLE')
-		#print(redchi_cut_break, 'RED CUT B')
+		print(redchi_triple, 'RED TRIPLE 162')
+		print(redchi_cut_break, 'RED CUT B 163')
 		
 
 		difference = breakp_high-breakp_low
@@ -174,16 +174,22 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 						which_fit = 'triple'
 						redchi = redchi_triple
 						result = result_triple
+						print('177')
 						return([which_fit, redchi, result])
+						
 					else:
 						fit = 'broken_cut'
+						print('182')
 					
 				else:
 					fit = 'broken_cut'
+					print('186')
 			else:
 				fit = 'broken_cut'
+				print('189')
 		else:
 			fit = 'broken_cut'
+			print('192')
 
 	#print(fit, 'FIT')
 
@@ -197,10 +203,11 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 		result_cut = pl_fit.cut_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, c1 = c1, E_cut = E_cut, maxit=10000)
 		redchi_cut= result_cut.res_var
 		cut        = result_cut.beta[2]	#shoud maybe make distinction between cut from cut pl and cut from cut broken pl
-		
+		print('206')
 		difference = cut_b-breakp_cut
 		
 		if difference>0.01 and redchi_cut_break<redchi_broken and redchi_cut_break <redchi_single and redchi_cut_break< redchi_cut:
+			print('210')
 			if cut_b < e_min or cut_b > e_max:
 				if breakp_cut < e_min or breakp_cut > e_max:
 					which_fit = 'single'
@@ -209,6 +216,7 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 					return([which_fit, redchi, result])
 				# Need to compare break and cut to see which actually fits better
 				if breakp >= e_min and breakp <=e_max:
+					print('219')
 					if redchi_broken<=redchi_cut:
 						which_fit = 'broken'
 						redchi = redchi_broken
@@ -267,9 +275,9 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 						redchi = redchi_cut							
 						result = result_cut
 						return([which_fit, redchi, result])
-							
-				
+									
 		if difference<=0.01:
+			print('279')
 			if redchi_broken<=redchi_single and redchi_broken<= redchi_cut:
 				if breakp <= e_min or breakp >= e_max:
 					which_fit = 'single'
@@ -302,18 +310,29 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 
 
 		if redchi_broken<=redchi_single and redchi_broken <=redchi_cut_break and redchi_broken<= redchi_cut:
+			print('313')
 			if breakp <= e_min or breakp >= e_max:
+				print('315')
 				which_fit = 'single'
 				redchi = redchi_single
 				result = result_single_pl
 				return([which_fit, redchi, result])
 			if breakp > e_min and breakp <e_max:
+				print('321')
 				which_fit = 'broken'
 				redchi = redchi_broken
 				result = result_broken
 				return([which_fit, redchi, result])
+			else:
+				print('326')
+				which_fit = 'single'
+				redchi = redchi_single
+				result = result_single_pl
+				return([which_fit, redchi, result])
+
 
 		if redchi_cut<redchi_single and redchi_cut <redchi_cut_break and redchi_cut < redchi_broken:
+			print('334')
 			if cut <= e_min or cut >= e_max:
 				which_fit = 'single'
 				redchi = redchi_single
@@ -326,11 +345,13 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 				return([which_fit, redchi, result])
 
 		if redchi_broken>redchi_single and redchi_cut_break>redchi_single and redchi_cut>redchi_single:
+			print('339')
 			which_fit = 'single'
 			redchi = redchi_single
 			result = result_single_pl
 			return([which_fit, redchi, result])
-
+		
+	print('345')
 
 	
 	if fit == 'best_sb':
@@ -415,7 +436,9 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	Also when the broken or cut options are chosen, the function checks if the break or cutoff points are outside of the energy range.
 	In such case, a sigle pl will be fit to the data and the function will output that the breakpoint is outside of the energy range.''' 
 	
-	
+	print(spec_e)
+	print(spec_flux)
+
 	if g2_guess is None:
 		g2_guess = g1_guess - 0.1
 
@@ -527,6 +550,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		# so you need to repeat the fit. Maybe this could be checked already in the function file.
 		#while which_fit_guess is None:
 		#	which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, beta = beta_guess, gamma1=g1_guess, gamma2=g2_guess, gamma3 = g3_guess, E_break_low=break_low_guess, E_break_high = break_high_guess, E_cut = cut_guess, fit = 'best', maxit=10000, e_min = e_min, e_max = e_max)
+		print(which_fit_guess)
 		redchi_guess = which_fit_guess[1]
 		print(redchi_guess)
 		redchi_final = redchi_guess
