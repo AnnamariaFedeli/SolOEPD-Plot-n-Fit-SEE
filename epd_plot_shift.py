@@ -456,24 +456,26 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
 
     if(averaging_mode == 'mean'):
         if(instrument=='ept'):
-
             df_proton_fluxes =df_proton_fluxes.resample('{}min'.format(averaging)).mean()
             df_proton_uncertainties = df_proton_uncertainties.resample('{}min'.format(averaging)).apply(average_flux_error)
+            #df_proton_fluxes = np.ma.masked_invalid(df_proton_fluxes)
+            
 # the data product changed so the first energy channel was set to nan. That messes with the matrix calculation of the ion contamination correction so changeod first channel to zero.
 # this should later be changed to a condition so if the first chan is nan then set to zero in case there will be another change with the data.
 
             #print(df_proton_fluxes.Ion_Flux_0)
-            for i in range(len(df_proton_fluxes.Ion_Flux_0)):
-                df_proton_fluxes.Ion_Flux_0[i] = 0.0
+            #for i in range(len(df_proton_fluxes.Ion_Flux_0)):
+                #df_proton_fluxes.Ion_Flux_0[i] = 0.0
             #print(df_proton_fluxes.Ion_Flux_0)
             
         # for STEP electrons, the resampling is done independently, e.g. solo_epd_loader.calc_electrons(df, resamle='1min')
         if(instrument!='step'):
             df_electron_fluxes = df_electron_fluxes.resample('{}min'.format(averaging)).mean()
             df_electron_uncertainties = df_electron_uncertainties.resample('{}min'.format(averaging)).apply(average_flux_error)
-            if instrument == 'ept':
-                for i in range(len(df_electron_fluxes.Electron_Flux_0)):
-                    df_electron_fluxes.Electron_Flux_0[i] = 0.0
+            #if instrument == 'ept':
+                #df_electron_fluxes = np.ma.masked_invalid(df_electron_fluxes)
+             #   for i in range(len(df_electron_fluxes.Electron_Flux_0)):
+              #      df_electron_fluxes.Electron_Flux_0[i] = 0.0
             #print(df_electron_fluxes.Electron_Flux_0)
             
 
@@ -492,20 +494,19 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         ion_cont_corr_matrix = np.loadtxt('EPT_ion_contamination_flux_paco.dat')
         Electron_Flux_cont = np.zeros(np.shape(df_electron_fluxes))
         Electron_Uncertainty_cont = np.zeros(np.shape(df_electron_uncertainties))
-        #print('line 475', df_electron_fluxes)
-        #print(Electron_Flux_cont)
-
+        
         for tt in range(len(df_electron_fluxes)):
-
-            # Electron_Flux_cont[tt,:] = np.sum(ion_cont_corr_matrix * df_protons.Ion_Flux.values[tt,:], axis=1)
-            Electron_Flux_cont[tt, :] = np.matmul(ion_cont_corr_matrix, df_proton_fluxes.values[tt, :])
-            Electron_Uncertainty_cont[tt, :] = np.sqrt(np.matmul(ion_cont_corr_matrix**2, df_proton_uncertainties.values[tt, :]**2 ))
-
-        #print('line 484', df_electron_fluxes)
-        #print(Electron_Flux_cont)
+            #df_proton_fluxes = df_proton_fluxes.values[tt, :]
+            #df_proton_uncertainties = df_proton_uncertainties.values[tt, :]
+            Electron_Flux_cont[tt,:] = np.sum(ion_cont_corr_matrix * np.ma.masked_invalid(df_proton_fluxes.values[tt, :]), axis=1)
+            # the matrix multiplication np.matmul does not work if there are nan vales in the matrix because it does not have an inbuilt ignore nan variable
+            # so for now we can ignore nans by using the above more 'by hand' calculation with np.ma.masked_invalid that ignore both inf and nan values
+            #Electron_Flux_cont[tt, :] = np.matmul(ion_cont_corr_matrix, np.ma.masked_invalid(df_proton_fluxes.values[tt, :]))
+            Electron_Uncertainty_cont[tt, :] = np.sqrt(np.matmul(ion_cont_corr_matrix**2, np.ma.masked_invalid(df_proton_uncertainties.values[tt, :]**2 )))
+            
         df_electron_fluxes = df_electron_fluxes - Electron_Flux_cont
         df_electron_uncertainties = np.sqrt(df_electron_uncertainties**2 + Electron_Uncertainty_cont**2 )
-    #print('line 488', df_electron_fluxes)
+    
 
     if(instrument=='ept'):
         ion_string = 'Ion_contamination_correction'

@@ -407,10 +407,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 			spec_flux_first_het  = first_het_data['Flux_'+fit_to]
 			flux_err_first_het   = first_het_data['Peak_electron_uncertainty']
 
-	print(spec_energy_step_ept)
-	print(spec_flux_step_ept)
-	print(energy_err_step_ept[1])
-	print(flux_err_step_ept)
+	
 	# <----------------------------------------------------------------------FIT AND PLOT------------------------------------------------------------------->
 
 	f, ax = plt.subplots(1, figsize=(8, 6), dpi = 200)
