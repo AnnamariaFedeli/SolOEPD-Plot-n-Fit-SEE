@@ -46,7 +46,7 @@ def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run
 	
 # changes to be made: ION CONTA CORRECTION  and  BG SUBRACTED DATA
 
-def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True):
+def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, fit_to_separate_folder = False):
 
 	     # slope (float, optional): The type of slope used to find the peak (for the title). Defaults to None.
 		 # #slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True):
@@ -97,6 +97,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		legend_details (bool, optional): If True, the final fit type and the reduced chi square will be dislayed in the legend.
 		ion_correction (bool, optional):
 		bg_subtraction (bool, optional):
+		fit_to_separate_folder (bool, optional): saves the fit to a plots folder
 	"""
 		
 	date_string =''
@@ -550,32 +551,38 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	plt.xlabel(energy_label)
 	plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging')
 
+	plot_path = path
+	if fit_to_separate_folder:
+		plot_path = path+'plots/'
+		if not os.path.exists(plot_path):
+			os.makedirs(plot_path)
+
 	if save_fig:
 		if make_fit:
 			if ion_correction and not bg_subtraction:
-				plt.savefig(path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr', dpi=300)
 			if not ion_correction and  bg_subtraction:
-				plt.savefig(path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-bg_sub', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-bg_sub', dpi=300)
 			if ion_correction and bg_subtraction:
-				plt.savefig(path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr-bg_bug', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr-bg_bug', dpi=300)
 			else:
-				plt.savefig(path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to, dpi=300)
+				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to, dpi=300)
 			
 		if make_fit is False:
 			if step and ept and het:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-step_ept_het', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_ept_het', dpi=300)
 			if step and ept and het is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-step_ept', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_ept', dpi=300)
 			if step and het and ept is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-step_het', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_het', dpi=300)
 			if step and ept is False and het is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-step', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step', dpi=300)
 			if ept and het and step is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-ept_het', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-ept_het', dpi=300)
 			if ept and step is False and het is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-ept', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-ept', dpi=300)
 			if het and ept is False and step is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-het', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-het', dpi=300)
 			
 			
 

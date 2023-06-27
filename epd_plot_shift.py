@@ -22,8 +22,42 @@ from tqdm.auto import tqdm
 import os
 
 # Add folder for data and one for plots
-def create_new_path(path, date):
+def create_new_path(path, date, threshold_folders = False, contamination_threshold = None, plots_n_data = True):
     newpath = path+date
+    if not os.path.exists(newpath):
+        os.makedirs(newpath)
+    print("Creating new directory "+newpath)
+    if threshold_folders :
+        nnewpath = newpath+'/'+'contamination_threshold_'+str(contamination_threshold)
+        if not os.path.exists(nnewpath):
+            os.makedirs(nnewpath)
+            print('Creating new directory  '+ nnewpath)
+        if plots_n_data:
+            plots_path = nnewpath+'/plots'
+            #data_path = nnewpath+'/data'
+            if not os.path.exists(plots_path):
+                os.makedirs(plots_path)
+                print('Creating new directory  '+ plots_path)
+            #if not os.path.exists(data_path):
+             #   os.makedirs(data_path)
+              #  print('Creating new directory  '+ data_path)
+    else:
+        if plots_n_data:
+            plots_path = newpath+'/plots'
+            #data_path = newpath+'/data'
+            if not os.path.exists(plots_path):
+                os.makedirs(plots_path)
+                print('Creating new directory  '+ plots_path)
+            #if not os.path.exists(data_path):
+             #   os.makedirs(data_path)
+              #  print('Creating new directory  '+ data_path)
+
+            
+        
+
+
+def new_threshold_path(path, contamination_thresh):
+    newpath = path+'contamination_threshold_'+contamination_thresh
     if not os.path.exists(newpath):
         os.makedirs(newpath)
     print("Creating new directory "+newpath)

@@ -519,9 +519,9 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		# so you need to repeat the fit. Maybe this could be checked already in the function file.
 		#while which_fit_guess is None:
 		#	which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, beta = beta_guess, gamma1=g1_guess, gamma2=g2_guess, gamma3 = g3_guess, E_break_low=break_low_guess, E_break_high = break_high_guess, E_cut = cut_guess, fit = 'best', maxit=10000, e_min = e_min, e_max = e_max)
-		print(which_fit_guess)
+		#print(which_fit_guess)
 		redchi_guess = which_fit_guess[1]
-		print(redchi_guess)
+		#print(redchi_guess)
 		redchi_final = redchi_guess
 		which_fit_final = which_fit_guess[0]
 		result_final = which_fit_guess[2]
@@ -564,7 +564,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 				c1_random = np.random.choice(c1_array,1)[0]
 				
 				which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, beta = beta_random, gamma1=g1_random, gamma2=g2_random, gamma3 = g3_random, E_break_low=break_low_random, E_break_high = break_high_random, E_cut = cut_random, maxit=10000, e_min = e_min, e_max = e_max)
-				print(which_fit_random)
+				#print(which_fit_random)
 				#while which_fit_random is None:
 				#	which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, beta = beta_random, gamma1=g1_random, gamma2=g2_random, gamma3 = g3_random, E_break_low=break_low_random, E_break_high = break_high_random, E_cut = cut_random, maxit=10000, e_min = e_min, e_max = e_max)
 				
