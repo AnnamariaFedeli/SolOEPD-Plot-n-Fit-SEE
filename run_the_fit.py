@@ -552,7 +552,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 			if not ion_correction and  bg_subtraction:
 				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-bg_sub', dpi=300)
 			if ion_correction and bg_subtraction:
-				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr-bg_bug', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr-bg_sub', dpi=300)
 			else:
 				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to, dpi=300)
 			
