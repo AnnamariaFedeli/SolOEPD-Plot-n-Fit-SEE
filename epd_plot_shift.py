@@ -23,18 +23,32 @@ import os
 
 # Add folder for data and one for plots
 def create_new_path(path, date, threshold_folders = False, contamination_threshold = None, plots_n_data = True):
+    """This function creates new folders to a given path based on different options.
+    Args:
+        path (str): Path to where the new folders will be created.
+        date (str): Date of an event in string form. In theory the string can be of any kind, but for the purposes of this sofware, it should be 'YYYY-mm-dd-hhMM'.
+        threshold_folders (bool, optional): In case you wish to create new folders based on different contamination thresholds set to True. This option was added only to 
+                make checking the difference between files easier. But after deciding on a certain threshold this shold be se to False. Also, if True some other options such as 
+                plots_n data will not work. Defaults to False.
+        contamination_threshold (int, optional): The threshold value will be added to the folder name when, and only if, threshold folders = True. Defaults to None.
+        plots_n_data (bool, optional): If True, the plots (e.g. spectrum, timeseries, fits) will also be saved to a separate folder called 'plots' inside the event folder. 
+                Defaults to True.
+    """
     newpath = path+date
     if not os.path.exists(newpath):
         os.makedirs(newpath)
     print("Creating new directory "+newpath)
+
     if threshold_folders :
         nnewpath = newpath+'/'+'contamination_threshold_'+str(contamination_threshold)
+
         if not os.path.exists(nnewpath):
             os.makedirs(nnewpath)
             print('Creating new directory  '+ nnewpath)
+
         if plots_n_data:
             plots_path = nnewpath+'/plots'
-            #data_path = nnewpath+'/data'
+
             if not os.path.exists(plots_path):
                 os.makedirs(plots_path)
                 print('Creating new directory  '+ plots_path)
@@ -44,7 +58,7 @@ def create_new_path(path, date, threshold_folders = False, contamination_thresho
     else:
         if plots_n_data:
             plots_path = newpath+'/plots'
-            #data_path = newpath+'/data'
+            
             if not os.path.exists(plots_path):
                 os.makedirs(plots_path)
                 print('Creating new directory  '+ plots_path)
@@ -54,13 +68,6 @@ def create_new_path(path, date, threshold_folders = False, contamination_thresho
 
             
         
-
-
-def new_threshold_path(path, contamination_thresh):
-    newpath = path+'contamination_threshold_'+contamination_thresh
-    if not os.path.exists(newpath):
-        os.makedirs(newpath)
-    print("Creating new directory "+newpath)
 
 
 def unit_vector(vector):
@@ -82,6 +89,15 @@ def angle_between(v1, v2):
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
 def calc_pa_coverage(instrument, mag_data):
+    """_summary_
+
+    Args:
+        instrument (_type_): _description_
+        mag_data (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     print(f'Calculating PA coverage for {instrument}...')
     if instrument not in ['ept', 'EPT', 'het', 'HET', 'step', 'STEP']:
         print("instrument not known, select 'EPT', 'HET', or 'STEP' ")
@@ -260,6 +276,15 @@ def evolt2speed(ekin, which):
 #searchstart, searchend,
 
 def len_of_spiral(vsw, dist):
+    """_summary_
+
+    Args:
+        vsw (_type_): _description_
+        dist (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     # dist = np.float(dist)
     #print('dist:', dist, type(dist))
     #print('')
@@ -278,6 +303,17 @@ def len_of_spiral(vsw, dist):
 
 
 def traveltime_los(los, energy, which, dist):
+    """_summary_
+
+    Args:
+        los (_type_): _description_
+        energy (_type_): _description_
+        which (_type_): _description_
+        dist (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
 
     v_e = evolt2speed(energy, which)
 
@@ -290,6 +326,14 @@ def traveltime_los(los, energy, which, dist):
     return t/60.
 
 def light_tt(dist):
+    """_summary_
+
+    Args:
+        dist (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     # dist in AU
     v = 299792458  # m/s
     au2m = 149597870691# m
@@ -300,6 +344,11 @@ def light_tt(dist):
     return t
 
 def posintion_and_traveltime(date):
+    """_summary_
+
+    Args:
+        date (_type_): _description_
+    """
     pos = get_horizons_coord('Solar Orbiter', date, 'id')
     dist = np.round(pos.radius.value, 2)
     spiral_len = len_of_spiral(400,dist)
@@ -451,7 +500,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
             for i in channels:
                 e_high.append(e_low[i]+df_energies['Electron_Bins_Width'][i])
 
-            #28.02 changing this part
+    
     elif(instrument == 'step'):
         if(data_type == 'l2'):
             e_low = df_energies['Bins_Low_Energy']
@@ -462,9 +511,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
                     e_high.append(e_low[i]+df_energies['Bins_Width'][i])
                     
 
-            #df_electron_fluxes = df_electrons['Electron_Flux'][plotstart:plotend]
-            #df_electron_uncertainties = df_electrons['Electron_Uncertainty'][plotstart:plotend]
-
+    
             if 'Electron_Avg_Flux_0' in df_electrons.columns:
                 df_electron_fluxes = pd.DataFrame()
                 df_electron_uncertainties = pd.DataFrame()
@@ -478,8 +525,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
 
             else:
                 step_data = make_step_electron_flux(df_electrons, mask_conta=masking)
-                #print(step_data[0].index)
-            
+                
                 df_electron_fluxes = step_data[0][plotstart:plotend]
                 df_electron_uncertainties = step_data[1][plotstart:plotend]
 
@@ -492,30 +538,17 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         if(instrument=='ept'):
             df_proton_fluxes =df_proton_fluxes.resample('{}min'.format(averaging)).mean()
             df_proton_uncertainties = df_proton_uncertainties.resample('{}min'.format(averaging)).apply(average_flux_error)
-            #df_proton_fluxes = np.ma.masked_invalid(df_proton_fluxes)
             
-# the data product changed so the first energy channel was set to nan. That messes with the matrix calculation of the ion contamination correction so changeod first channel to zero.
-# this should later be changed to a condition so if the first chan is nan then set to zero in case there will be another change with the data.
-
-            #print(df_proton_fluxes.Ion_Flux_0)
-            #for i in range(len(df_proton_fluxes.Ion_Flux_0)):
-                #df_proton_fluxes.Ion_Flux_0[i] = 0.0
-            #print(df_proton_fluxes.Ion_Flux_0)
-            
+# The data product changed so the first energy channel was set to nan. That messes with the matrix calculation of the ion contamination correction.
+# The issue was fixed by not using matmul and using a few extra steps and masking the nan data.
+         
         # for STEP electrons, the resampling is done independently, e.g. solo_epd_loader.calc_electrons(df, resamle='1min')
         if(instrument!='step'):
             df_electron_fluxes = df_electron_fluxes.resample('{}min'.format(averaging)).mean()
             df_electron_uncertainties = df_electron_uncertainties.resample('{}min'.format(averaging)).apply(average_flux_error)
-            #if instrument == 'ept':
-                #df_electron_fluxes = np.ma.masked_invalid(df_electron_fluxes)
-             #   for i in range(len(df_electron_fluxes.Electron_Flux_0)):
-              #      df_electron_fluxes.Electron_Flux_0[i] = 0.0
-            #print(df_electron_fluxes.Electron_Flux_0)
             
 
-
-        #print('line 463', df_electron_fluxes)
-
+    # 12.07.2023 The rolling window option should be deleted because it is never used. 
     # The rolling window might be broken, but it's not ever used.
     elif(averaging_mode == 'rolling_window'):
         # for STEP electrons, the resampling is done independently, but rolling_window is not supported!
@@ -530,12 +563,10 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         Electron_Uncertainty_cont = np.zeros(np.shape(df_electron_uncertainties))
         
         for tt in range(len(df_electron_fluxes)):
-            #df_proton_fluxes = df_proton_fluxes.values[tt, :]
-            #df_proton_uncertainties = df_proton_uncertainties.values[tt, :]
             Electron_Flux_cont[tt,:] = np.sum(ion_cont_corr_matrix * np.ma.masked_invalid(df_proton_fluxes.values[tt, :]), axis=1)
             # the matrix multiplication np.matmul does not work if there are nan vales in the matrix because it does not have an inbuilt ignore nan variable
             # so for now we can ignore nans by using the above more 'by hand' calculation with np.ma.masked_invalid that ignore both inf and nan values
-            #Electron_Flux_cont[tt, :] = np.matmul(ion_cont_corr_matrix, np.ma.masked_invalid(df_proton_fluxes.values[tt, :]))
+            # Electron_Flux_cont[tt, :] = np.matmul(ion_cont_corr_matrix, np.ma.masked_invalid(df_proton_fluxes.values[tt, :]))
             Electron_Uncertainty_cont[tt, :] = np.sqrt(np.matmul(ion_cont_corr_matrix**2, np.ma.masked_invalid(df_proton_uncertainties.values[tt, :]**2 )))
             
         df_electron_fluxes = df_electron_fluxes - Electron_Flux_cont
@@ -576,10 +607,9 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
     elif(averaging_mode == 'mean'):
         df_info['Averaging'] = ['Mean', 'Resampled to ' + str(averaging) + 'min'] + ['']*(len(channels)-2)
 
-    #print('line 519', df_electron_fluxes)
-    
+ 
     # Energy bin primary energies; geometric mean.
-    # Will be used to calculate beta and velocity of particles.
+    # Are be used to calculate beta and velocity of particles.
 
     primary_energies = []
 
@@ -602,7 +632,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         energy_error_low.append(primary_energies[i]-e_low[i])
         energy_error_high.append(e_high[i]-primary_energies[i])
 
-    #print(energy_error_low)
+
     energy_error_low_channels = []
     energy_error_high_channels = []
 
@@ -666,7 +696,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         for i in range(0, len(searchstart)):
             bgstart.append(bg_start)
             bgend.append(bg_end)
-    # fix bg window 
+    
     if bg_distance_from_window is not None:
         bgstart = []
         bgend   = []
@@ -690,13 +720,11 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
     #list_average_electron_uncertainties = [] change to new unc determination later
 
     n = 0
-    #print(df_electron_fluxes)
-    #print(df_electron_fluxes[searchstart[n]:searchend[n]])
-    
+     
     for channel in channels:
         b_f = df_electron_fluxes['Electron_Flux_{}'.format(channel)][searchstart[n]:searchend[n]]
-        #print(b_f)
-        # I think here is where I check if the BG is zero. Can temporarely change this. This was if len(b_f) ==0: bg_flux = np.nan list_bg_fluxes.append(bg_flux) Change back when needed
+        
+        # This is where I check if the BG is zero. Can temporarely change this. This was if len(b_f) ==0: bg_flux = np.nan list_bg_fluxes.append(bg_flux) Change back when needed
         if len(b_f) ==0:
             bg_flux = np.nan
             #bg_flux = df_electron_fluxes['Electron_Flux_{}'.format(channel)][bgstart[n]:bgend[n]].min()
@@ -708,7 +736,6 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         f_p = df_electron_fluxes['Electron_Flux_{}'.format(channel)][searchstart[n]:searchend[n]]
         if len(f_p) == 0 :
             flux_peak = np.nan
-            #list_flux_peaks.append(flux_peak)
         if len(f_p) != 0:
             flux_peak = df_electron_fluxes['Electron_Flux_{}'.format(channel)][searchstart[n]:searchend[n]].max()
         list_flux_peaks.append(flux_peak)
@@ -736,7 +763,6 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         if len(t_l)!= 0 and pd.isna(peak_timestamp)==False:
             timestamp_loc = df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)].index.get_loc(peak_timestamp, method='nearest')
             peak_electron_uncertainty = df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)].iloc[timestamp_loc]
-            #peak_electron_uncertainty = df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)][peak_timestamp]
             list_peak_electron_uncertainties.append(peak_electron_uncertainty)
 
         average_bg_uncertainty = np.sqrt((df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)]
@@ -778,8 +804,6 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
 
 
 
-    
-    #print(list_flux_average)
     df_info['Energy_channel'] = channels
     df_info['Bg_start'] = bgstart
     df_info['Bg_end'] = bgend
@@ -807,10 +831,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
 
     return df_electron_fluxes, df_info, [searchstart, searchend], [e_low, e_high], [instrument, data_type]
 
-# Workaround for STEP data, there's probably a better way in Python to handle this.
-#def extract_step_data(df_particles,  plotstart, plotend, t_inj, bgstart = None, bgend = None, bg_distance_from_window = None, bg_period = None, travel_distance = 0, travel_distance_second_slope = None, fixed_window = None, instrument = 'step', data_type = 'l2', averaging_mode='none', averaging=2, masking=False, ion_conta_corr=False):
 
- #   return extract_electron_data(df_particles, df_particles,  plotstart, plotend,  t_inj, bgstart, bgend, bg_distance_from_window, bg_period, travel_distance, travel_distance_second_slope, fixed_window, instrument = instrument, data_type = data_type, averaging_mode=averaging_mode, averaging=averaging, masking=masking, ion_conta_corr=ion_conta_corr)
 
 def make_step_electron_flux(stepdata, mask_conta=True):
     """
@@ -920,12 +941,11 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
         sensor (str, optional): sensor used for plotting the pitch angles. Defaults to 'ept'.
         viewing (str, optional): viewing direction of EPT or HET, used for plotting the pitch angles of these telescopes. Defaults to 'sun'. Is ignored if sensor=='step'
     """
-    #print(args)
+    
     peak_sig = args[1]['Peak_significance']
     rel_err = args[1]['rel_backsub_peak_err']
-    #Bg_subtracted_peak = args[1]['Bg_subtracted_peak']
     
-    #hours = mdates.HourLocator(interval = 1)
+    
     df_electron_fluxes = args[0]
     df_info = args[1]
     search_area = args[2]
@@ -998,10 +1018,7 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
     axes[0].set_title(title_string, size=20)
 
 
- 
-
     # Loop through selected energy channels and create a subplot for each.
-    # n=1
     n=0
     for channel in df_info['Energy_channel']:
         #ax = fig.add_subplot(npanels,1,n)
@@ -1034,8 +1051,6 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
                     ax.axvline(df_info['Peak_timestamp'][n], linestyle='-', linewidth=2, color='purple')
             
 
-        #print(peak_sig[n-1])
-        #print(type(peak_sig[n-1]))
         # Background measurement area.
         ax.axvspan(df_info['Bg_start'][n], df_info['Bg_end'][n], color='gray', alpha=0.25)
 
@@ -1091,8 +1106,16 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
 
     plt.show()
 
-# This plot_check function is not finished, but it does produce cool rainbow colored plots.
+# This plot_check function is not finished, but it does produce cool rainbow coloured plots.
 def plot_check(args, bg_subtraction=False, savefig=False, key=''):
+    """_summary_
+
+    Args:
+        args (_type_): _description_
+        bg_subtraction (bool, optional): _description_. Defaults to False.
+        savefig (bool, optional): _description_. Defaults to False.
+        key (str, optional): _description_. Defaults to ''.
+    """
 
     hours = mdates.HourLocator(interval = 1)
     df_electron_fluxes = args[0]
@@ -1116,6 +1139,19 @@ def plot_check(args, bg_subtraction=False, savefig=False, key=''):
     plt.show()
 
 def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None):
+    """_summary_
+
+    Args:
+        args (_type_): _description_
+        bg_subtraction (bool, optional): _description_. Defaults to True.
+        savefig (bool, optional): _description_. Defaults to False.
+        path (str, optional): _description_. Defaults to ''.
+        key (str, optional): _description_. Defaults to ''.
+        sigma (int, optional): _description_. Defaults to 3.
+        frac_nan_threshold (float, optional): _description_. Defaults to 0.4.
+        rel_err_threshold (float, optional): _description_. Defaults to 0.5.
+        direction (_type_, optional): _description_. Defaults to None.
+    """
     color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
     df_info = args[1]
     instrument = args[4][0]
@@ -1164,7 +1200,7 @@ def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key=''
     df_rel_err = df_info.where((df_info['rel_backsub_peak_err'] > rel_err_threshold), np.nan)
 
     # Plots either the background subtracted or raw flux peaks depending on choice.
-    #print(df_info['Flux_peak'])
+   
     if(bg_subtraction):
         f, ax = plt.subplots(figsize=(13,10)) 
         if direction == '':
@@ -1215,6 +1251,19 @@ def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key=''
     plt.show()
 
 def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None):
+    """_summary_
+
+    Args:
+        args (_type_): _description_
+        bg_subtraction (bool, optional): _description_. Defaults to True.
+        savefig (bool, optional): _description_. Defaults to False.
+        path (str, optional): _description_. Defaults to ''.
+        key (str, optional): _description_. Defaults to ''.
+        sigma (int, optional): _description_. Defaults to 3.
+        frac_nan_threshold (float, optional): _description_. Defaults to 0.4.
+        rel_err_threshold (float, optional): _description_. Defaults to 0.5.
+        direction (_type_, optional): _description_. Defaults to None.
+    """
     color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
     df_info = args[1]
     instrument = args[4][0]
@@ -1262,7 +1311,6 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
     df_rel_err = df_info.where((df_info['rel_backsub_peak_err'] > rel_err_threshold), np.nan)
 
     # Plots either the background subtracted or raw flux peaks average depending on choice.
-    #print(df_info['Bg_subtracted_average'])
     if(bg_subtraction):
         f, ax = plt.subplots(figsize=(13,10)) 
         if direction == '':
@@ -1325,6 +1373,14 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
 
 
 def write_to_csv(args, path='', key='', direction=None):
+    """_summary_
+
+    Args:
+        args (_type_): _description_
+        path (str, optional): _description_. Defaults to ''.
+        key (str, optional): _description_. Defaults to ''.
+        direction (_type_, optional): _description_. Defaults to None.
+    """
 
     df_info = args[1]
     instrument = args[4][0]
@@ -1356,14 +1412,17 @@ def write_to_csv(args, path='', key='', direction=None):
 
             filename = filename + '-ion_corr'
 
-    #print(hour)
-    #print(date)
-
 
     df_info.to_csv(path + filename + str(key) + '.csv',  sep = ';', index=False)
 
 # This acc_flux function is not really finished, just something I put together quickly.
 def acc_flux(args, time=[]):
+    """_summary_
+
+    Args:
+        args (_type_): _description_
+        time (list, optional): _description_. Defaults to [].
+    """
 
     df_electron_fluxes = args[0]
     df_info = args[1]

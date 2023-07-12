@@ -52,6 +52,12 @@ def average_flux_error(flux_err: pd.DataFrame) -> pd.Series:
 
 
 def closest_values(array, value):
+	"""This function finds n closest values to the guess value
+
+	Args:
+		array (np.array): _description_
+		value (float): _description_
+	"""
 
 	#this function finds n closest values to the guess value
 	#and returns an array with the closest values
@@ -61,16 +67,20 @@ def closest_values(array, value):
 	
 	
 	if len(array)<=10:
-		array_size = 5
+		array_size = len(array)-1
 		
 	if len(array)>10 and len(array)<= 20:
-		array_size = 7
+		array_size = round(len(array)/2)
 	
 	if len(array) >20:
 		array_size = 10
 		
-		
+	#array_size = len(array)-1
+
 	array = np.delete(array, np.where(array ==value))
+	#if len(new_array)!=0:
+	#	array = new_array
+		
 		
 	closest_values_array = np.array(())
 	
@@ -87,6 +97,27 @@ def closest_values(array, value):
 	
 	
 def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, gamma3 = -4, c1 = 1000, alpha = 10, beta = 10, E_break_low = 0.06, E_break_high = 0.1,  E_cut= None, fit = 'best',  maxit=10000, e_min=None, e_max=None):
+	"""_summary_
+
+	Args:
+		spec_e (_type_): _description_
+		spec_flux (_type_): _description_
+		e_err (_type_): _description_
+		flux_err (_type_): _description_
+		gamma1 (int, optional): _description_. Defaults to -1.
+		gamma2 (int, optional): _description_. Defaults to -2.
+		gamma3 (int, optional): _description_. Defaults to -4.
+		c1 (int, optional): _description_. Defaults to 1000.
+		alpha (int, optional): _description_. Defaults to 10.
+		beta (int, optional): _description_. Defaults to 10.
+		E_break_low (float, optional): _description_. Defaults to 0.06.
+		E_break_high (float, optional): _description_. Defaults to 0.1.
+		E_cut (_type_, optional): _description_. Defaults to None.
+		fit (str, optional): _description_. Defaults to 'best'.
+		maxit (int, optional): _description_. Defaults to 10000.
+		e_min (_type_, optional): _description_. Defaults to None.
+		e_max (_type_, optional): _description_. Defaults to None.
+	"""
 	#the function also checks if the break point is outside of the energy array (also the cutoff point)
 	#the min and max energies cannot be last and/or first points because it wouldn't be a physical result
 	if e_min is None:
@@ -169,7 +200,7 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 					
 			else:
 				fit = 'broken_cut'
-				print('189')
+				
 		else:
 			fit = 'broken_cut'
 			
@@ -378,6 +409,14 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 	
 	
 def find_c1(spec_e, spec_flux, e_min, e_max):
+	"""_summary_
+
+	Args:
+		spec_e (_type_): _description_
+		spec_flux (_type_): _description_
+		e_min (_type_): _description_
+		e_max (_type_): _description_
+	"""
 	absolute_val_array = np.abs(spec_e - e_max)
 	smallest_difference_index = absolute_val_array.argmin()
 	closest_element = spec_e[smallest_difference_index]

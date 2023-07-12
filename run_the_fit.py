@@ -4,12 +4,7 @@ import datetime as dt
 import matplotlib.pyplot as plt
 import matplotlib.ticker as pltt
 from sunpy.coordinates import get_horizons_coord
-#from make_the_fit import  *
-#from combining_files import *
 from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
-# Import mymodule
-#from savecsv import *
-#from combining_files import *
 import make_the_fit_tripl as fitting
 import savecsv as save
 import combining_files as comb
@@ -18,20 +13,15 @@ import os
 import shutil
 # <--------------------------------------------------------------- ALL NECESSARY INPUTS HERE ----------------------------------------------------------------->
 
-#source_folder = r"E:\demos\files\reports\\"
-#destination_folder = r"E:\demos\files\account\\"
-
-# fetch all files
-#for file_name in os.listdir(source_folder):
-    # construct full file path
-#    source = source_folder + file_name
-#    destination = destination_folder + file_name
-    # copy only files
-#    if os.path.isfile(source):
-#        shutil.copy(source, destination)
-#        print('copied', file_name)
-
 def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run_var_file):
+	"""_summary_
+
+	Args:
+		path (_type_): _description_
+		date (_type_): _description_
+		fit_var_file (_type_): _description_
+		run_var_file (_type_): _description_
+	"""
 	fitvariables = path+'fit_variables/'
 	runvariables = path+'run_variables/'
 	newpath = path+date+'/'
@@ -44,8 +34,6 @@ def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run
 	shutil.copy(newpath+run_var_file, runvariables+run_var_file)
 
 	
-# changes to be made: ION CONTA CORRECTION  and  BG SUBRACTED DATA
-
 def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, fit_to_separate_folder = False):
 
 	     # slope (float, optional): The type of slope used to find the peak (for the title). Defaults to None.
@@ -69,7 +57,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 				  	'best_cb'. Defaults to 'best'.
 					'triple' will force a triple pl fit. If this is not possible, the function will check which is the next best option.
 					'best' will choose automatically the best fit type by comparing the redchis of the fits.
-		sigma (int, optional): standard deviation from the background. Defaults to 3.
+		sigma (int, optional): Standard deviation from the background. Defaults to 3.
 		rel_err (float, optional): The absolute value of the uncertainty of the bg subtracted flux peak divided by the bg subtracted peak. Defaults to 0.5.
 		frac_nan_threshold (float, optional): The pecentage of data withing the search window to condśider the peak reliable (data gap). Defaults to 0.9.
 		fit_to (str, optional): You can fit the data either to the peak value within the search window or the avarage flux calculated within the search window. Defaults to 'peak'.
