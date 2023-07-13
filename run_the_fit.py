@@ -97,7 +97,12 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		date_string = str(date.date())
 		folder_time = str(date)[:-3].replace(' ', '-').replace(':', '')
 
-
+#quick change if submin av
+	av = averaging
+	if averaging < 1.:
+		av_string = str(int(averaging*60))+'s'
+		
+	
 
 	averaging = str(averaging)+'min'
 
@@ -111,6 +116,8 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		ept_file_name = 'electron_data-'+date_string+'-EPT-' + direction+ '-L2-'+averaging+'_averaging.csv'
 
 	het_file_name = 'electron_data-'+date_string+'-HET-'+ direction+'-L2-'+averaging+'_averaging.csv'
+
+	
 
 	# <-------------------------------------------------------------- END OF NECESSARY INPUTS ---------------------------------------------------------------->
 
@@ -186,6 +193,9 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	#-------------------------------------------------------------------------------------------------------------------------------------------------
 	color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
 
+	# quick change for sec resolution, change later
+	if av < 1.:
+		averaging = av_string
 
 	pickle_path = None
 	if save_pickle:
