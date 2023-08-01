@@ -98,13 +98,13 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		folder_time = str(date)[:-3].replace(' ', '-').replace(':', '')
 
 #quick change if submin av
-	av = averaging
-	if averaging < 1.:
-		av_string = str(int(averaging*60))+'s'
+	#av = averaging
+	#if averaging < 1.:
+	#	av_string = str(int(averaging*60))+'s'
 		
 	
 
-	averaging = str(averaging)+'min'
+	#averaging = str(averaging)+'min'
 
 	separator = ';'
 
@@ -194,8 +194,8 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
 
 	# quick change for sec resolution, change later
-	if av < 1.:
-		averaging = av_string
+	#if av < 1.:
+	#	averaging = av_string
 
 	pickle_path = None
 	if save_pickle:

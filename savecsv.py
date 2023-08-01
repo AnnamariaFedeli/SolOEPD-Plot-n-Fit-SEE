@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd 
 import numpy as np
+from pytimeparse.timeparse import timeparse
 
 
 def save_info_plot(path, plot_start, plot_end, t_inj, bgstart , bgend, bg_distance_from_window , 
@@ -41,7 +42,7 @@ traveltime_max, light_tt):
      "Travel distance first slope [AU]" : travel_distance, 
      "Travel distance second slope [AU]" : travel_distance_second_slope , 
      "Fixed window [min]": fixed_window, "data type" : data_type, 
-     "Averaging mode" : averaging_mode, "Averaging [min]": averaging, "Masking" : masking, 
+     "Averaging mode" : averaging_mode, "Averaging [s]": timeparse(averaging), "Masking" : masking, 
      "Ion contamination corection":ion_conta_corr, "Distance of s/c [AU]":dist,
      "Length of Parker Spiral [AU]":spiral_len, "Travel time 4keV [min]" :traveltime_min,
      "Traveltime 10MeV [min]": traveltime_max, "Traveltimeof light at distance D [min]": light_tt}, index = [0])
@@ -55,7 +56,7 @@ def save_info_fit(path, date_string, averaging, direction, data_product, dist, s
                   sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, shift_factor, fit_type, fit_to, which_fit, e_min, e_max, g1_guess, g2_guess, c1_guess, alpha_guess, break_guess,
                   cut_guess,use_random, iterations):
 
-    df = pd.DataFrame({"Date": date_string, "Averaging [min]":averaging, "Direction":direction,
+    df = pd.DataFrame({"Date": date_string, "Averaging [s]":timeparse(averaging), "Direction":direction,
     "Data type":data_product, "Distance [AU]":dist, "STEP":step, "EPT":ept, "HET":het, 
     "Sigma":sigma, "Relative error":rel_err, "Fraction of nan":frac_nan_threshold,
     "Leave first HET channel out":leave_out_1st_het_chan, "Shift STEP data": shift_factor,

@@ -20,6 +20,7 @@ from seppy.loader.solo import mag_load
 from pandas.tseries.frequencies import to_offset
 from tqdm.auto import tqdm
 import os
+import re
 
 # Add folder for data and one for plots
 def create_new_path(path, date, threshold_folders = False, contamination_threshold = None, plots_n_data = True):
@@ -200,6 +201,7 @@ def solo_mag_loader(sdate, edate, level='l2', type='normal', frame='rtn', av=Non
     frame : str, optional
         'srf', by default 'rtn'
     av : int or None, optional
+        use pandas strings CHANGE
         number of minutes to average, by default None
 
     Returns
@@ -215,8 +217,11 @@ def solo_mag_loader(sdate, edate, level='l2', type='normal', frame='rtn', av=Non
     if frame == 'srf':
         mag_data.rename(columns={'B_SRF_0':'Bx', 'B_SRF_1':'By', 'B_SRF_2':'Bz'}, inplace=True)
     if av is not None:
-        mav = f'{av}min' 
-        mag_offset = f'{av/2}min' 
+        mav = av 
+        m_int = int(re.search(r'\d+', av).group())/2
+        m_string = ''.join([i for i in av if not i.isdigit()])
+        mag_offset = str(m_int)+m_string
+    
         mag_data = mag_data.resample(mav,label='left').mean()
         mag_data.index = mag_data.index + to_offset(mag_offset)
 
@@ -322,8 +327,9 @@ def traveltime_los(los, energy, which, dist):
     # traveltime of electrons with given keV energy
     t = R_s/v_e
     #print(t)
+    #t is now in seconds
 
-    return t/60.
+    return t
 
 def light_tt(dist):
     """_summary_
@@ -340,7 +346,7 @@ def light_tt(dist):
 
     dist = dist*au2m
     t = dist/v  # in sec
-    t = t/60.
+    #t = t/60.
     return t
 
 def posintion_and_traveltime(date):
@@ -355,21 +361,37 @@ def posintion_and_traveltime(date):
     traveltime_min = traveltime_los(spiral_len, 0.004, 2, dist)
     traveltime_max = traveltime_los(spiral_len, 10, 2, dist)
     light_t = light_tt(dist)
+    min_sec = 's'
+
+    if traveltime_min > 90:
+        traveltime_min = traveltime_min/60.
+        traveltime_max = traveltime_max/60.
+        light_t = light_t/60
+        min_sec = 'min'
+    
+    
 
     table_data = [["Distance of SolO from the Sun", "[AU]", dist],
                   ["Length of the Parker Spiral for 400 km/s sw ", "[AU]", spiral_len],
-                  ["Travel time of 4 KeV electrons ", "[min]", traveltime_min],
-                  ["Travel time of 10 MeV electrons ", "[min]", traveltime_max],
-                  ["Travel time of light ", "[min]", light_t]]
+                  ["Travel time of 4 KeV electrons ", "["+min_sec+"]", traveltime_min],
+                  ["Travel time of 10 MeV electrons ", "["+min_sec+"]", traveltime_max],
+                  ["Travel time of light ", "["+min_sec+"]", light_t]]
     
     print(tabulate(table_data))
     return(table_data)
 
-def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj, bgstart = None, bgend = None, bg_distance_from_window = 120, bg_period = 60, travel_distance = 0,  travel_distance_second_slope = None, fixed_window = None, instrument = 'ept', data_type = 'l2', averaging_mode='none', averaging=2, masking=True, ion_conta_corr=False, df_protons = None):
+def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj, bgstart = None, bgend = None, bg_distance_from_window = '2h', bg_period = '60min', travel_distance = 0,  travel_distance_second_slope = None, fixed_window = None, instrument = 'ept', data_type = 'l2', averaging=None, masking=True, ion_conta_corr=False, df_protons = None):
     """This function determines an energy spectrum from time series data for any of the Solar Orbiter / EPD 
     sensors uses energy-dependent time windows to determine the flux points for the spectrum. 
     The dependence is determined according to an expected velocity dispersion assuming a certain 
     solar injection time (t_inj) and a traval distance (travel_distance).
+
+    CHANGES 1.08: THE DISTANCE IN MINUTES AND RESOLUTION FUNCTIONS CHANGED TO PANDAS TO_TIMEDELTA AND RESAMPLE. THESE WORK WITH PANDAS TIME STRINGS.
+    CHANGE ALSO DOCTRINGS.
+
+    ALSO NEED TO DELETE ROLLING OPTION AND MAKE SURE THE NONE (NO AVERAGING) OPTION WORKS
+    AVERAGING MODE KEY WORD SHOULD BE DELETED ENTIRELY. EITHER MEAN ALWAYS WHEN THE AVERAGING IS DONE OR IF AVERAGING IS NONE THEN NO AVERAGING WILL BE DONE
+
 
     Args:
         df_electrons (pandas DataFrame): contains electron data 
@@ -389,9 +411,19 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
                 starting point of the background window from the start of the peak search window.
                 Follows the velocity dispersion (first slope). If specified, specify also bg_distance.
                 Defaults to None. Leave to None for a fixed window and specify bgstart and bgend. 
-        bg_period (int, optional): input in minutes. This is the duration of the backdround window 
+        bg_period (str, optional): This is the duration of the backdround window 
                 in minutes. If specified, specify also bg_distance_from_window. Defaults to None.
                 Leave to None for a fixed window and specify bgstart and bgend. 
+                Possible values: 
+                'W'
+                'D' / 'days' / 'day'
+                'hours' / 'hour' / 'hr' / 'h'
+                'm' / 'minute' / 'min' / 'minutes' / 'T'
+                'S' / 'seconds' / 'sec' / 'second'
+                'ms' / 'milliseconds' / 'millisecond' / 'milli' / 'millis'/ 'L'
+                'us' / 'microseconds' / 'microsecond' / 'nicro' / 'micros' / 'U'
+                'ns' / 'nanoseconds' / 'nano' / 'nanos' / 'nanosecond' / 'N'
+
         travel_distance (float, optional): input in AU. The travel distance calculated with
                 velocity dispersion analysis. This value is used to calculate the 
                 peak search window starting time which is different for each energy channel.
@@ -403,15 +435,33 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
                 the flux peak if two events are close to each other with strong velocity dispersion.
                 Defaults to None. If None the peak search window will have a fixed time period. 
                 Either specify travel_distance_second_slope or fixed_window.
-        fixed_window (int, optional): input in minutes. This is the length of the search window
+        fixed_window (str, optional): This is the length of the search window
                 in minutes. Defaults to None. Either specify travel_distance_second_slope 
                 or fixed_window.
+                Possible values: 
+                'W'
+                'D' / 'days' / 'day'
+                'hours' / 'hour' / 'hr' / 'h'
+                'm' / 'minute' / 'min' / 'minutes' / 'T'
+                'S' / 'seconds' / 'sec' / 'second'
+                'ms' / 'milliseconds' / 'millisecond' / 'milli' / 'millis'/ 'L'
+                'us' / 'microseconds' / 'microsecond' / 'nicro' / 'micros' / 'U'
+                'ns' / 'nanoseconds' / 'nano' / 'nanos' / 'nanosecond' / 'N'
+
         instrument (str, optional): 'ept', 'het', or 'step'. Defaults to 'ept'.
         data_type (str, optional): which data level (e.g., low latency (ll) or level2 (l2)) is used. 
                 This affects the number of energy channels. Defaults to 'l2'.
-        averaging_mode (str, optional): averaging of the data, 'mean', 'rolling_window', 
-                or 'none'. Defaults to None.
-        averaging (int, optional): number of minutes used for averaging. Defaults to 2.
+        averaging (str, optional): Defaults to None.
+        Possible values: 
+                'W'
+                'D' / 'days' / 'day'
+                'hours' / 'hour' / 'hr' / 'h'
+                'm' / 'minute' / 'min' / 'minutes' / 'T'
+                'S' / 'seconds' / 'sec' / 'second'
+                'ms' / 'milliseconds' / 'millisecond' / 'milli' / 'millis'/ 'L'
+                'us' / 'microseconds' / 'microsecond' / 'nicro' / 'micros' / 'U'
+                'ns' / 'nanoseconds' / 'nano' / 'nanos' / 'nanosecond' / 'N'
+
         masking (bool, optional): Refers only to STEP data. If true, time intervals with significant 
                 (5 sigma) ion contamination are masked. Defaults to False.
         ion_conta_corr (bool, optional): Refers only to EPT data. If true, ion contamination
@@ -534,26 +584,26 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         # Cleans up negative flux values in STEP data.
         df_electron_fluxes[df_electron_fluxes<0] = np.NaN
 
-    if(averaging_mode == 'mean'):
+    if(averaging != None ):
         if(instrument=='ept'):
-            df_proton_fluxes =df_proton_fluxes.resample('{}min'.format(averaging)).mean()
-            df_proton_uncertainties = df_proton_uncertainties.resample('{}min'.format(averaging)).apply(average_flux_error)
+            df_proton_fluxes =df_proton_fluxes.resample(averaging).mean()
+            df_proton_uncertainties = df_proton_uncertainties.resample(averaging).apply(average_flux_error)
             
 # The data product changed so the first energy channel was set to nan. That messes with the matrix calculation of the ion contamination correction.
 # The issue was fixed by not using matmul and using a few extra steps and masking the nan data.
          
         # for STEP electrons, the resampling is done independently, e.g. solo_epd_loader.calc_electrons(df, resamle='1min')
         if(instrument!='step'):
-            df_electron_fluxes = df_electron_fluxes.resample('{}min'.format(averaging)).mean()
-            df_electron_uncertainties = df_electron_uncertainties.resample('{}min'.format(averaging)).apply(average_flux_error)
+            df_electron_fluxes = df_electron_fluxes.resample(averaging).mean()
+            df_electron_uncertainties = df_electron_uncertainties.resample(averaging).apply(average_flux_error)
             
 
     # 12.07.2023 The rolling window option should be deleted because it is never used. 
     # The rolling window might be broken, but it's not ever used.
-    elif(averaging_mode == 'rolling_window'):
+    #elif(averaging_mode == 'rolling_window'):
         # for STEP electrons, the resampling is done independently, but rolling_window is not supported!
-        if(instrument!='step'):
-            df_electron_fluxes = df_electron_fluxes.rolling(window=averaging, min_periods=1).mean()
+     #   if(instrument!='step'):
+      #      df_electron_fluxes = df_electron_fluxes.rolling(window=averaging, min_periods=1).mean()
 
 
     if(ion_conta_corr and (instrument == 'ept')):
@@ -598,14 +648,14 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
     elif(instrument=='step'):
         df_info['Ion_masking'] = [masking]+['']*(len(channels)-1)
 
-    if(averaging_mode == 'none'):
+    if(averaging is None):
         df_info['Averaging'] = ['No averaging']+['']*(len(channels)-1)
 
-    elif(averaging_mode == 'rolling_window'):
-        df_info['Averaging'] = ['Rolling window', 'Window size = ' + str(averaging)] + ['']*(len(channels)-2)
+    #elif(averaging_mode == 'rolling_window'):
+     #   df_info['Averaging'] = ['Rolling window', 'Window size = ' + str(averaging)] + ['']*(len(channels)-2)
 
-    elif(averaging_mode == 'mean'):
-        df_info['Averaging'] = ['Mean', 'Resampled to ' + str(averaging) + 'min'] + ['']*(len(channels)-2)
+    elif(averaging is not None):
+        df_info['Averaging'] = ['Mean', 'Resampled to ' + averaging] + ['']*(len(channels)-2)
 
  
     # Energy bin primary energies; geometric mean.
@@ -669,7 +719,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
     searchend = []
     
     # same thing for second slope if fixed_window = None (to find searchend)
-    if fixed_window == None:
+    if fixed_window is None:
         travel_distance_second_slope = travel_distance_second_slope*1.496E8
 
         DV2 = []
@@ -683,9 +733,9 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
             searchend.append(pd.to_datetime(t_inj)+pd.Timedelta(seconds = i))
             
 
-    if fixed_window != None:
+    if fixed_window is not None:
         for i in searchstart:
-            searchend.append(i+pd.Timedelta(minutes = fixed_window))
+            searchend.append(i+pd.to_timedelta(fixed_window))
             
         
     if bg_distance_from_window is None:
@@ -701,8 +751,8 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         bgstart = []
         bgend   = []
         for i in range(0,len(searchstart)):
-            bgstart.append(searchstart[i]-pd.Timedelta(minutes = bg_distance_from_window))
-            bgend.append(bgstart[i]+pd.Timedelta(minutes = bg_period))
+            bgstart.append(searchstart[i]-pd.to_timedelta(bg_distance_from_window))
+            bgend.append(bgstart[i]+pd.to_timedelta(bg_period))
 
     # Next blocks of code calculate information from data and append them to main info df.
     list_bg_fluxes = []
@@ -953,7 +1003,7 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
     instrument = args[4][0]
     data_type = args[4][1]
 
-    if viewing == None or sensor in ['STEP', 'step']:
+    if viewing is None or sensor in ['STEP', 'step']:
         viewing = 'sun'
 
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
@@ -1156,7 +1206,7 @@ def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key=''
     df_info = args[1]
     instrument = args[4][0]
     data_type = args[4][1]
-    if direction == None or instrument in ['STEP', 'step']:
+    if direction is None or instrument in ['STEP', 'step']:
         viewing = 'sun'
         direction = 'sun'
     else:
@@ -1268,7 +1318,7 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
     df_info = args[1]
     instrument = args[4][0]
     data_type = args[4][1]
-    if direction == None or instrument in ['STEP', 'step']:
+    if direction is None or instrument in ['STEP', 'step']:
         viewing = 'sun'
     else:
         viewing = f'-{direction}' 
@@ -1392,7 +1442,7 @@ def write_to_csv(args, path='', key='', direction=None):
         date = str(df_info['Plot_period'][1][:-5])
         
 
-    if direction == None:
+    if direction is None:
         viewing = 'sun'
     else:
         viewing = f'{direction}' 
