@@ -544,7 +544,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	ax.yaxis.set_minor_formatter(pltt.NullFormatter())
 
 
-	plt.legend(title='"'+legend_title+'"',  prop={'size': 7})
+	plt.legend(title=legend_title,  prop={'size': 7})
 	plt.ylabel(intensity_label)
 	plt.xlabel(energy_label)
 	plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging')

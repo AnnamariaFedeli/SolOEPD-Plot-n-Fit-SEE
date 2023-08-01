@@ -349,7 +349,7 @@ def light_tt(dist):
     #t = t/60.
     return t
 
-def posintion_and_traveltime(date):
+def position_and_traveltime(date):
     """_summary_
 
     Args:
