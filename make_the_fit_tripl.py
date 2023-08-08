@@ -121,11 +121,11 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 	#the function also checks if the break point is outside of the energy array (also the cutoff point)
 	#the min and max energies cannot be last and/or first points because it wouldn't be a physical result
 	if e_min is None:
-		#e_min = min(spec_e)
-		e_min = spec_e[2]
+		e_min = min(spec_e)
+		#e_min = spec_e[2]
 	if e_max is None:
-		#e_max = max(spec_e)
-		e_max = spec_e[len(spec_e)-3]
+		e_max = max(spec_e)
+		#e_max = spec_e[len(spec_e)-3]
 		
 	result_single_pl = pl_fit.power_law_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, c1 = c1)
 	redchi_single  = result_single_pl.res_var  
@@ -470,14 +470,22 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	# the break guess should be between min and max energy
 	
 	# have to construct the guesses logarithmically
+	g1_start_value = g1_guess*10.
+	g2_start_value = g2_guess*10.
+	g3_start_value = g3_guess*10.
+
+	g1_step = np.abs(g1_guess/4.)
+	g2_step = np.abs(g2_guess/4.)
+	g3_step = np.abs(g3_guess/4.)
 	
+
 	if use_random :	
-		gamma1_array = closest_values(np.arange(-10.0,0,0.5), g1_guess)
-		gamma2_array = closest_values(np.arange(-10.0,0,0.5), g2_guess)
-		gamma3_array = closest_values(np.arange(-10.0,0,0.5), g3_guess)
+		gamma1_array = closest_values(np.arange(g1_start_value,0.0,g1_step), g1_guess)
+		gamma2_array = closest_values(np.arange(g2_start_value,0.0,g2_step), g2_guess)
+		gamma3_array = closest_values(np.arange(g3_start_value,0.0,g3_step), g3_guess)
 		
 	# c1_array...  we want to get a good approximation of the flux at 1, whatever 1 is in your plot. 
-		c1_array = np.arange(c1_guess/10,c1_guess*10, c1_guess/10)
+		c1_array = np.arange(c1_guess/10.,c1_guess*10., c1_guess/10.)
 		
 	# alpha array
 		a1_array = np.arange(0.01,0.1,0.01)

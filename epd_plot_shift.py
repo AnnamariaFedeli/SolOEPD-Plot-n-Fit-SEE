@@ -407,9 +407,9 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
                 If specified, specify also bgstart. By specifying bgstart and bgend the bg window 
                 will be fixed. Defaults to None. Leave to None for a moving bg and specify 
                 bg_distance_from_window and bg_period.
-        bg_distance_from_window (int, optional): Input in minutes. This is the distance of the 
-                starting point of the background window from the start of the peak search window.
-                Follows the velocity dispersion (first slope). If specified, specify also bg_distance.
+        bg_distance_from_window (str, optional):  This is the distance of the 
+                end time of the background window from the start of the peak search window.
+                Follows the velocity dispersion (first slope). If specified, specify also bg_period.
                 Defaults to None. Leave to None for a fixed window and specify bgstart and bgend. 
         bg_period (str, optional): This is the duration of the backdround window 
                 in minutes. If specified, specify also bg_distance_from_window. Defaults to None.
@@ -751,8 +751,9 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         bgstart = []
         bgend   = []
         for i in range(0,len(searchstart)):
-            bgstart.append(searchstart[i]-pd.to_timedelta(bg_distance_from_window))
-            bgend.append(bgstart[i]+pd.to_timedelta(bg_period))
+            bgend.append(searchstart[i]-pd.to_timedelta(bg_distance_from_window))
+            bgstart.append(bgend[i]-pd.to_timedelta(bg_period))
+            #bgend.append(bgstart[i]+pd.to_timedelta(bg_period))
 
     # Next blocks of code calculate information from data and append them to main info df.
     list_bg_fluxes = []
