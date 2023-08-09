@@ -137,7 +137,8 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	legend_title = 'Electrons'  # 'mag' or 'foil' or 'Electrons' if there is more than just ept data
 	data_product = 'l2'
 
-	date_str = date_string[8:]+'-'+date_string[5:7]+'-'+date_string[0:4] #DO NOT CHANGE. This is used later for the plot title etc.
+	#date_str = date_string[8:]+'-'+date_string[5:7]+'-'+date_string[0:4] #DO NOT CHANGE. This is used later for the plot title etc.
+	date_str = str(date)[:-3]
 	pos = get_horizons_coord('Solar Orbiter', date_string, 'id')
 	dist = np.round(pos.radius.value, 2)
 	
