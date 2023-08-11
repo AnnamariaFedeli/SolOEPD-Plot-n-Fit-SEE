@@ -121,11 +121,11 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 	#the function also checks if the break point is outside of the energy array (also the cutoff point)
 	#the min and max energies cannot be last and/or first points because it wouldn't be a physical result
 	if e_min is None:
-		e_min = min(spec_e)
-		#e_min = spec_e[2]
+		#e_min = min(spec_e)
+		e_min = spec_e[2]
 	if e_max is None:
-		e_max = max(spec_e)
-		#e_max = spec_e[len(spec_e)-3]
+		#e_max = max(spec_e)
+		e_max = spec_e[len(spec_e)-3]
 		
 	result_single_pl = pl_fit.power_law_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, c1 = c1)
 	redchi_single  = result_single_pl.res_var  

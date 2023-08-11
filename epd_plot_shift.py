@@ -1423,7 +1423,7 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
     plt.show()
 
 
-def write_to_csv(args, path='', key='', direction=None):
+def write_to_csv(args, date, path='', key='', direction=None):
     """_summary_
 
     Args:
@@ -1436,12 +1436,13 @@ def write_to_csv(args, path='', key='', direction=None):
     df_info = args[1]
     instrument = args[4][0]
     data_type = args[4][1]
+
+    #date = str(df_info['Plot_period'][0][:-5])
+    #hour = int(df_info['Plot_period'][0][-4:-2])
+    #if hour >20 or hour<4:
+    #    date = str(df_info['Plot_period'][1][:-5])
+
     
-    date = str(df_info['Plot_period'][0][:-5])
-    hour = int(df_info['Plot_period'][0][-4:-2])
-    if hour >20:
-        date = str(df_info['Plot_period'][1][:-5])
-        
 
     if direction is None:
         viewing = 'sun'
