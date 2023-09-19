@@ -25,6 +25,7 @@ def combine_data(data_name_list, path, sigma = 3, rel_err = 0.5, frac_nan_thresh
 	combined_csv.reset_index(drop=True, inplace=True)
 	rows_to_delete = combined_csv.index[combined_csv['frac_nonan']<frac_nan_threshold].tolist()
 	combined_csv = combined_csv.drop(rows_to_delete, axis = 0)
+	combined_csv = combined_csv.sort_values('Primary_energy')
 	combined_csv.reset_index(drop=True, inplace=True)
 	
 	combined_csv.to_csv(path, sep = ';')
