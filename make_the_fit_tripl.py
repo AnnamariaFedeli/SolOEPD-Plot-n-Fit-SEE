@@ -500,6 +500,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		beta_array = closest_values(alpha_array, alpha_guess)
 	# break array
 	# cut array = break_array *1.8
+
+		break_array_low = []
 		
 		if e_max<0.1:
 			break_array_low = np.arange(e_min, e_max, 0.01)

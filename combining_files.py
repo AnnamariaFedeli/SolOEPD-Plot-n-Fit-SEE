@@ -114,4 +114,14 @@ def first_het_chan(data):
 	data = data.drop(first_het, axis = 0)
 	data.reset_index(drop=True, inplace=True)
 	return(data)
+
+def combine_data_general(data_name_list, path):
+	
+	combined_csv = pd.concat(data_name_list)
+	combined_csv.reset_index(drop=True, inplace=True)
+	#combined_csv = combined_csv.drop(columns = 'Energy_channel')
+	
+	combined_csv.to_csv(path, sep = ';')
+	
+	return(combined_csv)
 	

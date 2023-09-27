@@ -190,7 +190,11 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		first_het_data = comb.first_het_chan(het_data)
 		het_data = comb.delete_bad_data(het_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
 		
+	if e_min is None:
+		e_min = min(data['Primary_energy'])
 
+	if e_max is None:
+		e_max = max(data['Primary_energy'])
 	#-------------------------------------------------------------------------------------------------------------------------------------------------
 	color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
 
