@@ -139,11 +139,13 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 		redchi_triple = result_triple.res_var
 		breakp_low    = result_triple.beta[6]	
 		breakp_high   = result_triple.beta[7]
+		difference_triple = breakp_high-breakp_low
 		
 		result_cut_break = pl_fit.cut_break_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=gamma1, gamma2=gamma2, c1=c1, alpha=alpha, E_break=E_break_low, E_cut = E_cut, print_report=False, maxit=10000)
 		redchi_cut_break = result_cut_break.res_var
 		breakp_cut = result_cut_break.beta[4]
 		cut_b = result_cut_break.beta[5]
+		difference_cut = breakp_cut-cut_b
 
 		result_cut = pl_fit.cut_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, c1 = c1, E_cut = E_cut, maxit=10000)
 		redchi_cut= result_cut.res_var
@@ -156,175 +158,84 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 		result_single_pl = pl_fit.power_law_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, c1 = c1)
 		redchi_single  = result_single_pl.res_var  
 
-		# CONTINUE FROM HERE!!! MAKE LIST OF CHIS AND CHECK WHICH ONE IS THE SMALLEST ETC
+		chis = {"triple":redchi_triple, "broken_cut":redchi_cut_break, "cut":redchi_cut, "broken":redchi_broken, "single":redchi_single}
+		sorted_chis = dict(sorted(chis.items(), key=lambda x: x[1], reverse=False))
+		smallest_value = list(sorted_chis.keys())[0]
 
-		chis = {"redchi_triple":redchi_triple, "redchi_cut_break":redchi_cut_break, "redchi_cut":redchi_cut, "redchi_broken":redchi_broken, "redchi_single":redchi_single}
-
-
-		
-		if difference>0.01 and redchi_cut_break<redchi_broken and redchi_cut_break <redchi_single and redchi_cut_break< redchi_cut:
-			
-			if cut_b < e_min or cut_b > e_max:
-				if breakp_cut < e_min or breakp_cut > e_max:
-					which_fit = 'single'
-					redchi = redchi_single
-					result = result_single_pl
-					return([which_fit, redchi, result])
-				# Need to compare break and cut to see which actually fits better
-				if breakp >= e_min and breakp <=e_max:
-					
-					if redchi_broken<=redchi_cut:
-						which_fit = 'broken'
-						redchi = redchi_broken
-						result = result_broken
+		for i in range(len(sorted_chis)):
+			# make if statemenys to check values etc of breaks snd so on change smallest value ofter checking everything
+			if smallest_value == 'triple':
+				if breakp_high > breakp_low and difference_triple>0.01:
+					if breakp_low < e_max and breakp_low > e_min and breakp_high < e_max and breakp_high > e_min:
+						which_fit = 'triple'
+						redchi = redchi_triple
+						result = result_triple
 						return([which_fit, redchi, result])
-					if redchi_cut < redchi_broken:
-						which_fit = 'cut'
-						redchi = redchi_cut
-						result = result_cut
-						return([which_fit, redchi, result])
-				else:
-					which_fit = 'single'
-					redchi = redchi_single
-					result = result_single_pl
-					return([which_fit, redchi, result])
-
-
-			if cut_b >= e_min and cut_b<= e_max:
-				if cut_b> breakp_cut:
-					if breakp_cut >= e_min and breakp_cut <= e_max:
-						which_fit = 'broken_cut'
-						redchi = redchi_cut_break
-						result = result_cut_break
-						return([which_fit, redchi, result])
-
 					else:
-						if redchi_single<redchi_broken and redchi_single<redchi_cut:
-							which_fit = 'single'
-							redchi = redchi_single
-							result = result_single_pl
-							return([which_fit, redchi, result])
-						if redchi_broken<=redchi_single and redchi_broken<=redchi_cut:
-							which_fit = 'broken'
-							redchi = redchi_broken
-							result = result_broken
-							return([which_fit, redchi, result])
-						if redchi_cut<redchi_broken and redchi_cut<redchi_single:
-							which_fit = 'cut'
-							redchi = redchi_cut							
-							result = result_cut
-							return([which_fit, redchi, result])
+						smallest_value = list(sorted_chis.keys())[i]
+				else:
+					smallest_value = list(sorted_chis.keys())[i]
 
-				if cut_b<= breakp_cut:	
-					if redchi_single<redchi_broken and redchi_single<redchi_cut:
-						which_fit = 'single'
-						redchi = redchi_single
-						result = result_single_pl
-						return([which_fit, redchi, result])
-					if redchi_broken<=redchi_single and redchi_broken<=redchi_cut:
-						which_fit = 'broken'
-						redchi = redchi_broken
-						result = result_broken
-						return([which_fit, redchi, result])
-					if redchi_cut<redchi_broken and redchi_cut<redchi_single:
-						which_fit = 'cut'
-						redchi = redchi_cut							
-						result = result_cut
-						return([which_fit, redchi, result])
-									
-		if difference<=0.01:
+			if smallest_value == 'broken_cut':
+				if cut_b >= e_min and cut_b<= e_max and difference_cut>0.01:
+					if cut_b> breakp_cut:
+						if breakp_cut >= e_min and breakp_cut <= e_max:
+							which_fit = 'broken_cut'
+							redchi = redchi_cut_break
+							result = result_cut_break
+							return([which_fit, redchi, result])
+						else:
+							smallest_value = list(sorted_chis.keys())[i]
+					else:
+						smallest_value = list(sorted_chis.keys())[i]
+				else:
+					smallest_value = list(sorted_chis.keys())[i]
 			
-			if redchi_broken<=redchi_single and redchi_broken<= redchi_cut:
-				if breakp <= e_min or breakp >= e_max:
-					which_fit = 'single'
-					redchi = redchi_single
-					result = result_single_pl
-					return([which_fit, redchi, result])
-				if breakp > e_min and breakp <e_max:
-					which_fit = 'broken'
-					redchi = redchi_broken
-					result = result_broken
-					return([which_fit, redchi, result])
-
-			if redchi_cut<redchi_single and  redchi_cut < redchi_broken:
-				if cut <= e_min or cut >= e_max:
-					which_fit = 'single'
-					redchi = redchi_single
-					result = result_single_pl
-					return([which_fit, redchi, result])
-				if cut > e_min and cut <e_max:
+			if smallest_value == 'cut':
+				if cut >= e_min and cut <=e_max:	
 					which_fit = 'cut'
 					redchi = redchi_cut
 					result = result_cut
 					return([which_fit, redchi, result])
-
-			if redchi_broken>redchi_single and redchi_cut>redchi_single:
+				else:
+					smallest_value = list(sorted_chis.keys())[i]
+			
+			if smallest_value == 'broken':
+				if breakp >= e_min and breakp <=e_max:	
+					which_fit = 'broken'
+					redchi = redchi_broken
+					result = result_broken
+					return([which_fit, redchi, result])
+				else:
+					smallest_value = list(sorted_chis.keys())[i]
+			if smallest_value == 'single':
 				which_fit = 'single'
 				redchi = redchi_single
 				result = result_single_pl
 				return([which_fit, redchi, result])
 
-
-		if redchi_broken<=redchi_single and redchi_broken <=redchi_cut_break and redchi_broken<= redchi_cut:
-			
-			if breakp <= e_min or breakp >= e_max:
-				which_fit = 'single'
-				redchi = redchi_single
-				result = result_single_pl
-				return([which_fit, redchi, result])
-			if breakp > e_min and breakp <e_max:
-				which_fit = 'broken'
-				redchi = redchi_broken
-				result = result_broken
-				return([which_fit, redchi, result])
-			
-
-		if redchi_cut<redchi_single and redchi_cut <redchi_cut_break and redchi_cut < redchi_broken:
-			if cut <= e_min or cut >= e_max:
-				which_fit = 'single'
-				redchi = redchi_single
-				result = result_single_pl
-				return([which_fit, redchi, result])
-			if cut > e_min and cut <e_max:
-				which_fit = 'cut'
-				redchi = redchi_cut
-				result = result_cut
-				return([which_fit, redchi, result])
-
-		if redchi_broken>redchi_single and redchi_cut_break>redchi_single and redchi_cut>redchi_single:
-			
-			which_fit = 'single'
-			redchi = redchi_single
-			result = result_single_pl
-			return([which_fit, redchi, result])
-
+					
 		
-	if fit == 'best' or fit == 'triple':
+	if fit == 'triple':
 		result_triple = pl_fit.triple_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, gamma2 = gamma2, gamma3 = gamma3, c1 = c1, alpha = alpha, beta = beta, E_break_low = E_break_low, E_break_high = E_break_high, maxit=10000)
 		redchi_triple = result_triple.res_var
 		breakp_low    = result_triple.beta[6]	
 		breakp_high   = result_triple.beta[7]
-		g1            = result_triple.beta[1]
-		g2            = result_triple.beta[2]
-		g3            = result_triple.beta[3]
-		
+		difference_triple = breakp_high-breakp_low
 
-		if breakp_high > breakp_low:
+		if breakp_high > breakp_low and difference_triple>0.01:
 			if breakp_low < e_max and breakp_low > e_min and breakp_high < e_max and breakp_high > e_min:
-				if g3 < g2 and g2<g1:
-					which_fit = 'triple'
-					redchi = redchi_triple
-					result = result_triple
-					return([which_fit, redchi, result])
-						
-				else:
-					fit = 'broken_cut'
+				which_fit = 'triple'
+				redchi = redchi_triple
+				result = result_triple
+				return([which_fit, redchi, result])
 					
 			else:
 				fit = 'broken_cut'
 				
 		else:
 			fit = 'broken_cut'
+
 
 
 			
@@ -334,9 +245,10 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 		breakp_cut = result_cut_break.beta[4]
 		#The cut of the break + cutoff
 		cut_b = result_cut_break.beta[5]
+		difference_cut = breakp_cut-cut_b
 
 			
-		if cut_b < e_min or cut_b > e_max:
+		if cut_b < e_min or cut_b > e_max and difference_cut>0.01:
 			if breakp_cut <= e_min or breakp_cut >= e_max:
 				fit = 'single'
 			# Need to compare break and cut to see which actually fits better
@@ -959,6 +871,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		if detailed_legend:
 			ax.plot([], [], ' ', label="single pl")
 			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_single, ndigits=2))
+			ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$%5.2f' %round(c1, ndigits=2)+"/(s cm² sr MeV)")
+			
 
 
 		ax.plot(xplot, pl_fit.simple_pl([c1, gamma1], xplot), '-', color=color[direction], label=r'$\mathregular{\delta=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err))
@@ -1025,6 +939,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		if detailed_legend:
 			ax.plot([], [], ' ', label="broken pl")
 			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_broken, ndigits=2))
+			ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$%5.2f' %round(c1, ndigits=2)+"/(s cm² sr MeV)")
+			
 
 
 		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\delta_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2))#, lw=lwd)
@@ -1071,6 +987,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		if detailed_legend:
 			ax.plot([], [], ' ', label="single pl + exp cutoff")
 			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_cut, ndigits=2))
+			ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$%5.2f' %round(c1, ndigits=2)+"/(s cm² sr MeV)")
+			
 
 
 		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err))#, lw=lwd)
@@ -1130,6 +1048,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		if detailed_legend:
 			ax.plot([], [], ' ', label="broken pl + exp cutoff")
 			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_cut, ndigits=2))
+			ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$%5.2f' %round(c1, ndigits=2)+"/(s cm² sr MeV)")
+			
 
 		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\delta_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2))#, lw=lwd)
 		ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b=}$ '+str(round(breakp_1*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err*1e3, ndigits=0))+' keV')
@@ -1194,6 +1114,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		if detailed_legend:
 			ax.plot([], [], ' ', label="triple pl")
 			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_triple, ndigits=2))
+			ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$%5.2f' %round(c1, ndigits=2)+"/(s cm² sr MeV)")
+			
 
 		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\delta_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\delta_3=}$%5.2f' %round(gamma3, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma3_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2)+'\n'+r'$\mathregular{\beta=}$%5.2f' %round(beta, ndigits=2))#, lw=lwd)
 		ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b1=}$ '+str(round(breakp_1*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err*1e3, ndigits=0))+' keV')
