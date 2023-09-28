@@ -189,7 +189,7 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 					smallest_value = list(sorted_chis.keys())[i]
 
 			if smallest_value == 'broken_cut':
-				if cut_b >= e_min and cut_b<= e_max:
+				if cut_b >= e_min and cut_b<= e_max and breakp_cut >= e_min and breakp_cut<= e_max :
 					absolute_val_array = np.abs(spec_e - breakp_cut)
 					smallest_difference_index = absolute_val_array.argmin()
 					low = spec_e[smallest_difference_index]-e_err[smallest_difference_index]
