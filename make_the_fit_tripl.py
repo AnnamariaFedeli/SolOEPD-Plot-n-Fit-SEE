@@ -177,6 +177,7 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 					print(difference_triple_energy)
 					print(difference_triple)
 
+					
 					if breakp_high > breakp_low and difference_triple>difference_triple_energy:
 						which_fit = 'triple'
 						redchi = redchi_triple
@@ -204,6 +205,7 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 					print(difference_cut)
 
 					if cut_b> breakp_cut and difference_cut>difference_cut_energy:
+				
 						which_fit = 'broken_cut'
 						redchi = redchi_cut_break
 						result = result_cut_break
