@@ -116,7 +116,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		step_file_name = 'electron_data-'+date_string+'-STEP-'+direction+'-L2-'+averaging+'_averaging.csv'
 
 	ept_file_name = ''
-	
+
 	if ion_correction:
 		ept_file_name = 'electron_data-'+date_string+'-EPT-' + direction+ '-L2-'+averaging+'_averaging-ion_corr.csv'
 	else:
@@ -556,10 +556,14 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	ax.yaxis.set_minor_formatter(pltt.NullFormatter())
 
 
+
 	plt.legend(title=legend_title,  prop={'size': 7})
 	plt.ylabel(intensity_label)
 	plt.xlabel(energy_label)
-	plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging')
+	if centre_pix:
+		plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging, centre pixels')
+	else:
+		plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging')
 
 	plot_path = path
 	if fit_to_separate_folder:
@@ -567,32 +571,36 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		if not os.path.exists(plot_path):
 			os.makedirs(plot_path)
 
+	pix = ''
+	if centre_pix:
+		pix = '-centre_pix'
+
 	if save_fig:
 		if make_fit:
 			if ion_correction and not bg_subtraction:
-				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr'+pix, dpi=300)
 			if not ion_correction and  bg_subtraction:
-				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-bg_sub', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-bg_sub'+pix, dpi=300)
 			if ion_correction and bg_subtraction:
-				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr-bg_sub', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr-bg_sub'+pix, dpi=300)
 			else:
-				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to, dpi=300)
+				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+pix, dpi=300)
 			
 		if make_fit is False:
 			if step and ept and het:
-				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_ept_het', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_ept_het'+pix, dpi=300)
 			if step and ept and het is False:
-				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_ept', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_ept'+pix, dpi=300)
 			if step and het and ept is False:
-				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_het', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_het'+pix, dpi=300)
 			if step and ept is False and het is False:
-				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step'+pix, dpi=300)
 			if ept and het and step is False:
-				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-ept_het', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-ept_het'+pix, dpi=300)
 			if ept and step is False and het is False:
-				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-ept', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-ept'+pix, dpi=300)
 			if het and ept is False and step is False:
-				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-het', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-het'+pix, dpi=300)
 			
 			
 
