@@ -56,8 +56,8 @@ def run_all(path, data, savefig, plot_title = '', x_label = 'Intensity [/]', y_l
         all_data = data[0]
         all_data.columns = ['x', 'y', 'x error', 'y error']
             
-    print(all_data)
-    bad_data = all_data.index[all_data['y']<0].tolist()
+    #print(all_data)
+    bad_data = all_data.index[all_data['y']<=0].tolist()
     all_data = all_data.drop(bad_data, axis = 0)
     all_data.reset_index(drop=True, inplace=True)   
 
@@ -67,7 +67,7 @@ def run_all(path, data, savefig, plot_title = '', x_label = 'Intensity [/]', y_l
     y_data_err    = all_data['y error']   
     
 
-    print(all_data)
+    #print(all_data)
 
 
     f, ax = plt.subplots(1, figsize=(6, 5), dpi = 200)
@@ -76,16 +76,17 @@ def run_all(path, data, savefig, plot_title = '', x_label = 'Intensity [/]', y_l
 	                    #spec_energy_step_ept, spec_flux_step_ept, energy_err_step_ept[1], flux_err_step_ept, ax, direction=direction, e_min = e_min, e_max = e_max, which_fit=which_fit, g1_guess=g1_guess, g2_guess=g2_guess, g3_guess = g3_guess, alpha_guess=alpha_guess, beta_guess = beta_guess, break_low_guess=break_guess_low, break_high_guess = break_guess_high, cut_guess = cut_guess, c1_guess=c1_guess,use_random = use_random, iterations = iterations, path = pickle_path, path2 = fit_var_path, detailed_legend = legend_details)
 
 
-    colors = ['darkorange', 'red', 'marroon', 'blue']
+    colors = ['red', 'darkorange', 'marroon', 'blue']
     #print(data)
     #print(data[0])
     #print(data[0]['x'])
+    print(all_data)
 
     for i in range(len(data)):
         x_data = data[i]['x'] # energy for spectra
-        x_data_err  = data[i]['x_err']
+        x_data_err  = data[i]['x error']
         y_data   = data[i]['y']
-        y_data_err    = data[i]['y_err']
+        y_data_err    = data[i]['y error']
         #print(x_data)    
         ax.errorbar(x_data, y_data, yerr=y_data_err, xerr = x_data_err, marker='o', markersize= 3 , linestyle='', color=colors[i], alpha = 0.5, label=data_label_for_legend[i], zorder = -1)
 
