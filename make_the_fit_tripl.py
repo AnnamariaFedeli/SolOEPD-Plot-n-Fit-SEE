@@ -1194,6 +1194,14 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		breakp_1_err = errors[6]
 		breakp_2_err = errors[7]
 		c1         = result_triple.beta[0]
+		gamma1     = result_triple.beta[1]
+		gamma1_err = errors[1]
+		gamma2     = result_triple.beta[2]
+		gamma2_err = errors[2]
+		gamma3 = result_triple.beta[3]
+		gamma3_err = errors[3]
+
+
 	
 		if alpha > 0 and beta > 0 :
 			gamma1     = result_triple.beta[1]

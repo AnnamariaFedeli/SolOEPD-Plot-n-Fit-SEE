@@ -960,7 +960,7 @@ def average_flux_error(flux_err: pd.DataFrame) -> pd.Series:
 
     return np.sqrt((flux_err ** 2).sum(axis=0)) / len(flux_err.values)
 
-def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', frac_nan_threshold=0.4, rel_err_threshold=0.5, plot_pa=False, coverage=None, sensor = 'ept', viewing='sun', centre_pix = False):
+def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', frac_nan_threshold=0.4, rel_err_threshold=0.5, plot_pa=False, coverage=None, sensor = 'ept', viewing='sun', centre_pix = False, date = None):
     """Creates a timeseries plot showing the particle flux for each energy channel of
         the instrument (STEP, EPT, HET). The timeseries plot shows also the peak window and
         background window. The peak is marked with different color lines:
@@ -1011,11 +1011,23 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
     instrument = args[4][0]
     data_type = args[4][1]
 
+    date_string = ''
+    file_date = ''
+
+    if date is None:
+        date_string = str(df_info['Plot_period'][0][:-5])
+        file_date = str(df_info['Plot_period'][0][:-5])
+
+    else:
+        date_string = str(date)[:-3]
+        file_date = str(date)[:-3].replace(' ', '-').replace(':', '')
+    
+
     if viewing is None or sensor in ['STEP', 'step']:
         viewing = 'sun'
 
-    title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
-    filename = 'channels-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + '-' +viewing+ '-' + data_type.upper() 
+    title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + date_string
+    filename = 'channels-' + file_date + '-' + instrument.upper() + '-' +viewing+ '-' + data_type.upper() 
     
     if(df_info['Averaging'][0]=='Mean'):
 
@@ -1201,7 +1213,7 @@ def plot_check(args, bg_subtraction=False, savefig=False, key=''):
 
     plt.show()
 
-def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None, centre_pix = False):
+def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None, centre_pix = False, date = None):
     """_summary_
 
     Args:
@@ -1224,8 +1236,20 @@ def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key=''
         direction = 'sun'
     else:
         viewing = f'-{direction}' 
-    title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
-    filename = 'spectrum-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + viewing+ '-' + data_type.upper() 
+
+    date_string = ''
+    file_date = ''
+
+    if date is None:
+        date_string = str(df_info['Plot_period'][0][:-5])
+        file_date = str(df_info['Plot_period'][0][:-5])
+
+    else:
+        date_string = str(date)[:-3]
+        file_date = str(date)[:-3].replace(' ', '-').replace(':', '')
+    
+    title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + date_string
+    filename = 'spectrum-' + file_date + '-' + instrument.upper() + viewing+ '-' + data_type.upper() 
     
     if(df_info['Averaging'][0]=='Mean'):
 
@@ -1317,7 +1341,7 @@ def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key=''
 
     plt.show()
 
-def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None, centre_pix = False):
+def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None, centre_pix = False, date = None):
     """_summary_
 
     Args:
@@ -1339,8 +1363,23 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
         viewing = 'sun'
     else:
         viewing = f'-{direction}' 
-    title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
-    filename = 'spectrum-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper()  +viewing+ '-' + data_type.upper() 
+
+
+
+    date_string = ''
+    file_date = ''
+
+    if date is None:
+        date_string = str(df_info['Plot_period'][0][:-5])
+        file_date = str(df_info['Plot_period'][0][:-5])
+
+    else:
+        date_string = str(date)[:-3]
+        file_date = str(date)[:-3].replace(' ', '-').replace(':', '')
+    
+
+    title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + date_string
+    filename = 'spectrum-' + file_date + '-' + instrument.upper()  +viewing+ '-' + data_type.upper() 
     
     if(df_info['Averaging'][0]=='Mean'):
 
@@ -1524,7 +1563,7 @@ def acc_flux(args, time=[]):
 
 
 
-def ceter_pix_average_comparison_spec(args, args_pix, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None):
+def ceter_pix_average_comparison_spec(args, args_pix, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None, date = None):
     """_summary_
 
     Args:
@@ -1547,9 +1586,20 @@ def ceter_pix_average_comparison_spec(args, args_pix, bg_subtraction=True, savef
     
     viewing = 'sun'
     direction = 'sun'
+
+    date_string = ''
+    file_date = ''
+
+    if date is None:
+        date_string = str(df_info['Plot_period'][0][:-5])
+        file_date = str(df_info['Plot_period'][0][:-5])
+
+    else:
+        date_string = str(date)[:-3]
+        file_date = str(date)[:-3].replace(' ', '-').replace(':', '')
     
-    title_string = instrument + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
-    filename = 'spectrum-pix-comparison' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument + viewing+ '-' + data_type.upper() 
+    title_string = instrument + ', ' + data_type.upper() + ', ' + date_string
+    filename = 'spectrum-pix-comparison' + file_date + '-' + instrument + viewing+ '-' + data_type.upper() 
     
     
     if(df_info['Averaging'][0]=='Mean'):
