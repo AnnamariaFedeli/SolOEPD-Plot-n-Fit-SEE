@@ -1563,7 +1563,7 @@ def acc_flux(args, time=[]):
 
 
 
-def ceter_pix_average_comparison_spec(args, args_pix, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None, date = None):
+def centre_pix_average_comparison_spec(args, args_pix, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None, date = None):
     """_summary_
 
     Args:
@@ -1649,7 +1649,7 @@ def ceter_pix_average_comparison_spec(args, args_pix, bg_subtraction=True, savef
         ax.plot(df_rel_err.Primary_energy, df_rel_err.Bg_subtracted_peak, 'o', c='orange', markersize=6, label='excluded (rel error)')
 
         ax.errorbar(x=df_info_pix['Primary_energy'], y=df_info_pix['Bg_subtracted_peak'], yerr=df_info_pix['Backsub_peak_uncertainty'],
-                    xerr=[df_info_pix['Energy_error_low'], df_info_pix['Energy_error_high']], color=color['sun_pix'], fmt='o', ecolor=color['sun_pix'], zorder=0, label='Flux peaks center pix')
+                    xerr=[df_info_pix['Energy_error_low'], df_info_pix['Energy_error_high']], color=color['sun_pix'], fmt='o', ecolor=color['sun_pix'], zorder=0, label='Flux peaks centre pix')
         ax.plot(df_nan_pix.Primary_energy, df_nan_pix.Bg_subtracted_peak, 'o', markersize=15, c='gray')#, label='excluded (NaNs)')
         ax.plot(df_no_sig_pix.Primary_energy, df_no_sig_pix.Bg_subtracted_peak, 'o', c='blue', markersize=11)#, label='excluded (sigma)')
         ax.plot(df_rel_err_pix.Primary_energy, df_rel_err_pix.Bg_subtracted_peak, 'o', c='orange', markersize=6)#, label='excluded (rel error)')
@@ -1665,7 +1665,7 @@ def ceter_pix_average_comparison_spec(args, args_pix, bg_subtraction=True, savef
         ax.plot(df_rel_err.Primary_energy, df_rel_err.Flux_peak, 'o', markersize=6, c='orange', label='excluded (rel error)')
 
         ax.errorbar(x=df_info_pix['Primary_energy'], y=df_info_pix['Flux_peak'], yerr=df_info_pix['Peak_electron_uncertainty'],
-                    xerr=[df_info_pix['Energy_error_low'], df_info_pix['Energy_error_high']], fmt='o', color=color['sun_pix'],ecolor=color['sun_pix'], zorder=0, label='Flux peaks center pix')
+                    xerr=[df_info_pix['Energy_error_low'], df_info_pix['Energy_error_high']], fmt='o', color=color['sun_pix'],ecolor=color['sun_pix'], zorder=0, label='Flux peaks centre pix')
         ax.plot(df_nan_pix.Primary_energy, df_nan_pix.Flux_peak, 'o', markersize=15, c='gray')#, label='excluded (NaNs)')
         ax.plot(df_no_sig_pix.Primary_energy, df_no_sig_pix.Flux_peak, 'o', markersize=11, c='blue')#, label='excluded (sigma)')
         ax.plot(df_rel_err_pix.Primary_energy, df_rel_err_pix.Flux_peak, 'o', markersize=6, c='orange')#, label='excluded (rel error)')
@@ -1676,7 +1676,7 @@ def ceter_pix_average_comparison_spec(args, args_pix, bg_subtraction=True, savef
                 fmt='o', color=color[direction], ecolor=color[direction], alpha=0.15, label='Background flux all pix avg')
 
     ax.errorbar(x=df_info_pix['Primary_energy'], y=df_info_pix['Background_flux'], yerr=df_info_pix['Bg_electron_uncertainty'], xerr=[df_info_pix['Energy_error_low'],df_info_pix['Energy_error_high']],
-                fmt='o', color=color['sun_pix'], ecolor=color['sun_pix'], alpha=0.15, label='Background flux center pix')
+                fmt='o', color=color['sun_pix'], ecolor=color['sun_pix'], alpha=0.15, label='Background flux centre pix')
 
     ax.set_yscale('log')
     ax.set_xscale('log')
