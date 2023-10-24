@@ -492,7 +492,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		gamma3_array = closest_values(np.arange(g3_start_value,0.0,g3_step), g3_guess)
 		
 	# c1_array...  we want to get a good approximation of the flux at 1, whatever 1 is in your plot. 
-		c1_array = np.arange(c1_guess/10.,c1_guess*10., c1_guess/10.)
+		c1_array = np.arange(c1_guess/100.,c1_guess*100., c1_guess/500.)
 		
 	# alpha array
 		a1_array = np.arange(0.01,0.1,0.01)
