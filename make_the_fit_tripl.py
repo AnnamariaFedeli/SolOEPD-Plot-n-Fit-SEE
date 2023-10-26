@@ -135,9 +135,12 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 	else:
 		emax = e_max
 
+	
 
+	print(spec_e)
 
 	if fit == 'best':
+		print('143 best')
 		result_triple = pl_fit.triple_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, gamma2 = gamma2, gamma3 = gamma3, c1 = c1, alpha = alpha, beta = beta, E_break_low = E_break_low, E_break_high = E_break_high, maxit=10000)
 		redchi_triple = result_triple.res_var
 		breakp_low    = result_triple.beta[6]	
@@ -452,7 +455,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	The best option checks between all the options and chooses between the three by checking the reduced chisqr.
 	Also when the broken or cut options are chosen, the function checks if the break or cutoff points are outside of the energy range.
 	In such case, a sigle pl will be fit to the data and the function will output that the breakpoint is outside of the energy range.''' 
-	
+	print(spec_e)
+	print(spec_flux)
 
 	if g2_guess is None:
 		g2_guess = g1_guess - 0.1
@@ -487,9 +491,9 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	
 
 	if use_random :	
-		gamma1_array = closest_values(np.arange(g1_start_value,0.0,g1_step), g1_guess)
-		gamma2_array = closest_values(np.arange(g2_start_value,0.0,g2_step), g2_guess)
-		gamma3_array = closest_values(np.arange(g3_start_value,0.0,g3_step), g3_guess)
+		gamma1_array = closest_values(np.arange(g1_start_value,np.abs(g1_start_value),g1_step), g1_guess)
+		gamma2_array = closest_values(np.arange(g2_start_value,np.abs(g2_start_value),g2_step), g2_guess)
+		gamma3_array = closest_values(np.arange(g3_start_value,np.abs(g3_start_value),g3_step), g3_guess)
 		
 	# c1_array...  we want to get a good approximation of the flux at 1, whatever 1 is in your plot. 
 		c1_array = np.arange(c1_guess/100.,c1_guess*100., c1_guess/500.)
@@ -565,6 +569,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	
 # spec_e, spec_flux, e_err, flux_err, gamma1, gamma2, gamma3, c1, alpha, beta, E_break_low, E_break_high,  E_cut= None, fit = 'best',  maxit=10000, e_min=None, e_max=None):
 	if which_fit == 'best':
+		print('572 best')
 	#first check the redchi and if the break is outside of the energy range using the guess values then compare the random values to these 
 	#if redchi is better, substitute values
 		which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, beta = beta_guess, gamma1=g1_guess, gamma2=g2_guess, gamma3 = g3_guess, E_break_low=break_low_guess, E_break_high = break_high_guess, E_cut = cut_guess, fit = 'best', maxit=10000, e_min = e_min, e_max = e_max)
@@ -575,6 +580,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		result_final = which_fit_guess[2]
 
 		if use_random :
+			print('USING RANDOM BEST')
 			for i in range(iterations):
 				#need [0] because it's an array
 				g1_random = np.random.choice(gamma1_array, 1)[0]
@@ -846,6 +852,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			redchi_final = redchi_guess
 		
 		if use_random :
+			print('USING RANDOM BROKEN')
 			for i in range(iterations):
 				#need [0] because it's an array
 				g1_random = np.random.choice(gamma1_array, 1)[0]
@@ -1267,6 +1274,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		result_dataframe["Alpha"] = alpha
 		result_dataframe["Beta"] = beta
 		
+		print('WHICH FIT   '+which_fit)
 
 	
 

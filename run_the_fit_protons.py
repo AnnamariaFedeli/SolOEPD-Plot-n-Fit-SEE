@@ -32,6 +32,14 @@ import shutil
 #        print('copied', file_name)
 
 def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run_var_file):
+	"""_summary_
+
+	Args:
+		path (_type_): _description_
+		date (_type_): _description_
+		fit_var_file (_type_): _description_
+		run_var_file (_type_): _description_
+	"""
 	fitvariables = path+'fit_variables/'
 	runvariables = path+'run_variables/'
 	newpath = path+date+'/'
@@ -43,8 +51,8 @@ def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run
 	shutil.copy(newpath+fit_var_file, fitvariables+fit_var_file)
 	shutil.copy(newpath+run_var_file, runvariables+run_var_file)
 
-
-def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, fit_to_separate_folder = False):
+	
+def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = False, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False):
 
 	     # slope (float, optional): The type of slope used to find the peak (for the title). Defaults to None.
 		 # #slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True):
@@ -95,6 +103,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		legend_details (bool, optional): If True, the final fit type and the reduced chi square will be dislayed in the legend.
 		ion_correction (bool, optional):
 		bg_subtraction (bool, optional):
+		fit_to_separate_folder (bool, optional): saves the fit to a plots folder
 	"""
 		
 	date_string =''
@@ -115,7 +124,13 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 
 	separator = ';'
 
-	step_file_name = 'proton_data-'+date_string+'-STEP-'+direction+'-L2-'+averaging+'_averaging.csv'
+	step_file_name = ''
+
+	if centre_pix:
+		step_file_name = 'proton_data-'+date_string+'-STEP-'+direction+'-L2-'+averaging+'_averaging-centre_pix.csv'
+	else:
+		step_file_name = 'proton_data-'+date_string+'-STEP-'+direction+'-L2-'+averaging+'_averaging.csv'
+
 	ept_file_name = ''
 	if ion_correction:
 		ept_file_name = 'proton_data-'+date_string+'-EPT-' + direction+ '-L2-'+averaging+'_averaging.csv'
@@ -166,8 +181,8 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		het_data = pd.read_csv(path+het_file_name, sep = separator)
 		data_list.append(het_data)
 
-	data = comb.combine_data(data_list, path+date_string+'-all-l2-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
-	data = pd.read_csv(path+date_string+'-all-l2-'+averaging+'.csv', sep = separator)
+	data = comb.combine_data(data_list, path+date_string+'-all-l2-'+direction+'-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
+	data = pd.read_csv(path+date_string+'-all-l2-'+direction+'-'+averaging+'.csv', sep = separator)
 
 	if step and ept:
 		step_ept_data = comb.combine_data([step_data, ept_data], path+date_string+'-step_ept-l2-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
@@ -189,13 +204,19 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 
 	if step:
 		step_data = comb.delete_bad_data(step_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, fit_to = fit_to_comb)
+		print('STEP   ',step_data)
 	if ept:
 		ept_data = comb.delete_bad_data(ept_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, fit_to = fit_to_comb)
+		print('EPT  ',ept_data)
 	if het:
 		first_het_data = comb.first_het_chan(het_data)
 		het_data = comb.delete_bad_data(het_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
 		
+	if e_min is None:
+		e_min = min(data['Primary_energy'])
 
+	if e_max is None:
+		e_max = max(data['Primary_energy'])
 	#-------------------------------------------------------------------------------------------------------------------------------------------------
 	color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
 	
@@ -224,6 +245,8 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 
 
 	# <---------------------------------------------------------------------DATA--------------------------------------------------------------------->
+	print(data)
+	
 
 	# all data
 	spec_energy = data['Primary_energy']
@@ -519,8 +542,8 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	e_range_min = None
 	e_range_max = None	
 	step_energy_range = [0.004323343613,0.07803193193]  # needs to be changed to protons!
-	ept_energy_range =  [2,5]
-	het_energy_range =  [10,100]
+	ept_energy_range =  [2.,5.]
+	het_energy_range =  [10.,100.]
 	#if fit_type == 'step':
 	#	e_range_min = step_energy_range[0]
 	#	e_range_max = step_energy_range[1]
@@ -554,34 +577,47 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	plt.legend(title=legend_title,  prop={'size': 7})
 	plt.ylabel(intensity_label)
 	plt.xlabel(energy_label)
-	plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging')
+	if centre_pix:
+		plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging, centre pixels')
+	else:
+		plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging')
+
+	plot_path = path
+	if fit_to_separate_folder:
+		plot_path = path+'plots/'
+		if not os.path.exists(plot_path):
+			os.makedirs(plot_path)
+
+	pix = ''
+	if centre_pix:
+		pix = '-centre_pix'
 
 	if save_fig:
 		if make_fit:
 			if ion_correction and not bg_subtraction:
-				plt.savefig(path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr'+pix, dpi=300)
 			if not ion_correction and  bg_subtraction:
-				plt.savefig(path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-bg_sub', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-bg_sub'+pix, dpi=300)
 			if ion_correction and bg_subtraction:
-				plt.savefig(path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr-bg_bug', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr-bg_sub'+pix, dpi=300)
 			else:
-				plt.savefig(path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to, dpi=300)
+				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+pix, dpi=300)
 			
 		if make_fit is False:
 			if step and ept and het:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-step_ept_het', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_ept_het'+pix, dpi=300)
 			if step and ept and het is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-step_ept', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_ept'+pix, dpi=300)
 			if step and het and ept is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-step_het', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_het'+pix, dpi=300)
 			if step and ept is False and het is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-step', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step'+pix, dpi=300)
 			if ept and het and step is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-ept_het', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-ept_het'+pix, dpi=300)
 			if ept and step is False and het is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-ept', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-ept'+pix, dpi=300)
 			if het and ept is False and step is False:
-				plt.savefig(path+date_string+'-'+averaging+'-no_fit-het', dpi=300)
+				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-het'+pix, dpi=300)
 			
 			
 

@@ -198,8 +198,9 @@ def double_line(p, x):#, c1, c2, gamma1, gamma2, E_break):
 
 
 def simple_pl(p,x):#, c1, gamma1):
-    c1, gamma1 = p
-    return c1*x**gamma1
+	c1, gamma1 = p
+	y = c1*(x/0.1)**gamma1
+	return y#c1*x**gamma1
 
 
 

@@ -359,6 +359,7 @@ def position_and_traveltime(date, species):
         which = 2
     if species.lower() in ['proton', 'protons', 'p']:
         which = 1
+    
     pos = get_horizons_coord('Solar Orbiter', date, 'id')
     dist = np.round(pos.radius.value, 2)
     spiral_len = len_of_spiral(400,dist)
@@ -389,7 +390,7 @@ def position_and_traveltime(date, species):
     print(tabulate(table_data))
     return(table_data)
 
-def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj, bgstart = None, bgend = None, bg_distance_from_window = '2h', bg_period = '60min', travel_distance = 0,  travel_distance_second_slope = None, fixed_window = None, instrument = 'ept', data_type = 'l2', averaging=None, masking=True, ion_conta_corr=False, df_protons = None):
+def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj, bgstart = None, bgend = None, bg_distance_from_window = '2h', bg_period = '60min', travel_distance = 0,  travel_distance_second_slope = None, fixed_window = None, instrument = 'ept', data_type = 'l2', averaging=None, masking=True, ion_conta_corr=False, df_protons = None, centre_pix = False):
     """This function determines an energy spectrum from time series data for any of the Solar Orbiter / EPD 
     sensors uses energy-dependent time windows to determine the flux points for the spectrum. 
     The dependence is determined according to an expected velocity dispersion assuming a certain 
@@ -578,8 +579,14 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
                 for i in channels:
                     e_high.append(e_low[i]+df_energies['Bins_Width'][i])
 
-                    df_electron_fluxes['Electron_Flux_'+str(i)] = df_electrons['Electron_Avg_Flux_'+str(i)][plotstart:plotend]
-                    df_electron_uncertainties['Electron_Uncertainty_'+str(i)] = df_electrons['Electron_Avg_Uncertainty_'+str(i)][plotstart:plotend]
+                    if centre_pix:
+                        df_electron_fluxes['Electron_Flux_'+str(i)] = df_electrons['Electron_Comb_Flux_'+str(i)][plotstart:plotend]
+                        df_electron_uncertainties['Electron_Uncertainty_'+str(i)] = df_electrons['Electron_Comb_Uncertainty_'+str(i)][plotstart:plotend]
+
+
+                    else:
+                        df_electron_fluxes['Electron_Flux_'+str(i)] = df_electrons['Electron_Avg_Flux_'+str(i)][plotstart:plotend]
+                        df_electron_uncertainties['Electron_Uncertainty_'+str(i)] = df_electrons['Electron_Avg_Uncertainty_'+str(i)][plotstart:plotend]
 
 
             else:
@@ -1002,8 +1009,9 @@ def extract_proton_data(df_protons, df_energies, plotstart, plotend,  t_inj, bgs
 
             for i in channels:
                 e_high.append(e_low[i]+df_energies['Ion_Bins_Width'][i])
-                df_proton_fluxes = df_proton_fluxes.rename(columns={'Ele_Flux_{}'.format(i):'Electron_Flux_{}'.format(i)})
-                df_proton_uncertainties = df_proton_uncertainties.rename(columns={'Ele_Flux_Sigma_{}'.format(i):'Electron_Uncertainty_{}'.format(i)})
+                #I don't think the next two lines of code are necessary at all. Also they were wrong because it said electrons instead of protons.
+                df_proton_fluxes = df_proton_fluxes.rename(columns={'H_Flux_{}'.format(i):'Ion_Flux_{}'.format(i)})
+                df_proton_uncertainties = df_proton_uncertainties.rename(columns={'H_Flux_Sigma_{}'.format(i):'Ion_Uncertainty_{}'.format(i)})
 
 
         elif(data_type == 'l2'):
@@ -1071,7 +1079,6 @@ def extract_proton_data(df_protons, df_energies, plotstart, plotend,  t_inj, bgs
         df_proton_fluxes[df_proton_fluxes<0] = np.NaN
 
     if(averaging != None ):
-
         if(instrument=='ept'):
 
             df_proton_fluxes =df_proton_fluxes.resample(averaging).mean()
