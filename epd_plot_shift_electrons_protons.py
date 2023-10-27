@@ -1080,25 +1080,28 @@ def extract_proton_data(df_protons, df_energies, plotstart, plotend,  t_inj, bgs
 
     if(averaging != None ):
         if(instrument=='ept'):
-
             df_proton_fluxes =df_proton_fluxes.resample(averaging).mean()
             df_proton_uncertainties = df_proton_uncertainties.resample(averaging).apply(average_flux_error)
 # the data product changed so the first energy channel was set to nan. That messes with the matrix calculation of the ion contamination correction so changeod first channel to zero.
 # this should later be changed to a condition so if the first chan is nan then set to zero in case there will be another change with the data.
 
             #print(df_proton_fluxes.Ion_Flux_0)
-            for i in range(len(df_proton_fluxes.Ion_Flux_0)):
-                df_proton_fluxes.Ion_Flux_0[i] = 0.0
+            # 26.10.23 uncommenting following two lines. WHY SET TO ZERO? 
+            # ok this was the bug causing the fit not to work. NEVER SET TO ZERO! 
+            # IT MESSES WITH THE FUNCTIONS
+            #for i in range(len(df_proton_fluxes.Ion_Flux_0)):
+                #df_proton_fluxes.Ion_Flux_0[i] = 0.0
             #print(df_proton_fluxes.Ion_Flux_0)
             
         # for STEP electrons, the resampling is done independently, e.g. solo_epd_loader.calc_electrons(df, resamle='1min')
         if(instrument!='step'):
             df_proton_fluxes = df_proton_fluxes.resample(averaging).mean()
             df_proton_uncertainties = df_proton_uncertainties.resample(averaging).apply(average_flux_error)
-            if instrument == 'ept':
-                for i in range(len(df_proton_fluxes.Ion_Flux_0)):
-                    df_proton_fluxes.Ion_Flux_0[i] = 0.0
-            #print(df_electron_fluxes.Electron_Flux_0)
+            #if instrument == 'ept':
+               # for i in range(len(df_proton_fluxes.Ion_Flux_0)):
+               #     df_proton_fluxes.Ion_Flux_0[i] = 0.0
+            #
+            # t(df_electron_fluxes.Electron_Flux_0)
             
 
 
@@ -1491,7 +1494,7 @@ def plot_channels_electrons(args, bg_subtraction=False, savefig=False, sigma=3, 
         viewing = 'sun'
 
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
-    filename = 'channels-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + '-' +viewing+ '-' + data_type.upper() 
+    filename = 'electron_channels-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + '-' +viewing+ '-' + data_type.upper() 
     
     if(df_info['Averaging'][0]=='Mean'):
 
@@ -1694,7 +1697,7 @@ def plot_channels_protons(args, bg_subtraction=False, savefig=False, sigma=3, pa
         viewing = 'sun'
 
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
-    filename = 'channels-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + '-' +viewing+ '-' + data_type.upper() 
+    filename = 'proton_channels-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + '-' +viewing+ '-' + data_type.upper() 
     
     if(df_info['Averaging'][0]=='Mean'):
 
@@ -1903,7 +1906,7 @@ def plot_spectrum_peak(args, species, bg_subtraction=True, savefig=False, path='
     else:
         viewing = f'-{direction}' 
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
-    filename = 'spectrum-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + viewing+ '-' + data_type.upper() 
+    filename = f'{species}_spectrum-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + viewing+ '-' + data_type.upper() 
     
     if(df_info['Averaging'][0]=='Mean'):
 
@@ -2018,7 +2021,7 @@ def plot_spectrum_average(args, species, bg_subtraction=True, savefig=False, pat
     else:
         viewing = f'-{direction}' 
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
-    filename = 'spectrum-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper()  +viewing+ '-' + data_type.upper() 
+    filename = f'{species}_spectrum-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper()  +viewing+ '-' + data_type.upper() 
     
     if(df_info['Averaging'][0]=='Mean'):
 

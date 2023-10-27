@@ -1035,7 +1035,7 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
         viewing = 'sun'
 
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + date_string
-    filename = 'channels-' + file_date + '-' + instrument.upper() + '-' +viewing+ '-' + data_type.upper() 
+    filename = 'electron_channels-' + file_date + '-' + instrument.upper() + '-' +viewing+ '-' + data_type.upper() 
     
     if(df_info['Averaging'][0]=='Mean'):
 
@@ -1257,7 +1257,7 @@ def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key=''
         file_date = str(date)[:-3].replace(' ', '-').replace(':', '')
     
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + date_string
-    filename = 'spectrum-' + file_date + '-' + instrument.upper() + viewing+ '-' + data_type.upper() 
+    filename = 'electron_spectrum-' + file_date + '-' + instrument.upper() + viewing+ '-' + data_type.upper() 
     
     if(df_info['Averaging'][0]=='Mean'):
 
@@ -1387,7 +1387,7 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
     
 
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + date_string
-    filename = 'spectrum-' + file_date + '-' + instrument.upper()  +viewing+ '-' + data_type.upper() 
+    filename = 'electron_spectrum-' + file_date + '-' + instrument.upper()  +viewing+ '-' + data_type.upper() 
     
     if(df_info['Averaging'][0]=='Mean'):
 

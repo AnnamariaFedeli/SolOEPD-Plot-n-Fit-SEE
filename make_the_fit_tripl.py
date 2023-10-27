@@ -120,6 +120,7 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 	"""
 	#the function also checks if the break point is outside of the energy array (also the cutoff point)
 	#the min and max energies cannot be last and/or first points because it wouldn't be a physical result
+	#print(spec_e)
 
 	emin = spec_e[2]
 	emax = spec_e[len(spec_e)-3]
@@ -137,10 +138,10 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 
 	
 
-	print(spec_e)
+	#print(emin, emax)
 
 	if fit == 'best':
-		print('143 best')
+		#print('143 best')
 		result_triple = pl_fit.triple_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, gamma2 = gamma2, gamma3 = gamma3, c1 = c1, alpha = alpha, beta = beta, E_break_low = E_break_low, E_break_high = E_break_high, maxit=10000)
 		redchi_triple = result_triple.res_var
 		breakp_low    = result_triple.beta[6]	
@@ -455,8 +456,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	The best option checks between all the options and chooses between the three by checking the reduced chisqr.
 	Also when the broken or cut options are chosen, the function checks if the break or cutoff points are outside of the energy range.
 	In such case, a sigle pl will be fit to the data and the function will output that the breakpoint is outside of the energy range.''' 
-	print(spec_e)
-	print(spec_flux)
+	#print(spec_e)
+	#print(spec_flux)
 
 	if g2_guess is None:
 		g2_guess = g1_guess - 0.1
@@ -569,7 +570,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	
 # spec_e, spec_flux, e_err, flux_err, gamma1, gamma2, gamma3, c1, alpha, beta, E_break_low, E_break_high,  E_cut= None, fit = 'best',  maxit=10000, e_min=None, e_max=None):
 	if which_fit == 'best':
-		print('572 best')
+		#print('572 best')
 	#first check the redchi and if the break is outside of the energy range using the guess values then compare the random values to these 
 	#if redchi is better, substitute values
 		which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, beta = beta_guess, gamma1=g1_guess, gamma2=g2_guess, gamma3 = g3_guess, E_break_low=break_low_guess, E_break_high = break_high_guess, E_cut = cut_guess, fit = 'best', maxit=10000, e_min = e_min, e_max = e_max)
@@ -580,7 +581,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		result_final = which_fit_guess[2]
 
 		if use_random :
-			print('USING RANDOM BEST')
+			#print('USING RANDOM BEST')
 			for i in range(iterations):
 				#need [0] because it's an array
 				g1_random = np.random.choice(gamma1_array, 1)[0]
@@ -852,7 +853,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			redchi_final = redchi_guess
 		
 		if use_random :
-			print('USING RANDOM BROKEN')
+			#print('USING RANDOM BROKEN')
 			for i in range(iterations):
 				#need [0] because it's an array
 				g1_random = np.random.choice(gamma1_array, 1)[0]
@@ -946,7 +947,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	
 	result_dataframe = pd.DataFrame({"FInal fit type":which_fit_final}, index = [0])
 	result = result_final
-	print(which_fit_final)
+	#print(which_fit_final)
 	if which_fit_final == 'single':
 		#result_single_pl = pl_fit.power_law_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=gamma1_final, c1=c1_final)
 		result_single_pl = result_final
@@ -1158,9 +1159,11 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\delta_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2))#, lw=lwd)
 		if len(str(breakp_1*1e3).split('.')[0])>3:
 			ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b=}$ '+str(round(breakp_1, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err, ndigits=0))+' MeV')
+		if len(str(cut*1e3).split('.')[0])>3:
 			ax.axvline(x=cut, color='purple', linestyle='--', label=r'$\mathregular{E_c=}$ '+str(round(cut, ndigits=1))+'\n'+r"$\pm$"+str(round(cut_err, ndigits=0))+' MeV')
-		elif len(str(breakp_1*1e3).split('.')[0])<=3:
+		if len(str(breakp_1*1e3).split('.')[0])<=3:
 			ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b=}$ '+str(round(breakp_1*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err*1e3, ndigits=0))+' keV')
+		if len(str(cut*1e3).split('.')[0])<=3:
 			ax.axvline(x=cut, color='purple', linestyle='--', label=r'$\mathregular{E_c=}$ '+str(round(cut*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(cut_err*1e3, ndigits=0))+' keV')
 
 
@@ -1250,10 +1253,12 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\delta_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\delta_3=}$%5.2f' %round(gamma3, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma3_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2)+'\n'+r'$\mathregular{\beta=}$%5.2f' %round(beta, ndigits=2))#, lw=lwd)
 		if len(str(breakp_1*1e3).split('.')[0])>3:
 			ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b1=}$ '+str(round(breakp_1, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err, ndigits=0))+' MeV')
+		if len(str(breakp_2*1e3).split('.')[0])>3:
 			ax.axvline(x=breakp_2, color='purple', linestyle='--', label=r'$\mathregular{E_b2=}$ '+str(round(breakp_2, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_2_err, ndigits=0))+' MeV')
 
-		elif len(str(breakp_1*1e3).split('.')[0])<=3:
+		if len(str(breakp_1*1e3).split('.')[0])<=3:
 			ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b1=}$ '+str(round(breakp_1*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err*1e3, ndigits=0))+' keV')
+		if len(str(breakp_2*1e3).split('.')[0])<=3:
 			ax.axvline(x=breakp_2, color='purple', linestyle='--', label=r'$\mathregular{E_b2=}$ '+str(round(breakp_2*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_2_err*1e3, ndigits=0))+' keV')
 
 		result_dataframe["Reduced chi sq"] = redchi_triple
@@ -1274,7 +1279,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		result_dataframe["Alpha"] = alpha
 		result_dataframe["Beta"] = beta
 		
-		print('WHICH FIT   '+which_fit)
+		#print('WHICH FIT   '+which_fit)
 
 	
 

@@ -197,11 +197,11 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		first_het_data = comb.first_het_chan(het_data)
 		het_data = comb.delete_bad_data(het_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
 		
-	if e_min is None:
-		e_min = min(data['Primary_energy'])
+	#if e_min is None:
+	#	e_min = min(data['Primary_energy'])
 
-	if e_max is None:
-		e_max = max(data['Primary_energy'])
+	#if e_max is None:
+	#	e_max = max(data['Primary_energy'])
 	#-------------------------------------------------------------------------------------------------------------------------------------------------
 	color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
 
@@ -418,6 +418,86 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 			spec_flux_first_het  = first_het_data['Flux_'+fit_to]
 			flux_err_first_het   = first_het_data['Peak_electron_uncertainty']
 
+
+
+	# energy fixed
+	min_energy = ''
+	max_energy = ''
+
+	if fit_type == 'step':
+		if e_min is None:
+			min_energy = min(spec_energy_step)
+
+		if e_max is None:
+			max_energy = max(spec_energy_step)
+
+	if fit_type == 'ept':
+		if e_min is None:
+			min_energy = min(spec_energy_ept)
+
+		if e_max is None:
+			max_energy = max(spec_energy_ept)
+
+	if fit_type == 'het':
+		if e_min is None:
+			min_energy = min(spec_energy_het)
+
+		if e_max is None:
+			max_energy = max(spec_energy_het)
+
+	if fit_type == 'step_ept':
+		if e_min is None:
+			min_energy = min(spec_energy_step_ept)
+
+		if e_max is None:
+			max_energy = max(spec_energy_step_ept)
+
+	if fit_type == 'ept_het':
+		if e_min is None:
+			min_energy = min(spec_energy_ept_het)
+
+		if e_max is None:
+			max_energy = max(spec_energy_ept_het)
+
+	if fit_type == 'step_ept_het':
+		if e_min is None:
+			min_energy = min(spec_energy)
+
+		if e_max is None:
+			max_energy = max(spec_energy)
+
+
+
+
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------
+	color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
+	
+	# quick change for sec resolution, change later
+	# if av < 1.:
+	# 	averaging = av_string
+
+
+	pickle_path = None
+	if save_pickle:
+		pickle_path = path+folder_time+'-pickle_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.p'
+
+	fit_var_path = None
+	if save_fit_variables:
+		fit_var_path = path+folder_time+'-fit-result-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
+
+	fitrun_path = None
+	if save_fitrun:
+		fitrun_path = path+folder_time+'-all-fit-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
+		
+		save.save_info_fit(fitrun_path, date_string, averaging, direction, data_product, dist, step, ept, het,
+		sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, shift_factor, fit_type, fit_to,
+		which_fit, min_energy, max_energy, g1_guess, g2_guess, c1_guess, alpha_guess, break_guess_low, cut_guess,
+		use_random, iterations)
+	
+
+
+
 	
 	# <----------------------------------------------------------------------FIT AND PLOT------------------------------------------------------------------->
 
@@ -578,29 +658,29 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	if save_fig:
 		if make_fit:
 			if ion_correction and not bg_subtraction:
-				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr'+pix, dpi=300)
 			if not ion_correction and  bg_subtraction:
-				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-bg_sub'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-bg_sub'+pix, dpi=300)
 			if ion_correction and bg_subtraction:
-				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr-bg_sub'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr-bg_sub'+pix, dpi=300)
 			else:
-				plt.savefig(plot_path+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+pix, dpi=300)
 			
 		if make_fit is False:
 			if step and ept and het:
-				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_ept_het'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-step_ept_het'+pix, dpi=300)
 			if step and ept and het is False:
-				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_ept'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-step_ept'+pix, dpi=300)
 			if step and het and ept is False:
-				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step_het'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-step_het'+pix, dpi=300)
 			if step and ept is False and het is False:
-				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-step'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-step'+pix, dpi=300)
 			if ept and het and step is False:
-				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-ept_het'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-ept_het'+pix, dpi=300)
 			if ept and step is False and het is False:
-				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-ept'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-ept'+pix, dpi=300)
 			if het and ept is False and step is False:
-				plt.savefig(plot_path+date_string+'-'+averaging+'-no_fit-het'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-het'+pix, dpi=300)
 			
 			
 
