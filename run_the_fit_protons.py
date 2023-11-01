@@ -495,6 +495,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	# <----------------------------------------------------------------------FIT AND PLOT------------------------------------------------------------------->
 
 	f, ax = plt.subplots(1, figsize=(8, 6), dpi = 200)
+	
 
 	#distance  = ''
 	distance = f' (R={dist} au)'

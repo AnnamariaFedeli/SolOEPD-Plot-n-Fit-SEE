@@ -20,9 +20,10 @@ def combine_data(data_name_list, path, sigma = 3, rel_err = 0.5, frac_nan_thresh
 	rows_to_delete = combined_csv.index[combined_csv[fit_to+'_significance'] <sigma].tolist()
 	combined_csv = combined_csv.drop(rows_to_delete, axis = 0)
 	combined_csv.reset_index(drop=True, inplace=True)
-	rows_to_delete = combined_csv.index[combined_csv['rel_backsub_peak_err']> rel_err].tolist()
-	combined_csv = combined_csv.drop(rows_to_delete, axis = 0)
-	combined_csv.reset_index(drop=True, inplace=True)
+	if rel_err is not None:
+		rows_to_delete = combined_csv.index[combined_csv['rel_backsub_peak_err']> rel_err].tolist()
+		combined_csv = combined_csv.drop(rows_to_delete, axis = 0)
+		combined_csv.reset_index(drop=True, inplace=True)
 	rows_to_delete = combined_csv.index[combined_csv['frac_nonan']<frac_nan_threshold].tolist()
 	combined_csv = combined_csv.drop(rows_to_delete, axis = 0)
 	combined_csv = combined_csv.sort_values('Primary_energy')
