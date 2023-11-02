@@ -191,8 +191,8 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 
 		smallest_value = list(sorted_chis.keys())[0]
 
-		print(sorted_chis)
-		print(smallest_value)
+		#print(sorted_chis)
+		#print(smallest_value)
 
 
 
@@ -480,7 +480,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	In such case, a sigle pl will be fit to the data and the function will output that the breakpoint is outside of the energy range.''' 
 	#print(spec_e)
 	#print(spec_flux)
-
+	# CHANGE GUESS VALYES OF GAMMA1
 	if g2_guess is None:
 		g2_guess = g1_guess - 0.1
 
@@ -609,7 +609,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 				g1_random = np.random.choice(gamma1_array, 1)[0]
 				g2_random = np.random.choice(gamma2_array, 1)[0] 
 				g3_random = np.random.choice(gamma3_array, 1)[0]
-
+# POSSIBLE ISSUES
 				gammas = [g1_random, g2_random, g3_random]
 				gammas.sort()
 				g1_random = gammas[0]
@@ -631,7 +631,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 				#print(which_fit_random)
 				#while which_fit_random is None:
 				#	which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, beta = beta_random, gamma1=g1_random, gamma2=g2_random, gamma3 = g3_random, E_break_low=break_low_random, E_break_high = break_high_random, E_cut = cut_random, maxit=10000, e_min = e_min, e_max = e_max)
-				print(which_fit_random is None)
+				#print(which_fit_random is None)
 				if which_fit_random is None:
 					break
 				redchi_random = which_fit_random[1]
