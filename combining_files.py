@@ -5,6 +5,17 @@ import pandas as pd
 
 
 def combine_data(data_name_list, path, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, leave_out_1st_het_chan = False, fit_to = 'Peak'):
+	"""_summary_
+
+	Args:
+		data_name_list (_type_): _description_
+		path (_type_): _description_
+		sigma (int, optional): _description_. Defaults to 3.
+		rel_err (float, optional): _description_. Defaults to 0.5.
+		frac_nan_threshold (float, optional): _description_. Defaults to 0.9.
+		leave_out_1st_het_chan (bool, optional): _description_. Defaults to False.
+		fit_to (str, optional): _description_. Defaults to 'Peak'.
+	"""
 	#print(data_name_list)
 	if leave_out_1st_het_chan and len(data_name_list)>2:
 		het = data_name_list[-1]
@@ -34,6 +45,14 @@ def combine_data(data_name_list, path, sigma = 3, rel_err = 0.5, frac_nan_thresh
 	return(combined_csv)
 
 def low_sigma_threshold(data_name_list, sigma = 3, leave_out_1st_het_chan = False, fit_to = 'Peak'):
+	"""_summary_
+
+	Args:
+		data_name_list (_type_): _description_
+		sigma (int, optional): _description_. Defaults to 3.
+		leave_out_1st_het_chan (bool, optional): _description_. Defaults to False.
+		fit_to (str, optional): _description_. Defaults to 'Peak'.
+	"""
 	combined_csv = pd.concat(data_name_list)
 	combined_csv.reset_index(drop=True, inplace=True)
 	combined_csv = combined_csv.drop(columns = 'Energy_channel')
@@ -53,6 +72,13 @@ def low_sigma_threshold(data_name_list, sigma = 3, leave_out_1st_het_chan = Fals
 	return(combined_csv)
 
 def too_many_nans(data_name_list, frac_nan_threshold = 0.9, leave_out_1st_het_chan = False):
+	"""_summary_
+
+	Args:
+		data_name_list (_type_): _description_
+		frac_nan_threshold (float, optional): _description_. Defaults to 0.9.
+		leave_out_1st_het_chan (bool, optional): _description_. Defaults to False.
+	"""
 	combined_csv = pd.concat(data_name_list)
 	combined_csv.reset_index(drop=True, inplace=True)
 	combined_csv = combined_csv.drop(columns = 'Energy_channel')
@@ -72,6 +98,13 @@ def too_many_nans(data_name_list, frac_nan_threshold = 0.9, leave_out_1st_het_ch
 	return(combined_csv)
 
 def high_rel_err(data_name_list, rel_err = 0.5, leave_out_1st_het_chan = False):
+	"""_summary_
+
+	Args:
+		data_name_list (_type_): _description_
+		rel_err (float, optional): _description_. Defaults to 0.5.
+		leave_out_1st_het_chan (bool, optional): _description_. Defaults to False.
+	"""
 	combined_csv = pd.concat(data_name_list)
 	combined_csv.reset_index(drop=True, inplace=True)
 	combined_csv = combined_csv.drop(columns = 'Energy_channel')
@@ -91,6 +124,16 @@ def high_rel_err(data_name_list, rel_err = 0.5, leave_out_1st_het_chan = False):
 	return(combined_csv)
 	
 def delete_bad_data(data, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, leave_out_1st_het_chan = False, fit_to = 'Peak'):
+	"""_summary_
+
+	Args:
+		data (_type_): _description_
+		sigma (int, optional): _description_. Defaults to 3.
+		rel_err (float, optional): _description_. Defaults to 0.5.
+		frac_nan_threshold (float, optional): _description_. Defaults to 0.9.
+		leave_out_1st_het_chan (bool, optional): _description_. Defaults to False.
+		fit_to (str, optional): _description_. Defaults to 'Peak'.
+	"""
 	data = data.drop(columns = 'Energy_channel')
 	rows_to_delete = data.index[data[fit_to+'_significance'] <sigma].tolist()
 	data = data.drop(rows_to_delete, axis = 0)
@@ -111,13 +154,23 @@ def delete_bad_data(data, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, le
 	
 
 def first_het_chan(data):
+	"""_summary_
+
+	Args:
+		data (_type_): _description_
+	"""
 	first_het = data.index[data['Primary_energy']> 0.7].tolist()
 	data = data.drop(first_het, axis = 0)
 	data.reset_index(drop=True, inplace=True)
 	return(data)
 
 def combine_data_general(data_name_list, path):
-	
+	"""_summary_
+
+	Args:
+		data_name_list (_type_): _description_
+		path (_type_): _description_
+	"""
 	combined_csv = pd.concat(data_name_list)
 	combined_csv.reset_index(drop=True, inplace=True)
 	#combined_csv = combined_csv.drop(columns = 'Energy_channel')

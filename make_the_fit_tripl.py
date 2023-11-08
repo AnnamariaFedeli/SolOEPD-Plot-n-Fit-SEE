@@ -1034,7 +1034,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		errors     = t_val * result_broken.sd_beta  #np.sqrt(np.diag(result_broken.cov_beta))
 		breakp_1_err = errors[4]
 		c1         = result_broken.beta[0]
-
+# NINA SAID THERE IS AN ISSUE HERE. THE CODE BREAKS SOMEHOW.gamma1 is not found. 02.11.23
 		if alpha > 0 :
 			gamma1     = result_broken.beta[1]
 			gamma1_err = errors[1]
@@ -1055,7 +1055,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		#	gamma2 = gamma_temp
 		#	gamma2_err = gamma_temp_err
 			
-			
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! result broken seems to be empty sometimes and it causes the fit to crash
 		fit_plot = pl_fit.broken_pl_func(result_broken.beta, xplot)
 		fit_plot[fit_plot == 0] = np.nan
 
