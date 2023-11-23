@@ -1282,11 +1282,14 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\delta_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\delta_3=}$%5.2f' %round(gamma3, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma3_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2)+'\n'+r'$\mathregular{\beta=}$%5.2f' %round(beta, ndigits=2))#, lw=lwd)
 		if len(str(breakp_1*1e3).split('.')[0])>3:
 			ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b1=}$ '+str(round(breakp_1, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err, ndigits=0))+' MeV')
+		
+		if len(str(breakp_1*1e3).split('.')[0])<=3:
+			ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b1=}$ '+str(round(breakp_1*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err*1e3, ndigits=0))+' keV')
+		
+		
 		if len(str(breakp_2*1e3).split('.')[0])>3:
 			ax.axvline(x=breakp_2, color='purple', linestyle='--', label=r'$\mathregular{E_b2=}$ '+str(round(breakp_2, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_2_err, ndigits=0))+' MeV')
 
-		if len(str(breakp_1*1e3).split('.')[0])<=3:
-			ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b1=}$ '+str(round(breakp_1*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err*1e3, ndigits=0))+' keV')
 		if len(str(breakp_2*1e3).split('.')[0])<=3:
 			ax.axvline(x=breakp_2, color='purple', linestyle='--', label=r'$\mathregular{E_b2=}$ '+str(round(breakp_2*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_2_err*1e3, ndigits=0))+' keV')
 
