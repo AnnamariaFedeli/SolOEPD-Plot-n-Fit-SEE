@@ -12,6 +12,38 @@ from datetime import *
 import os
 import shutil
 # <--------------------------------------------------------------- ALL NECESSARY INPUTS HERE ----------------------------------------------------------------->
+def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_threshold, fit_to):
+	"""_summary_
+
+	Args:
+		step_data (_type_): _description_
+		ept_data (_type_): _description_
+		sigma (_type_): _description_
+		rel_err (_type_): _description_
+		frac_nan_threshold (_type_): _description_
+		fit_to (_type_): _description_
+	"""
+	bad_step_data = step_data.index[step_data['Primary_energy'] <0.037 or step_data['Primary_energy']>0.077].tolist()
+	data_step = step_data.drop(bad_step_data, axis = 0)
+	data_step.reset_index(drop=True, inplace=True)
+
+	data_step = comb.combine_data([data_step], path = None, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = False, fit_to = fit_to)
+
+	bad_ept_data = ept_data.index[ept_data['Primary_energy'] <0.037 or ept_data['Primary_energy']>0.077].tolist()
+	data_ept = ept_data.drop(bad_ept_data, axis = 0)
+	data_ept.reset_index(drop=True, inplace=True)
+
+	data_ept = comb.combine_data([data_ept], path = None, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = False, fit_to = fit_to)
+
+	if len(data_step) < 5 or len(data_ept) <5:
+		print('There are too few energy channels to do a comparison and find a shift factor. If you still want to shift STEP data, please set automatic_shift to False and provide a shift_factor.')
+		return(1)
+	else:
+		step_intensity_average = data_step['Flux_'+fit_to].mean()
+		ept_intensity_average = data_ept['Flux_'+fit_to].mean()
+		shift_factor = step_intensity_average/ept_intensity_average
+		return(shift_factor)
+	
 
 def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run_var_file):
 	"""_summary_
@@ -34,7 +66,7 @@ def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run
 	shutil.copy(newpath+run_var_file, runvariables+run_var_file)
 
 	
-def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False):
+def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False):
 
 	     # slope (float, optional): The type of slope used to find the peak (for the title). Defaults to None.
 		 # #slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True):
@@ -153,20 +185,39 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	# <---------------------------------------------------------------LOADING AND SAVING FILES------------------------------------------------------------------->
 
 	#print(path_to_file+step_file_name)
+
 	data_list = []
-	if step :
+	
+	#SHIFTING DATA 
+	if step:
 		step_data = pd.read_csv(path+step_file_name, sep = separator)
-		if shift_step_data:
-			step_data['Bg_subtracted_'+fit_to] = shift_factor*step_data['Bg_subtracted_'+fit_to]
-			step_data['Flux_'+fit_to] = shift_factor*step_data['Flux_'+fit_to]
+		if ept:
+			ept_data = pd.read_csv(path+ept_file_name, sep = separator)
+
+			if shift_step_data:
+				step_shift_factor = 1
+				if auto_shift:
+					step_shift_factor = calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_threshold, fit_to)
+				else:
+					step_shift_factor = shift_factor
+				print('SHIFT FACTOR:  '+step_shift_factor)
+				step_data['Bg_subtracted_'+fit_to] = step_data['Bg_subtracted_'+fit_to]/step_shift_factor
+				step_data['Flux_'+fit_to] = step_data['Flux_'+fit_to]/step_shift_factor
+				step_data['Background_flux'] = step_data['Background_flux']/step_shift_factor
+
 		data_list.append(step_data)
-		
+
+
 	if ept :
 		ept_data = pd.read_csv(path+ept_file_name, sep = separator)
 		data_list.append(ept_data)
 	if het :
 		het_data = pd.read_csv(path+het_file_name, sep = separator)
 		data_list.append(het_data)
+
+
+
+
 
 	data = comb.combine_data(data_list, path+date_string+'-all-l2-'+direction+'-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
 	data = pd.read_csv(path+date_string+'-all-l2-'+direction+'-'+averaging+'.csv', sep = separator)

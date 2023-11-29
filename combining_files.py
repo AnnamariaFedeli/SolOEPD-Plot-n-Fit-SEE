@@ -4,7 +4,7 @@ import pandas as pd
 
 
 
-def combine_data(data_name_list, path, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, leave_out_1st_het_chan = False, fit_to = 'Peak'):
+def combine_data(data_name_list, path = None, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, leave_out_1st_het_chan = False, fit_to = 'Peak'):
 	"""_summary_
 
 	Args:
@@ -40,7 +40,8 @@ def combine_data(data_name_list, path, sigma = 3, rel_err = 0.5, frac_nan_thresh
 	combined_csv = combined_csv.sort_values('Primary_energy')
 	combined_csv.reset_index(drop=True, inplace=True)
 	
-	combined_csv.to_csv(path, sep = ';')
+	if path is not None:
+		combined_csv.to_csv(path, sep = ';')
 	
 	return(combined_csv)
 
@@ -179,3 +180,7 @@ def combine_data_general(data_name_list, path):
 	
 	return(combined_csv)
 	
+def quality_index(pa_coverage):
+	
+
+	return()
