@@ -67,7 +67,7 @@ def closest_values(array, value):
 	
 	
 	if len(array)<=10:
-		array_size = len(array)-1
+		array_size = len(array)
 		
 	if len(array)>10 and len(array)<= 20:
 		array_size = round(len(array)/2)
@@ -552,8 +552,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			b4_array = np.arange(10, e_max, 1)
 			break_array_low = np.hstack((b1_array, b2_array, b3_array, b4_array))
 		
-		break_array_high = break_array_low[2:]
-		cut_array = break_array_low[2:]
+		break_array_high = break_array_low[1:]
+		cut_array = break_array_low[1:]
 	
 		break_array_low = closest_values(break_array_low, break_low_guess)
 		break_array_high = closest_values(break_array_high, break_high_guess)

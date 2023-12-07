@@ -561,40 +561,48 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
 
     
     elif(instrument == 'step'):
+        # needs to be changed. Need to check if Electron_Sectors_Bins_Text is in df energies. If yes it's old data and if pix then energy channels is that 
+        # so check pix first. if pix then check for Electron_Sectors_Bins_Text and loop throught that for energies. If not then use the same block as if statement 
+        # below these comments.
+        old_new_data_string = ''
+        if 'Electron_Sectors_Bins_Text' in df_energies.keys() and centre_pix:
+            old_new_data_string = 'Electron_Sectors_'
+
         if(data_type == 'l2'):
-            e_low = df_energies['Bins_Low_Energy']
+           # if 'Electron_Sectors_Bins_Text' in df_energies.columns:
+             #   print('Using data before data product change!')
+            e_low = df_energies[old_new_data_string+'Bins_Low_Energy']
             e_high = []
 
-            channels = range(len(df_energies['Bins_Low_Energy']))
+            channels = range(len(df_energies[old_new_data_string+'Bins_Low_Energy']))
             for i in channels:
-                    e_high.append(e_low[i]+df_energies['Bins_Width'][i])
-                    
+                    e_high.append(e_low[i]+df_energies[old_new_data_string+'Bins_Width'][i])
 
     
-            if 'Electron_Avg_Flux_0' in df_electrons.columns:
-                df_electron_fluxes = pd.DataFrame()
-                df_electron_uncertainties = pd.DataFrame()
+            #if 'Electron_Avg_Flux_0' in df_electrons.columns:
+            df_electron_fluxes = pd.DataFrame()
+            df_electron_uncertainties = pd.DataFrame()
 
-                for i in channels:
-                    e_high.append(e_low[i]+df_energies['Bins_Width'][i])
+            for i in channels:
+                e_high.append(e_low[i]+df_energies[old_new_data_string+'Bins_Width'][i])
 
-                    if centre_pix:
-                        df_electron_fluxes['Electron_Flux_'+str(i)] = df_electrons['Electron_Comb_Flux_'+str(i)][plotstart:plotend]
-                        df_electron_uncertainties['Electron_Uncertainty_'+str(i)] = df_electrons['Electron_Comb_Uncertainty_'+str(i)][plotstart:plotend]
-
-
-                    else:
-                        df_electron_fluxes['Electron_Flux_'+str(i)] = df_electrons['Electron_Avg_Flux_'+str(i)][plotstart:plotend]
-                        df_electron_uncertainties['Electron_Uncertainty_'+str(i)] = df_electrons['Electron_Avg_Uncertainty_'+str(i)][plotstart:plotend]
+                if centre_pix:
+                    df_electron_fluxes['Electron_Flux_'+str(i)] = df_electrons['Electron_Comb_Flux_'+str(i)][plotstart:plotend]
+                    df_electron_uncertainties['Electron_Uncertainty_'+str(i)] = df_electrons['Electron_Comb_Uncertainty_'+str(i)][plotstart:plotend]
 
 
-            else:
+                else:
+                    df_electron_fluxes['Electron_Flux_'+str(i)] = df_electrons['Electron_Avg_Flux_'+str(i)][plotstart:plotend]
+                    df_electron_uncertainties['Electron_Uncertainty_'+str(i)] = df_electrons['Electron_Avg_Uncertainty_'+str(i)][plotstart:plotend]
+
+            # this can probaböy be removed now.
+           # else:
                 # check how the pix works for old events
-                step_data = make_step_electron_flux(df_electrons, mask_conta=masking)
+             #   step_data = make_step_electron_flux(df_electrons, mask_conta=masking)
                 
-                df_electron_fluxes = step_data[0][plotstart:plotend]
-                df_electron_uncertainties = step_data[1][plotstart:plotend]
-
+             #   df_electron_fluxes = step_data[0][plotstart:plotend]
+              #  df_electron_uncertainties = step_data[1][plotstart:plotend]
+#
 
 
         # Cleans up negative flux values in STEP data.
@@ -1088,7 +1096,11 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
         npanels = npanels + 1
 
     if sensor == 'step':
-        fsize = (20,60)
+        n_channels_step = len(args[1]['Energy_channel'])
+        if n_channels_step > 8:
+            fsize = (20,60)
+        else:
+            fsize = (20,24)
     if sensor == 'ept':
         fsize = (20,48)
     if sensor == 'het':

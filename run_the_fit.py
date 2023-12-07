@@ -23,25 +23,43 @@ def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_thresho
 		frac_nan_threshold (_type_): _description_
 		fit_to (_type_): _description_
 	"""
-	bad_step_data = step_data.index[step_data['Primary_energy'] <0.037 or step_data['Primary_energy']>0.077].tolist()
+	print(step_data['Primary_energy'])
+	fit = fit_to[0].upper()+fit_to[1:]
+	bad_step_data = step_data.index[step_data['Primary_energy'] <0.037 ].tolist()
 	data_step = step_data.drop(bad_step_data, axis = 0)
 	data_step.reset_index(drop=True, inplace=True)
+	print(bad_step_data)
 
-	data_step = comb.combine_data([data_step], path = None, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = False, fit_to = fit_to)
+	bad_step_data = data_step.index[data_step['Primary_energy']>0.057].tolist()
+	data_step = data_step.drop(bad_step_data, axis = 0)
+	data_step.reset_index(drop=True, inplace=True)
+	print(bad_step_data)
 
-	bad_ept_data = ept_data.index[ept_data['Primary_energy'] <0.037 or ept_data['Primary_energy']>0.077].tolist()
+	data_step = comb.combine_data([data_step], path = None, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = False, fit_to = fit)
+	print(data_step)
+
+	bad_ept_data = ept_data.index[ept_data['Primary_energy'] <0.037].tolist()
 	data_ept = ept_data.drop(bad_ept_data, axis = 0)
 	data_ept.reset_index(drop=True, inplace=True)
+	print(bad_ept_data)
 
-	data_ept = comb.combine_data([data_ept], path = None, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = False, fit_to = fit_to)
+	bad_ept_data = data_ept.index[data_ept['Primary_energy']>0.057].tolist()
+	data_ept = data_ept.drop(bad_ept_data, axis = 0)
+	data_ept.reset_index(drop=True, inplace=True)
+	print(bad_ept_data)
 
-	if len(data_step) < 5 or len(data_ept) <5:
+	data_ept = comb.combine_data([data_ept], path = None, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = False, fit_to = fit)
+
+	if len(data_step) < 4 or len(data_ept) <4 or data_step['Primary_energy'][len(data_step['Primary_energy'])-1]<data_ept['Primary_energy'][0]:
 		print('There are too few energy channels to do a comparison and find a shift factor. If you still want to shift STEP data, please set automatic_shift to False and provide a shift_factor.')
 		return(1)
 	else:
 		step_intensity_average = data_step['Flux_'+fit_to].mean()
 		ept_intensity_average = data_ept['Flux_'+fit_to].mean()
 		shift_factor = step_intensity_average/ept_intensity_average
+		print('STEP INTENSITY AVG '+ str(step_intensity_average))
+		print('EPT INTENSITY AVG '+ str(ept_intensity_average))
+		print(shift_factor)
 		return(shift_factor)
 	
 
@@ -200,7 +218,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 					step_shift_factor = calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_threshold, fit_to)
 				else:
 					step_shift_factor = shift_factor
-				print('SHIFT FACTOR:  '+step_shift_factor)
+				print('SHIFT FACTOR:  '+str(step_shift_factor))
 				step_data['Bg_subtracted_'+fit_to] = step_data['Bg_subtracted_'+fit_to]/step_shift_factor
 				step_data['Flux_'+fit_to] = step_data['Flux_'+fit_to]/step_shift_factor
 				step_data['Background_flux'] = step_data['Background_flux']/step_shift_factor
@@ -542,7 +560,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		fitrun_path = path+folder_time+'-all-fit-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
 		
 		save.save_info_fit(fitrun_path, date_string, averaging, direction, data_product, dist, step, ept, het,
-		sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, shift_factor, fit_type, fit_to,
+		sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, step_shift_factor, fit_type, fit_to,
 		which_fit, min_energy, max_energy, g1_guess, g2_guess, c1_guess, alpha_guess, break_guess_low, cut_guess,
 		use_random, iterations)
 	
@@ -568,6 +586,8 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 			ax.plot([], [], ' ', label="bg subtraction on")
 		else:
 			ax.plot([], [], ' ', label="bg subtraction off")
+		if shift_step_data:
+			ax.plot([], [], ' ', label="Shift factor (STEP) "+ str(step_shift_factor))
 
 
 	if make_fit:
