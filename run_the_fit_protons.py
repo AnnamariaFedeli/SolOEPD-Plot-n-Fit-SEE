@@ -31,6 +31,66 @@ import shutil
 #        shutil.copy(source, destination)
 #        print('copied', file_name)
 
+def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_threshold, fit_to):
+	"""_summary_
+
+	Args:
+		step_data (_type_): _description_
+		ept_data (_type_): _description_
+		sigma (_type_): _description_
+		rel_err (_type_): _description_
+		frac_nan_threshold (_type_): _description_
+		fit_to (_type_): _description_
+	"""
+
+	#print(step_data['Primary_energy'])
+	fit = fit_to[0].upper()+fit_to[1:]
+	bad_step_data = step_data.index[step_data['Primary_energy'] <0.037 ].tolist()
+	data_step = step_data.drop(bad_step_data, axis = 0)
+	data_step.reset_index(drop=True, inplace=True)
+	#print(bad_step_data)
+
+	bad_step_data = data_step.index[data_step['Primary_energy']>0.057].tolist()
+	data_step = data_step.drop(bad_step_data, axis = 0)
+	data_step.reset_index(drop=True, inplace=True)
+	#print(bad_step_data)
+
+	data_step = comb.combine_data([data_step], path = None, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = False, fit_to = fit)
+	#print(data_step)
+
+	n_step_chans = 0
+
+	if len(step_data['Primary_energy'])>8:
+		n_step_chans = 4
+
+
+	else:
+		n_step_chans = 1
+
+	bad_ept_data = ept_data.index[ept_data['Primary_energy'] <0.037].tolist()
+	data_ept = ept_data.drop(bad_ept_data, axis = 0)
+	data_ept.reset_index(drop=True, inplace=True)
+	#print(bad_ept_data)
+
+	bad_ept_data = data_ept.index[data_ept['Primary_energy']>0.057].tolist()
+	data_ept = data_ept.drop(bad_ept_data, axis = 0)
+	data_ept.reset_index(drop=True, inplace=True)
+	#print(bad_ept_data)
+
+	data_ept = comb.combine_data([data_ept], path = None, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = False, fit_to = fit)
+
+	if len(data_step) < n_step_chans or len(data_ept) <4 or data_step['Primary_energy'][len(data_step['Primary_energy'])-1]<data_ept['Primary_energy'][0]:
+		print('There are too few energy channels to do a comparison and find a shift factor. If you still want to shift STEP data, please set automatic_shift to False and provide a shift_factor.')
+		return(1)
+	else:
+		step_intensity_average = data_step['Flux_'+fit_to].mean()
+		ept_intensity_average = data_ept['Flux_'+fit_to].mean()
+		shift_factor = step_intensity_average/ept_intensity_average
+		print('STEP INTENSITY AVG '+ str(step_intensity_average))
+		print('EPT INTENSITY AVG '+ str(ept_intensity_average))
+		print(shift_factor)
+		return(shift_factor)
+
 def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run_var_file):
 	"""_summary_
 
@@ -52,7 +112,7 @@ def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run
 	shutil.copy(newpath+run_var_file, runvariables+run_var_file)
 
 	
-def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = False, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False):
+def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False,  shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False):
 
 	     # slope (float, optional): The type of slope used to find the peak (for the title). Defaults to None.
 		 # #slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True):
@@ -131,11 +191,9 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	else:
 		step_file_name = 'proton_data-'+date_string+'-STEP-'+direction+'-L2-'+averaging+'_averaging.csv'
 
-	ept_file_name = ''
-	if ion_correction:
-		ept_file_name = 'proton_data-'+date_string+'-EPT-' + direction+ '-L2-'+averaging+'_averaging.csv'
-	else:
-		ept_file_name = 'proton_data-'+date_string+'-EPT-' + direction+ '-L2-'+averaging+'_averaging.csv'
+	#ept_file_name = ''
+	#ept_file_name = 'proton_data-'+date_string+'-EPT-' + direction+ '-L2-'+averaging+'_averaging.csv'
+	ept_file_name = 'proton_data-'+date_string+'-EPT-' + direction+ '-L2-'+averaging+'_averaging.csv'
 
 	het_file_name = 'proton_data-'+date_string+'-HET-'+ direction+'-L2-'+averaging+'_averaging.csv'
 
@@ -167,11 +225,24 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 
 	#print(e_min, e_max)
 	data_list = []
-	if step :
+	
+	#SHIFTING DATA 
+	if step:
 		step_data = pd.read_csv(path+step_file_name, sep = separator)
-		if shift_step_data:
-			step_data['Bg_subtracted_'+fit_to] = shift_factor*step_data['Bg_subtracted_'+fit_to]
-			step_data['Flux_'+fit_to] = shift_factor*step_data['Flux_'+fit_to]
+		if ept:
+			ept_data = pd.read_csv(path+ept_file_name, sep = separator)
+
+			if shift_step_data:
+				step_shift_factor = 1
+				if auto_shift:
+					step_shift_factor = calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_threshold, fit_to)
+				else:
+					step_shift_factor = shift_factor
+				print('SHIFT FACTOR:  '+str(step_shift_factor))
+				step_data['Bg_subtracted_'+fit_to] = step_data['Bg_subtracted_'+fit_to]/step_shift_factor
+				step_data['Flux_'+fit_to] = step_data['Flux_'+fit_to]/step_shift_factor
+				step_data['Background_flux'] = step_data['Background_flux']/step_shift_factor
+
 		data_list.append(step_data)
 		
 	if ept :
@@ -485,7 +556,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		fitrun_path = path+folder_time+'-all-fit-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
 		
 		save.save_info_fit(fitrun_path, date_string, averaging, direction, data_product, dist, step, ept, het,
-		sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, shift_factor, fit_type, fit_to,
+		sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, step_shift_factor, fit_type, fit_to,
 		which_fit, min_energy, max_energy, g1_guess, g2_guess, c1_guess, alpha_guess, break_guess_low, cut_guess,
 		use_random, iterations)
 	
@@ -511,6 +582,8 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 			ax.plot([], [], ' ', label="bg subtraction on")
 		else:
 			ax.plot([], [], ' ', label="bg subtraction off")
+		if shift_step_data:
+			ax.plot([], [], ' ', label="Shift factor (STEP) "+ str(np.round(step_shift_factor,2)))
 
 
 	if make_fit:
@@ -648,14 +721,23 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	if centre_pix:
 		pix = '-centre_pix'
 
+	shift_string = ''
+	if shift_step_data:
+		if auto_shift:
+			shift_string = '-auto-step-shift_'+str(np.round(step_shift_factor,2)).replace('.', '_')
+		else:
+			shift_string = '-step-shift-hift_'+str(np.round(step_shift_factor,2)).replace('.', '_')
+
+	#shift_step_data = False, auto_shift = False, shift_factor = None
+
 	if save_fig:
 		if make_fit:
-			if ion_correction and not bg_subtraction:
-				plt.savefig(plot_path+'protons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr'+pix, dpi=300)
-			if not ion_correction and  bg_subtraction:
+			#if not bg_subtraction:
+			#	plt.savefig(plot_path+'protons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-'+pix, dpi=300)
+			if  bg_subtraction:
 				plt.savefig(plot_path+'protons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-bg_sub'+pix, dpi=300)
-			if ion_correction and bg_subtraction:
-				plt.savefig(plot_path+'protons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr-bg_sub'+pix, dpi=300)
+			#if ion_correction and bg_subtraction:
+				#plt.savefig(plot_path+'protons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr-bg_sub'+pix, dpi=300)
 			else:
 				plt.savefig(plot_path+'protons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+pix, dpi=300)
 			

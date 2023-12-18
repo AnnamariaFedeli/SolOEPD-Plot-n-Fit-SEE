@@ -23,34 +23,44 @@ def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_thresho
 		frac_nan_threshold (_type_): _description_
 		fit_to (_type_): _description_
 	"""
-	print(step_data['Primary_energy'])
+
+	#print(step_data['Primary_energy'])
 	fit = fit_to[0].upper()+fit_to[1:]
 	bad_step_data = step_data.index[step_data['Primary_energy'] <0.037 ].tolist()
 	data_step = step_data.drop(bad_step_data, axis = 0)
 	data_step.reset_index(drop=True, inplace=True)
-	print(bad_step_data)
+	#print(bad_step_data)
 
 	bad_step_data = data_step.index[data_step['Primary_energy']>0.057].tolist()
 	data_step = data_step.drop(bad_step_data, axis = 0)
 	data_step.reset_index(drop=True, inplace=True)
-	print(bad_step_data)
+	#print(bad_step_data)
 
 	data_step = comb.combine_data([data_step], path = None, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = False, fit_to = fit)
-	print(data_step)
+	#print(data_step)
+
+	n_step_chans = 0
+
+	if len(step_data['Primary_energy'])>8:
+		n_step_chans = 4
+
+
+	else:
+		n_step_chans = 1
 
 	bad_ept_data = ept_data.index[ept_data['Primary_energy'] <0.037].tolist()
 	data_ept = ept_data.drop(bad_ept_data, axis = 0)
 	data_ept.reset_index(drop=True, inplace=True)
-	print(bad_ept_data)
+	#print(bad_ept_data)
 
 	bad_ept_data = data_ept.index[data_ept['Primary_energy']>0.057].tolist()
 	data_ept = data_ept.drop(bad_ept_data, axis = 0)
 	data_ept.reset_index(drop=True, inplace=True)
-	print(bad_ept_data)
+	#print(bad_ept_data)
 
 	data_ept = comb.combine_data([data_ept], path = None, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = False, fit_to = fit)
 
-	if len(data_step) < 4 or len(data_ept) <4 or data_step['Primary_energy'][len(data_step['Primary_energy'])-1]<data_ept['Primary_energy'][0]:
+	if len(data_step) < n_step_chans or len(data_ept) <4 or data_step['Primary_energy'][len(data_step['Primary_energy'])-1]<data_ept['Primary_energy'][0]:
 		print('There are too few energy channels to do a comparison and find a shift factor. If you still want to shift STEP data, please set automatic_shift to False and provide a shift_factor.')
 		return(1)
 	else:
@@ -272,28 +282,31 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	#if e_max is None:
 	#	e_max = max(data['Primary_energy'])
 	#-------------------------------------------------------------------------------------------------------------------------------------------------
-	color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
+	#### SAME BLOCK LATER!!! UNCOMMENT IF FOR SOME REASON NOT WORKING
+	
+	
+	#color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
 
 	# quick change for sec resolution, change later
 	#if av < 1.:
 	#	averaging = av_string
 
-	pickle_path = None
-	if save_pickle:
-		pickle_path = path+folder_time+'-pickle_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.p'
+	#pickle_path = None
+	#if save_pickle:
+	#	pickle_path = path+folder_time+'-pickle_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.p'
 
-	fit_var_path = None
-	if save_fit_variables:
-		fit_var_path = path+folder_time+'-fit-result-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
+	#fit_var_path = None
+	#if save_fit_variables:
+	#	fit_var_path = path+folder_time+'-fit-result-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
 
-	fitrun_path = None
-	if save_fitrun:
-		fitrun_path = path+folder_time+'-all-fit-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
+	#fitrun_path = None
+	#if save_fitrun:
+	#	fitrun_path = path+folder_time+'-all-fit-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
 		
-		save.save_info_fit(fitrun_path, date_string, averaging, direction, data_product, dist, step, ept, het,
-		sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, shift_factor, fit_type, fit_to,
-		which_fit, e_min, e_max, g1_guess, g2_guess, c1_guess, alpha_guess, break_guess_low, cut_guess,
-		use_random, iterations)
+	#	save.save_info_fit(fitrun_path, date_string, averaging, direction, data_product, dist, step, ept, het,
+	#	sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, shift_factor, fit_type, fit_to,
+	#	which_fit, e_min, e_max, g1_guess, g2_guess, c1_guess, alpha_guess, break_guess_low, cut_guess,
+	#	use_random, iterations)
 
 
 
@@ -587,7 +600,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		else:
 			ax.plot([], [], ' ', label="bg subtraction off")
 		if shift_step_data:
-			ax.plot([], [], ' ', label="Shift factor (STEP) "+ str(step_shift_factor))
+			ax.plot([], [], ' ', label="Shift factor (STEP) "+ str(np.round(step_shift_factor,2)))
 
 
 	if make_fit:
@@ -726,32 +739,41 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	if centre_pix:
 		pix = '-centre_pix'
 
+	shift_string = ''
+	if shift_step_data:
+		if auto_shift:
+			shift_string = '-auto-step-shift_'+str(np.round(step_shift_factor,2)).replace('.', '_')
+		else:
+			shift_string = '-step-shift-hift_'+str(np.round(step_shift_factor,2)).replace('.', '_')
+
+	#shift_step_data = False, auto_shift = False, shift_factor = None
+
 	if save_fig:
 		if make_fit:
 			if ion_correction and not bg_subtraction:
-				plt.savefig(plot_path+'electrons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr'+pix+shift_string, dpi=300)
 			if not ion_correction and  bg_subtraction:
-				plt.savefig(plot_path+'electrons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-bg_sub'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-bg_sub'+pix+shift_string, dpi=300)
 			if ion_correction and bg_subtraction:
-				plt.savefig(plot_path+'electrons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr-bg_sub'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+'-ion_corr-bg_sub'+pix+shift_string, dpi=300)
 			else:
-				plt.savefig(plot_path+'electrons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+direction+'-'+averaging+'-'+which_fit+'-'+fit_type+'-'+fit_to+pix+shift_string, dpi=300)
 			
 		if make_fit is False:
 			if step and ept and het:
-				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-step_ept_het'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-step_ept_het'+pix+shift_string, dpi=300)
 			if step and ept and het is False:
-				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-step_ept'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-step_ept'+pix+shift_string, dpi=300)
 			if step and het and ept is False:
-				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-step_het'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-step_het'+pix+shift_string, dpi=300)
 			if step and ept is False and het is False:
-				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-step'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-step'+pix+shift_string, dpi=300)
 			if ept and het and step is False:
-				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-ept_het'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-ept_het'+pix+shift_string, dpi=300)
 			if ept and step is False and het is False:
-				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-ept'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-ept'+pix+shift_string, dpi=300)
 			if het and ept is False and step is False:
-				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-het'+pix, dpi=300)
+				plt.savefig(plot_path+'electrons-'+date_string+'-'+averaging+'-no_fit-het'+pix+shift_string, dpi=300)
 			
 			
 
