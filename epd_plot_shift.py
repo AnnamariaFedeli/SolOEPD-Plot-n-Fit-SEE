@@ -23,7 +23,6 @@ import os
 import re
 import seaborn as sns
 
-
 # Add folder for data and one for plots
 def create_new_path(path, date, threshold_folders = False, contamination_threshold = None, plots_n_data = True):
     """This function creates new folders to a given path based on different options.
