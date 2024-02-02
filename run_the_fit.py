@@ -215,7 +215,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	#print(path_to_file+step_file_name)
 
 	data_list = []
-	
+	step_shift_factor = shift_factor
 	#SHIFTING DATA 
 	if step:
 		step_data = pd.read_csv(path+step_file_name, sep = separator)

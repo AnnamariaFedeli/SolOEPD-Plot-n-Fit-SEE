@@ -21,6 +21,8 @@ from pandas.tseries.frequencies import to_offset
 from tqdm.auto import tqdm
 import os
 import re
+import seaborn as sns
+
 
 # Add folder for data and one for plots
 def create_new_path(path, date, threshold_folders = False, contamination_threshold = None, plots_n_data = True):
@@ -1502,6 +1504,156 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
 
     plt.show()
 
+
+def plot_some_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', frac_nan_threshold=0.9, rel_err_threshold=0.5, channels = [0,1,2,3,4], figsize_x = 15, figsize_y = 8, f_scale = 1, f_size = 12):
+    """Creates a timeseries plot showing the particle flux for each energy channel of
+        the instrument (STEP, EPT, HET). The timeseries plot shows also the peak window and
+        background window. The peak is marked with different color lines:
+        green: peak is ok
+        grey: too many nans in window
+        blue: low sigma
+        orange: high relative error
+
+    Args:
+        args : Output of the extract_data function. Incudes:
+                df_electron_fluxes: pandas DataFrame
+                df_info : pandas DataFrame. This data frame contains the spectrum data 
+                and all its metadata (which is saved to csv in the function write_to_csv())
+                [searchstart, searchend]: list of strings. The search window start and end times.
+                [e_low, e_high] : list of float. The lowest and highest energy corresponding to 
+                each energy channel.
+                [instrument, data_type] : list of strings.
+        bg_subtraction (bool, optional): Subtract bg from data. Defaults to False.
+        savefig (bool, optional): saving the timeseries plot. Defaults to False.
+        sigma (int, optional): sigma threshold value. Is used to check if the sigma value is 
+                high enough fro the data within the search-period interval. If not, the flux and 
+                uncertainty value of that energy channel are set to nan and therefore 
+                excluded from the spectrum. Defaults to 3.
+        path (str, optional): path to folder where the timeseries will be saved. Defaults to ''.
+        key (str, optional): _description_. Defaults to ''.
+        frac_nan_threshold (float, optional):  is used to to check if there is enough non-nan 
+                flux data points in the search-period interval. If not, the flux and 
+                uncertainty value of that energy channel are set to nan and therefore 
+                excluded from the spectrum. Defaults to 0.4.
+        rel_err_threshold (float, optional): is used to check that relative error is 
+                low enough in the search period interval. If not, the flux and 
+                uncertainty value of that energy channel are set to nan and therefore 
+                excluded from the spectrum. Defaults to 0.5.
+    """
+    
+    peak_sig = args[1]['Peak_significance']
+    rel_err = args[1]['rel_backsub_peak_err']
+    
+    #hours = mdates.HourLocator(interval = 1)
+    df_electron_fluxes = args[0]
+    df_info = args[1]
+    search_area = args[2]
+    energy_bin = args[3]
+    instrument = args[4][0]
+    data_type = args[4][1]
+
+    title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
+    filename = 'channels-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + '-' + data_type.upper() 
+    
+    if(df_info['Averaging'][0]=='Mean'):
+
+        title_string = title_string + ', ' + df_info['Averaging'][1].split()[2] + ' averaging'
+        filename = filename + '-' + df_info['Averaging'][1].split()[2] + '_averaging'
+
+    elif(df_info['Averaging'][0]=='No averaging'):
+
+        title_string = title_string + ', no averaging'
+        filename = filename + '-no_averaging'
+
+    if(bg_subtraction):
+        
+       title_string = title_string + ', bg subtraction on'
+       filename = filename + '-bg_subtr'
+
+    else:
+
+        title_string = title_string + ', bg subtraction off'
+    
+    if(instrument == 'ept'):
+        
+        if(df_info['Ion_contamination_correction'][0]):
+
+            title_string = title_string + ', ion correction on'
+            filename = filename + '-ion_corr'
+
+        elif(df_info['Ion_contamination_correction'][0]==False):
+
+            title_string = title_string + ', ion correction off'
+
+    # If background subtraction is enabled, subtracts bg_flux from all observations. If flux value is negative, changes it to NaN.
+    if(bg_subtraction == False):
+        pass
+    elif(bg_subtraction == True):
+        df_electron_fluxes = df_electron_fluxes.sub(df_info['Background_flux'].values, axis=1)
+        df_electron_fluxes[df_electron_fluxes<0] = np.NaN
+
+    # Plotting part.
+    # Initialized the main figure.
+    fig = plt.figure()
+    plt.xticks([],fontsize=12)
+    plt.yticks([],fontsize=12)
+    plt.ylabel("Flux \n [1/s cm$^2$ sr MeV] \n \n", size=f_size)
+    plt.xlabel("\n \n Time", size=f_size)
+    plt.title(title_string, size = f_size)
+ 
+
+    # Loop through selected energy channels and create a subplot for each.
+    n=1
+    for channel in channels:
+        sns.set_theme(style="white",font_scale = f_scale)
+        m = len(channels)
+
+        ax = fig.add_subplot(len(channels),1,n)
+        ax = df_electron_fluxes['Electron_Flux_{}'.format(df_info['Energy_channel'][channel])].plot(logy=True, figsize=(figsize_x,figsize_y), color='red', drawstyle='steps-mid')
+
+        plt.text(0.025,0.7, str(energy_bin[0][channel]) + " - " + str(energy_bin[1][channel]) + " MeV", transform=ax.transAxes, size=f_size)
+
+        # Search area vertical lines.
+        ax.axvline(search_area[0][channel], color='black')
+        ax.axvline(search_area[1][channel], color='black')
+        
+        
+        # Peak vertical line.
+        if df_info['Peak_timestamp'][channel] is not pd.NaT:
+            if  (rel_err[channel] > rel_err_threshold): # if the relative error too large, we exlcude the channel
+                ax.axvline(df_info['Peak_timestamp'][channel], linestyle=':', linewidth=4, color='orange')
+            if df_info['frac_nonan'][channel] < frac_nan_threshold:  # we only plot a line if the fraction of non-nan data points in the search interval is larger than frac_nan_threshold
+                ax.axvline(df_info['Peak_timestamp'][channel], linestyle='--', linewidth=3, color='gray')
+            if (peak_sig[channel] < sigma): # if the peak is not significant, we discard the energy channel
+                ax.axvline(df_info['Peak_timestamp'][channel], linestyle='-.', linewidth=2, color='blue')
+            if (peak_sig[channel] >= sigma) and (rel_err[channel] <= rel_err_threshold) and (df_info['frac_nonan'][channel] > frac_nan_threshold):
+                ax.axvline(df_info['Peak_timestamp'][channel], color='green')
+            
+        # Background measurement area.
+        ax.axvspan(df_info['Bg_start'][channel], df_info['Bg_end'][channel], color='gray', alpha=0.25)
+
+        ax.get_xaxis().set_visible(False)
+
+        if(n == len(channels)):
+
+            ax.get_xaxis().set_visible(True)
+
+        plt.xlabel("")
+        #ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
+        #ax.xaxis.set_minor_locator(hours)
+
+        n+=1
+
+    # Saves figure, if enabled.
+    if(path[len(path)-1] != '/'):
+
+        path = path + '/'
+
+    if(savefig):
+
+        plt.savefig(path + filename + str(key) +'.jpg', bbox_inches='tight')
+
+    plt.show()
 
 def write_to_csv(args, date, path='', key='', direction=None,  centre_pix = False):
     """_summary_
