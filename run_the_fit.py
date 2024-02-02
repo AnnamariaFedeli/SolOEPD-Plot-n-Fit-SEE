@@ -12,6 +12,35 @@ from datetime import *
 import os
 import shutil
 # <--------------------------------------------------------------- ALL NECESSARY INPUTS HERE ----------------------------------------------------------------->
+def quality_factor_PA_coverage(data_ept, coverage):
+	qf = 0
+	for j in range(0, len(data_ept)-1):
+		df = coverage['sun']
+		df = df.reset_index()
+		df = df.drop(np.where(df['EPOCH'] < data_ept[2][0][j])[0])
+		df.reset_index(drop = True, inplace = True)
+		df = df.drop(np.where(df['EPOCH'] > data_ept[2][1][j])[0])
+		df.reset_index(drop = True, inplace = True)
+		factors = []
+		for i in range(len(df)):
+			if df.center[i] >=165. or df.center[i]<=15.:
+				factors.append(100)
+			if (df.center[i]<165. and df.center[i] >=150) or (df.center[i]>15. and df.center[i] <=30):
+				factors.append(80)
+			if (df.center[i]<150. and df.center[i] >=135) or (df.center[i]>30. and df.center[i] <=45):
+				factors.append(60)
+			if (df.center[i]<135. and df.center[i] >=120) or (df.center[i]>45. and df.center[i] <=60):
+				factors.append(40)
+			if (df.center[i]<120. and df.center[i] >=105) or (df.center[i]>60. and df.center[i] <=75):
+				factors.append(20)
+			if df.center[i]<105. and df.center[i]>90.:
+				factors.append(1)
+				
+		qf = sum(factors)/len(factors)
+
+	return qf
+
+
 def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_threshold, fit_to):
 	"""_summary_
 
