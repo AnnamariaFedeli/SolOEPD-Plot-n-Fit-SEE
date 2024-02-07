@@ -51,27 +51,27 @@ def create_new_path(path, date, threshold_folders = False, contamination_thresho
 
         if plots_n_data:
             plots_path = nnewpath+'/plots'
+            data_path = nnewpath+'/data'
 
             if not os.path.exists(plots_path):
                 os.makedirs(plots_path)
                 print('Creating new directory  '+ plots_path)
-            #if not os.path.exists(data_path):
-             #   os.makedirs(data_path)
-              #  print('Creating new directory  '+ data_path)
+            if not os.path.exists(data_path):
+                os.makedirs(data_path)
+                print('Creating new directory  '+ data_path)
     else:
         if plots_n_data:
             plots_path = newpath+'/plots'
+            data_path = newpath+'/data'
             
             if not os.path.exists(plots_path):
                 os.makedirs(plots_path)
                 print('Creating new directory  '+ plots_path)
-            #if not os.path.exists(data_path):
-             #   os.makedirs(data_path)
-              #  print('Creating new directory  '+ data_path)
-
+            if not os.path.exists(data_path):
+                os.makedirs(data_path)
+                print('Creating new directory  '+ data_path)
             
-        
-
+            
 
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """

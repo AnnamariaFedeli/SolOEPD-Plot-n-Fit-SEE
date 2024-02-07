@@ -106,14 +106,14 @@ def triple_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, gamma3 = -3, c1=None,
 
 def cut_break_pl_func(p, x): #c1, gamma1, gamma2, alpha, E_break, E_cut
 
-	c1, gamma1, gamma2, alpha, E_break, E_cut = p
+	c1, gamma1, gamma2, alpha, E_break, E_cut, exponent = p
 	
-	y = c1*(x/0.1)**gamma1 * ((x**alpha + E_break**alpha)/(0.1**alpha+E_break**alpha))**((gamma2-gamma1)/alpha)*np.exp(-(x/E_cut)**2)
+	y = c1*(x/0.1)**gamma1 * ((x**alpha + E_break**alpha)/(0.1**alpha+E_break**alpha))**((gamma2-gamma1)/alpha)*np.exp(-(x/E_cut)**exponent)
 	
 	return y
 
 	
-def cut_break_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None, E_break=0.1, E_cut = 0.35, print_report=False, maxit=20):
+def cut_break_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None, E_break=0.1, E_cut = 0.35, exponent = 2, print_report=False, maxit=20):
 	c1 = y[4] if c1==None else c1
 	#c2 = y[-1]*1e-2 if c2==None else c2
 	alpha = 0.1 if alpha==None else alpha
@@ -123,7 +123,7 @@ def cut_break_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=Non
 	# Create a RealData object using our initiated data from above.
 	data = RealData(x, y, sx=xerr, sy=yerr)
 	# Set up ODR with the model and data.
-	odr = ODR(data, plmodel, beta0=[c1, gamma1, gamma2, alpha, E_break, E_cut], ifixb=[1,1,1,1,1,1], maxit = maxit)
+	odr = ODR(data, plmodel, beta0=[c1, gamma1, gamma2, alpha, E_break, E_cut, exponent], ifixb=[1,1,1,1,1,1,1], maxit = maxit)
 
 	# Run the regression.
 	result = odr.run()
@@ -135,14 +135,14 @@ def cut_break_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=Non
 	
 def cut_pl_func(p, x): #c1, gamma1, gamma2, alpha, E_break, E_cut
 
-	c1, gamma1, E_cut = p
+	c1, gamma1, E_cut, exponent = p
 	
-	y = c1*(x/0.1)**gamma1 *np.exp(-(x/E_cut)**2)
+	y = c1*(x/0.1)**gamma1 *np.exp(-(x/E_cut)**exponent)
 	
 	return y
 
 	
-def cut_pl_fit(x,y, xerr, yerr, gamma1=-1.8, c1=None, E_cut = 0.35, print_report=False, maxit=20):
+def cut_pl_fit(x,y, xerr, yerr, gamma1=-1.8, c1=None, E_cut = 0.35, exponent = 2, print_report=False, maxit=20):
 	c1 = y[4] if c1==None else c1
 	#c2 = y[-1]*1e-2 if c2==None else c2
 	#alpha = 0.1 if alpha==None else alpha
@@ -153,7 +153,7 @@ def cut_pl_fit(x,y, xerr, yerr, gamma1=-1.8, c1=None, E_cut = 0.35, print_report
 	data = RealData(x, y, sx=xerr, sy=yerr)
 	# Set up ODR with the model and data.
 	
-	odr = ODR(data, plmodel, beta0=[c1, gamma1, E_cut], ifixb=[1,1,1], maxit = maxit)
+	odr = ODR(data, plmodel, beta0=[c1, gamma1, E_cut, exponent], ifixb=[1,1,1,1], maxit = maxit)
 
 	# Run the regression.
 	result = odr.run()

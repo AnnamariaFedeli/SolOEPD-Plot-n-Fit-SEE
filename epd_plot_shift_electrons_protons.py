@@ -21,6 +21,8 @@ from pandas.tseries.frequencies import to_offset
 from tqdm.auto import tqdm
 import os
 import re
+import seaborn as sns
+
 
 # Add folder for data and one for plots
 def create_new_path(path, date, threshold_folders = False, contamination_threshold = None, plots_n_data = True):
@@ -49,23 +51,25 @@ def create_new_path(path, date, threshold_folders = False, contamination_thresho
 
         if plots_n_data:
             plots_path = nnewpath+'/plots'
+            data_path = nnewpath+'/data'
 
             if not os.path.exists(plots_path):
                 os.makedirs(plots_path)
                 print('Creating new directory  '+ plots_path)
-            #if not os.path.exists(data_path):
-             #   os.makedirs(data_path)
-              #  print('Creating new directory  '+ data_path)
+            if not os.path.exists(data_path):
+                os.makedirs(data_path)
+                print('Creating new directory  '+ data_path)
     else:
         if plots_n_data:
             plots_path = newpath+'/plots'
+            data_path = newpath+'/data'
             
             if not os.path.exists(plots_path):
                 os.makedirs(plots_path)
                 print('Creating new directory  '+ plots_path)
-            #if not os.path.exists(data_path):
-             #   os.makedirs(data_path)
-              #  print('Creating new directory  '+ data_path)
+            if not os.path.exists(data_path):
+                os.makedirs(data_path)
+                print('Creating new directory  '+ data_path)
 
             
         
@@ -552,49 +556,57 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
 
 
         elif(data_type == 'l2'):
+            channels = range(len(df_energies['Electron_Bins_Low_Energy']))
             e_low = df_energies['Electron_Bins_Low_Energy']
             e_high = []
-
-            channels = range(len(df_energies['Electron_Bins_Low_Energy']))
 
             for i in channels:
                 e_high.append(e_low[i]+df_energies['Electron_Bins_Width'][i])
 
     
     elif(instrument == 'step'):
+        # needs to be changed. Need to check if Electron_Sectors_Bins_Text is in df energies. If yes it's old data and if pix then energy channels is that 
+        # so check pix first. if pix then check for Electron_Sectors_Bins_Text and loop throught that for energies. If not then use the same block as if statement 
+        # below these comments.
+        old_new_data_string = ''
+        if 'Electron_Sectors_Bins_Text' in df_energies.keys() and centre_pix:
+            old_new_data_string = 'Electron_Sectors_'
+
         if(data_type == 'l2'):
-            e_low = df_energies['Bins_Low_Energy']
+           # if 'Electron_Sectors_Bins_Text' in df_energies.columns:
+             #   print('Using data before data product change!')
+            e_low = df_energies[old_new_data_string+'Bins_Low_Energy']
             e_high = []
 
-            channels = range(len(df_energies['Bins_Low_Energy']))
+            channels = range(len(df_energies[old_new_data_string+'Bins_Low_Energy']))
             for i in channels:
-                    e_high.append(e_low[i]+df_energies['Bins_Width'][i])
-                    
+                    e_high.append(e_low[i]+df_energies[old_new_data_string+'Bins_Width'][i])
 
     
-            if 'Electron_Avg_Flux_0' in df_electrons.columns:
-                df_electron_fluxes = pd.DataFrame()
-                df_electron_uncertainties = pd.DataFrame()
+            #if 'Electron_Avg_Flux_0' in df_electrons.columns:
+            df_electron_fluxes = pd.DataFrame()
+            df_electron_uncertainties = pd.DataFrame()
 
-                for i in channels:
-                    e_high.append(e_low[i]+df_energies['Bins_Width'][i])
+            for i in channels:
+                e_high.append(e_low[i]+df_energies[old_new_data_string+'Bins_Width'][i])
 
-                    if centre_pix:
-                        df_electron_fluxes['Electron_Flux_'+str(i)] = df_electrons['Electron_Comb_Flux_'+str(i)][plotstart:plotend]
-                        df_electron_uncertainties['Electron_Uncertainty_'+str(i)] = df_electrons['Electron_Comb_Uncertainty_'+str(i)][plotstart:plotend]
-
-
-                    else:
-                        df_electron_fluxes['Electron_Flux_'+str(i)] = df_electrons['Electron_Avg_Flux_'+str(i)][plotstart:plotend]
-                        df_electron_uncertainties['Electron_Uncertainty_'+str(i)] = df_electrons['Electron_Avg_Uncertainty_'+str(i)][plotstart:plotend]
+                if centre_pix:
+                    df_electron_fluxes['Electron_Flux_'+str(i)] = df_electrons['Electron_Comb_Flux_'+str(i)][plotstart:plotend]
+                    df_electron_uncertainties['Electron_Uncertainty_'+str(i)] = df_electrons['Electron_Comb_Uncertainty_'+str(i)][plotstart:plotend]
 
 
-            else:
-                step_data = make_step_electron_flux(df_electrons, mask_conta=masking)
+                else:
+                    df_electron_fluxes['Electron_Flux_'+str(i)] = df_electrons['Electron_Avg_Flux_'+str(i)][plotstart:plotend]
+                    df_electron_uncertainties['Electron_Uncertainty_'+str(i)] = df_electrons['Electron_Avg_Uncertainty_'+str(i)][plotstart:plotend]
+
+            # this can probaböy be removed now.
+           # else:
+                # check how the pix works for old events
+             #   step_data = make_step_electron_flux(df_electrons, mask_conta=masking)
                 
-                df_electron_fluxes = step_data[0][plotstart:plotend]
-                df_electron_uncertainties = step_data[1][plotstart:plotend]
-
+             #   df_electron_fluxes = step_data[0][plotstart:plotend]
+              #  df_electron_uncertainties = step_data[1][plotstart:plotend]
+#
 
 
         # Cleans up negative flux values in STEP data.
@@ -667,8 +679,8 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
     if(averaging is None):
         df_info['Averaging'] = ['No averaging']+['']*(len(channels)-1)
 
-    # elif(averaging_mode == 'rolling_window'):
-    #     df_info['Averaging'] = ['Rolling window', 'Window size = ' + str(averaging)] + ['']*(len(channels)-2)
+    #elif(averaging_mode == 'rolling_window'):
+     #   df_info['Averaging'] = ['Rolling window', 'Window size = ' + str(averaging)] + ['']*(len(channels)-2)
 
     elif(averaging is not None):
         df_info['Averaging'] = ['Mean', 'Resampled to ' + averaging] + ['']*(len(channels)-2)
@@ -837,7 +849,6 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         list_average_bg_uncertainties.append(average_bg_uncertainty)
 
         bg_std = df_electron_fluxes['Electron_Flux_{}'.format(channel)][bgstart[n]:bgend[n]].std()
-        
     
         list_bg_std.append(bg_std)
         
@@ -1490,11 +1501,23 @@ def plot_channels_electrons(args, bg_subtraction=False, savefig=False, sigma=3, 
     instrument = args[4][0]
     data_type = args[4][1]
 
+    date_string = ''
+    file_date = ''
+
+    if date is None:
+        date_string = str(df_info['Plot_period'][0][:-5])
+        file_date = str(df_info['Plot_period'][0][:-5])
+
+    else:
+        date_string = str(date)[:-3]
+        file_date = str(date)[:-3].replace(' ', '-').replace(':', '')
+    
+
     if viewing is None or sensor in ['STEP', 'step']:
         viewing = 'sun'
 
-    title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
-    filename = 'electron_channels-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + '-' +viewing+ '-' + data_type.upper() 
+    title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + date_string
+    filename = 'electron_channels-' + file_date + '-' + instrument.upper() + '-' +viewing+ '-' + data_type.upper() 
     
     if(df_info['Averaging'][0]=='Mean'):
 
@@ -1526,6 +1549,11 @@ def plot_channels_electrons(args, bg_subtraction=False, savefig=False, sigma=3, 
 
             title_string = title_string + ', ion correction off'
 
+    if instrument == 'step' and centre_pix:
+        filename = filename + '-centre_pix'
+        title_string = title_string + ', centre pix'
+
+
     # If background subtraction is enabled, subtracts bg_flux from all observations. If flux value is negative, changes it to NaN.
     if(bg_subtraction == False):
         pass
@@ -1542,7 +1570,11 @@ def plot_channels_electrons(args, bg_subtraction=False, savefig=False, sigma=3, 
         npanels = npanels + 1
 
     if sensor == 'step':
-        fsize = (20,60)
+        n_channels_step = len(args[1]['Energy_channel'])
+        if n_channels_step > 8:
+            fsize = (20,60)
+        else:
+            fsize = (20,24)
     if sensor == 'ept':
         fsize = (20,48)
     if sensor == 'het':
