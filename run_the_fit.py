@@ -12,10 +12,10 @@ from datetime import *
 import os
 import shutil
 # <--------------------------------------------------------------- ALL NECESSARY INPUTS HERE ----------------------------------------------------------------->
-def quality_factor_PA_coverage(data_ept, coverage):
+def quality_factor_PA_coverage(data_ept, coverage, direction = 'sun', angle = 180):
 	qf = 0
 	for j in range(0, len(data_ept)-1):
-		df = coverage['sun']
+		df = coverage[direction]
 		df = df.reset_index()
 		df = df.drop(np.where(df['EPOCH'] < data_ept[2][0][j])[0])
 		df.reset_index(drop = True, inplace = True)
@@ -23,18 +23,54 @@ def quality_factor_PA_coverage(data_ept, coverage):
 		df.reset_index(drop = True, inplace = True)
 		factors = []
 		for i in range(len(df)):
-			if df.center[i] >=165. or df.center[i]<=15.:
-				factors.append(100)
-			if (df.center[i]<165. and df.center[i] >=150) or (df.center[i]>15. and df.center[i] <=30):
-				factors.append(80)
-			if (df.center[i]<150. and df.center[i] >=135) or (df.center[i]>30. and df.center[i] <=45):
-				factors.append(60)
-			if (df.center[i]<135. and df.center[i] >=120) or (df.center[i]>45. and df.center[i] <=60):
-				factors.append(40)
-			if (df.center[i]<120. and df.center[i] >=105) or (df.center[i]>60. and df.center[i] <=75):
-				factors.append(20)
-			if df.center[i]<105. and df.center[i]>90.:
-				factors.append(1)
+			r = df.center[i]
+			if angle == 180:
+				if r >=165.:
+					factors.append(100)
+				if r<165. and r >=155:
+					factors.append(90)
+				if r<155. and r >=145:
+					factors.append(80)
+				if r<145. and r >=135:
+					factors.append(70)
+				if r<135. and r >=125:
+					factors.append(60)
+				if r<125. and r>=115.:
+					factors.append(50)
+				if r<115. and r>=105.:
+					factors.append(40)
+				if r<105. and r>=90.:
+					factors.append(30)
+				if r<90. and r>=70.:
+					factors.append(20)
+				if r<70. and r>=45.:
+					factors.append(10)
+				if r<45.:
+					factors.append(1)
+
+			if angle == 0:
+				if r <=15.:
+					factors.append(100)
+				if r<25. and r >=15:
+					factors.append(90)
+				if r<35. and r >=25:
+					factors.append(80)
+				if r<45. and r >=35:
+					factors.append(70)
+				if r<55. and r >=45:
+					factors.append(60)
+				if r<65. and r>=55.:
+					factors.append(50)
+				if r<75. and r>=65.:
+					factors.append(40)
+				if r<90. and r>=75.:
+					factors.append(30)
+				if r<110. and r>=90.:
+					factors.append(20)
+				if r<135. and r>=110.:
+					factors.append(10)
+				if r>135.:
+					factors.append(1)
 				
 		qf = sum(factors)/len(factors)
 
