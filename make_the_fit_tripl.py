@@ -96,7 +96,7 @@ def closest_values(array, value):
 	return(closest_values_array)
 
 	
-def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, gamma3 = -4, c1 = 1000, alpha = 10, beta = 10, E_break_low = 0.06, E_break_high = 0.1,  E_cut= None, fit = 'best',  maxit=10000, e_min=None, e_max=None):
+def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, gamma3 = -4, c1 = 1000, alpha = 10, beta = 10, E_break_low = 0.06, E_break_high = 0.1,  E_cut= None, exponent = 2, fit = 'best',  maxit=10000, e_min=None, e_max=None):
 	"""_summary_
 
 	Args:
@@ -153,16 +153,18 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 			gamma1     = result_triple.beta[2]
 
 	
-		result_cut_break = pl_fit.cut_break_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=gamma1, gamma2=gamma2, c1=c1, alpha=alpha, E_break=E_break_low, E_cut = E_cut, print_report=False, maxit=10000)
+		result_cut_break = pl_fit.cut_break_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=gamma1, gamma2=gamma2, c1=c1, alpha=alpha, E_break=E_break_low, E_cut = E_cut, exponent = exponent, print_report=False, maxit=10000)
 		redchi_cut_break = result_cut_break.res_var
 		breakp_cut = result_cut_break.beta[4]
 		cut_b = result_cut_break.beta[5]
 		difference_cut = np.abs(breakp_cut-cut_b)
+		exponent_cut_break = result_cut_break.beta[6]
 
 
-		result_cut = pl_fit.cut_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, c1 = c1, E_cut = E_cut, maxit=10000)
+		result_cut = pl_fit.cut_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, c1 = c1, E_cut = E_cut, exponent = exponent, maxit=10000)
 		redchi_cut= result_cut.res_var
 		cut        = result_cut.beta[2]	#shoud maybe make distinction between cut from cut pl and cut from cut broken pl
+		exponent_cut = result_cut.beta[3]
 
 		result_broken = pl_fit.broken_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, gamma2 = gamma2, c1 = c1, alpha = alpha, E_break = E_break_low, maxit=10000)
 		redchi_broken = result_broken.res_var
@@ -174,6 +176,10 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 
 		chis = {"triple":redchi_triple, "broken_cut":redchi_cut_break, "cut":redchi_cut, "broken":redchi_broken, "single":redchi_single}
 		sorted_chis = dict(sorted(chis.items(), key=lambda x: x[1], reverse=False))
+		if exponent_cut == 0:
+			sorted_chis.pop("cut")
+		if exponent_cut_break == 0:
+			sorted_chis.pop("broken_cut")
 		#smallest_value = list(sorted_chis.keys())[0]
 		#print(sorted_chis)
 		#print('Smallest chis value ' + smallest_value)
@@ -318,7 +324,7 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 
 			
 	if fit == 'broken_cut':
-		result_cut_break = pl_fit.cut_break_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=gamma1, gamma2=gamma2, c1=c1, alpha=alpha, E_break=E_break_low, E_cut = E_cut, print_report=False, maxit=10000)
+		result_cut_break = pl_fit.cut_break_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=gamma1, gamma2=gamma2, c1=c1, alpha=alpha, E_break=E_break_low, E_cut = E_cut, exponent = exponent, print_report=False, maxit=10000)
 		redchi_cut_break = result_cut_break.res_var
 		breakp_cut = result_cut_break.beta[4]
 		#The cut of the break + cutoff
@@ -373,7 +379,7 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 			return([which_fit, redchi, result])
 
 	if fit == 'best_cb':
-		result_cut = pl_fit.cut_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, c1 = c1, E_cut = E_cut, maxit=10000)
+		result_cut = pl_fit.cut_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, c1 = c1, E_cut = E_cut, exponent = exponent, maxit=10000)
 		redchi_cut= result_cut.res_var
 		cut        = result_cut.beta[2]	#shoud maybe make distinction between cut from cut pl and cut from cut broken pl
 
@@ -401,7 +407,7 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 	
 	
 	if fit == 'cut':
-		result_cut = pl_fit.cut_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, c1 = c1, E_cut = E_cut, maxit=10000)
+		result_cut = pl_fit.cut_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = gamma1, c1 = c1, E_cut = E_cut,exponent = exponent, maxit=10000)
 		redchi_cut= result_broken.res_var
 		cut        = result_cut.beta[2]	#shoud maybe make distinction between cut from cut pl and cut from cut broken pl
 		if cut < emin or cut > emax:
@@ -472,7 +478,7 @@ def find_c1(spec_e, spec_flux, e_min, e_max):
 	
 	
 
-def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_fit='best', e_min=None, e_max=None, g1_guess=-2., g2_guess=None, g3_guess=None, alpha_guess=5., beta_guess = 5,  break_low_guess=0.065, break_high_guess=0.12, cut_guess = 0.12, c1_guess=None, use_random = False, iterations = 10, path = None, path2 = None, detailed_legend = False):
+def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_fit='best', e_min=None, e_max=None, g1_guess=-2., g2_guess=None, g3_guess=None, alpha_guess=5., beta_guess = 5,  break_low_guess=0.065, break_high_guess=0.12, cut_guess = 0.12, c1_guess=None, exponent_guess = 2, use_random = False, iterations = 10, path = None, path2 = None, detailed_legend = False):
 	'''This function fit the data to a single, double or break+cut power law. 
 	The fit type can be chosen between: single,double, cut or best. 
 	The best option checks between all the options and chooses between the three by checking the reduced chisqr.
@@ -480,7 +486,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	In such case, a sigle pl will be fit to the data and the function will output that the breakpoint is outside of the energy range.''' 
 	#print(spec_e)
 	#print(spec_flux)
-	# CHANGE GUESS VALYES OF GAMMA1
+	# CHANGE GUESS VALUES OF GAMMA1
 	if g2_guess is None:
 		g2_guess = g1_guess - 0.1
 
@@ -595,7 +601,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		#print('572 best')
 	#first check the redchi and if the break is outside of the energy range using the guess values then compare the random values to these 
 	#if redchi is better, substitute values
-		which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, beta = beta_guess, gamma1=g1_guess, gamma2=g2_guess, gamma3 = g3_guess, E_break_low=break_low_guess, E_break_high = break_high_guess, E_cut = cut_guess, fit = 'best', maxit=10000, e_min = e_min, e_max = e_max)
+		which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, beta = beta_guess, gamma1=g1_guess, gamma2=g2_guess, gamma3 = g3_guess, E_break_low=break_low_guess, E_break_high = break_high_guess, E_cut = cut_guess, exponent = exponent_guess, fit = 'best', maxit=10000, e_min = e_min, e_max = e_max)
 		redchi_guess = which_fit_guess[1]
 		
 		redchi_final = redchi_guess
@@ -627,7 +633,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 				cut_random = np.random.choice(cut_array,1)[0]
 				c1_random = np.random.choice(c1_array,1)[0]
 				
-				which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, beta = beta_random, gamma1=g1_random, gamma2=g2_random, gamma3 = g3_random, E_break_low=break_low_random, E_break_high = break_high_random, E_cut = cut_random, maxit=10000, e_min = e_min, e_max = e_max)
+				which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, beta = beta_random, gamma1=g1_random, gamma2=g2_random, gamma3 = g3_random, E_break_low=break_low_random, E_break_high = break_high_random, E_cut = cut_random, exponent = exponent_guess, maxit=10000, e_min = e_min, e_max = e_max)
 				#print(which_fit_random)
 				#while which_fit_random is None:
 				#	which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, beta = beta_random, gamma1=g1_random, gamma2=g2_random, gamma3 = g3_random, E_break_low=break_low_random, E_break_high = break_high_random, E_cut = cut_random, maxit=10000, e_min = e_min, e_max = e_max)
@@ -643,7 +649,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	if which_fit == 'triple':
 	#first check the redchi and if the break is outside of the energy range using the guess values then compare the random values to these 
 	#if redchi is better, substitute values
-		which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, beta = beta_guess, gamma1=g1_guess, gamma2=g2_guess, gamma3 = g3_guess, E_break_low=break_low_guess, E_break_high = break_high_guess, E_cut = cut_guess, fit = 'triple', maxit=10000, e_min = e_min, e_max = e_max)
+		which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, beta = beta_guess, gamma1=g1_guess, gamma2=g2_guess, gamma3 = g3_guess, E_break_low=break_low_guess, E_break_high = break_high_guess, E_cut = cut_guess, exponent = exponent_guess, fit = 'triple', maxit=10000, e_min = e_min, e_max = e_max)
 		# if for some reason the fit is not doable, the result will be None. In that case you cannot use redchi_guess = which_fit_guess[1] because you cannot call a None value. 
 		# so you need to repeat the fit. Maybe this could be checked already in the function file.
 		#while which_fit_guess is None:
@@ -692,7 +698,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 				cut_random = np.random.choice(cut_array,1)[0]
 				c1_random = np.random.choice(c1_array,1)[0]
 				
-				which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, beta = beta_random, gamma1=g1_random, gamma2=g2_random, gamma3 = g3_random, E_break_low=break_low_random, E_break_high = break_high_random, E_cut = cut_random, fit = 'triple', maxit=10000, e_min = e_min, e_max = e_max)
+				which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, beta = beta_random, gamma1=g1_random, gamma2=g2_random, gamma3 = g3_random, E_break_low=break_low_random, E_break_high = break_high_random, E_cut = cut_random, exponent = exponent_guess, fit = 'triple', maxit=10000, e_min = e_min, e_max = e_max)
 				#print(which_fit_random)
 				#while which_fit_random is None:
 				#	which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, beta = beta_random, gamma1=g1_random, gamma2=g2_random, gamma3 = g3_random, E_break_low=break_low_random, E_break_high = break_high_random, E_cut = cut_random, maxit=10000, e_min = e_min, e_max = e_max)
@@ -711,7 +717,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	#first check the redchi and if the break is outside of the energy range using the guess values then compare the random values to these 
 	#if redchi is better, substitute values
 		#which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, gamma1=g1_guess, gamma2=g2_guess, E_break=break_low_guess, E_cut = cut_guess, fit = 'best_cb', maxit=10000, e_min = e_min, e_max = e_max)
-		which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess,  gamma1=g1_guess, gamma2=g2_guess, E_break_low=break_low_guess, E_cut = cut_guess, fit = 'best_cb', maxit=10000, e_min = e_min, e_max = e_max)
+		which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess,  gamma1=g1_guess, gamma2=g2_guess, E_break_low=break_low_guess, E_cut = cut_guess, exponent = exponent_guess, fit = 'best_cb', maxit=10000, e_min = e_min, e_max = e_max)
 		
 		redchi_guess = which_fit_guess[1]
 		redchi_final = redchi_guess
@@ -733,7 +739,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 				cut_random = np.random.choice(cut_array,1)[0]
 				c1_random = np.random.choice(c1_array,1)[0]
 				#which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, gamma1=g1_random, gamma2=g2_random, E_break=break_low_random, E_cut = cut_random, fit = 'best_cb', maxit=10000, e_min = e_min, e_max = e_max)
-				which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random,  gamma1=g1_random, gamma2=g2_random, E_break_low=break_low_random, E_cut = cut_random, fit = 'best_cb', maxit=10000, e_min = e_min, e_max = e_max)
+				which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random,  gamma1=g1_random, gamma2=g2_random, E_break_low=break_low_random, E_cut = cut_random, exponent = exponent_guess, fit = 'best_cb', maxit=10000, e_min = e_min, e_max = e_max)
 				if which_fit_random is None:
 					break
 				redchi_random = which_fit_random[1]
@@ -795,13 +801,13 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 
 	
 	if which_fit == 'broken_cut':
-		result_cut_guess = pl_fit.cut_break_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=g1_guess, gamma2=g2_guess, c1=c1_guess, alpha=alpha_guess, E_break=break_low_guess, E_cut = cut_guess, print_report=False, maxit=10000)
+		result_cut_guess = pl_fit.cut_break_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=g1_guess, gamma2=g2_guess, c1=c1_guess, alpha=alpha_guess, E_break=break_low_guess, E_cut = cut_guess, exponent = exponent_guess, print_report=False, maxit=10000)
 		breakp_cut = result_cut_guess.beta[4]
 		cut_b = result_cut_guess.beta[5]
 	
 		if breakp_cut < e_min or breakp_cut > e_max:
 			print('The break point is outside of the energy range')
-			which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, gamma1=g1_guess, gamma2=g2_guess, E_break_low=break_low_guess, E_cut = cut_guess, fit = 'best_cb', maxit=10000, e_min = e_min, e_max = e_max)
+			which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, gamma1=g1_guess, gamma2=g2_guess, E_break_low=break_low_guess, E_cut = cut_guess, exponent = exponent_guess, fit = 'best_cb', maxit=10000, e_min = e_min, e_max = e_max)
 			redchi_guess = which_fit_guess[1]
 			redchi_final = redchi_guess
 			which_fit_final = which_fit_guess[0]
@@ -811,7 +817,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			if cut_b <=e_min or cut_b >=e_max:
 				# The breaks are checked by redchi
 				#which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, gamma1=g1_guess, gamma2=g2_guess, E_break=break_low_guess, E_cut = None, fit = 'best_cb', maxit=10000, e_min = e_min, e_max = e_max)
-				which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, beta = beta_guess, gamma1=g1_guess, gamma2=g2_guess, E_break_low=break_low_guess, E_cut = cut_b, fit = 'broken_cut', maxit=10000, e_min = e_min, e_max = e_max)
+				which_fit_guess = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_guess, alpha=alpha_guess, beta = beta_guess, gamma1=g1_guess, gamma2=g2_guess, E_break_low=break_low_guess, E_cut = cut_b, exponent = exponent_guess, fit = 'broken_cut', maxit=10000, e_min = e_min, e_max = e_max)
 		
 				redchi_guess = which_fit_guess[1]
 				redchi_final = redchi_guess
@@ -839,7 +845,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 				c1_random = np.random.choice(c1_array, 1)[0]
 
 				#which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, gamma1=g1_random, gamma2=g2_random, E_break=break_low_random, E_cut = cut_random, fit = 'broken_cut', maxit=10000, e_min = e_min, e_max = e_max)
-				which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, gamma1=g1_random, gamma2=g2_random, E_break_low=break_low_random, E_cut = cut_random, fit = 'broken_cut', maxit=10000, e_min = e_min, e_max = e_max)
+				which_fit_random = check_redchi(spec_e, spec_flux, e_err, flux_err, c1=c1_random, alpha=alpha_random, gamma1=g1_random, gamma2=g2_random, E_break_low=break_low_random, E_cut = cut_random, exponent = exponent_guess, fit = 'broken_cut', maxit=10000, e_min = e_min, e_max = e_max)
 				if which_fit_random is None:
 					break
 				redchi_random = which_fit_random[1]
@@ -914,7 +920,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 
 	if which_fit == 'cut':
 		# even if the which_fit is broken we need to check first if the break point is outside of the energy range. In that case we have to change it to single.
-		result_cut_guess = pl_fit.cut_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=g1_guess,  c1 = c1_guess,  E_cut = cut_guess, maxit=10000)
+		result_cut_guess = pl_fit.cut_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=g1_guess,  c1 = c1_guess,  E_cut = cut_guess, exponent = exponent_guess, maxit=10000)
 		cut = result_cut_guess.beta[2]
 		
 		if cut < e_min or cut > e_max:
@@ -937,7 +943,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 				g1_random = np.random.choice(gamma1_array, 1)[0]
 				cut_random = np.random.choice(cut_array,1)[0]
 				c1_random = np.random.choice(c1_array, 1)[0]
-				result_cut_random = pl_fit.cut_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = g1_random,  c1 = c1_random,  E_cut = cut_random, maxit=10000)
+				result_cut_random = pl_fit.cut_pl_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1 = g1_random,  c1 = c1_random,  E_cut = cut_random, exponent = exponent_guess, maxit=10000)
 				cut = result_cut_random.beta[2]
 				if cut < e_min or cut > e_max:
 					result_single_pl_random = pl_fit.power_law_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=g1_random, c1=c1_random)
@@ -1001,7 +1007,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		ax.plot(xplot, pl_fit.simple_pl([c1, gamma1], xplot), '-', color=color[direction], label=r'$\mathregular{\delta=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err))
 		ax.plot(xplot, pl_fit.simple_pl([c1, gamma1], xplot), '--k', zorder=10)
 
-		
+
 
 		result_dataframe["Reduced chi sq"] = redchi_single
 		result_dataframe["c1"] = c1
@@ -1019,7 +1025,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		result_dataframe["Exponential cutoff point [MeV]"] = None
 		result_dataframe["Cutoff err [MeV]"] = None
 		result_dataframe["Alpha"] = None
-		result_dataframe["Alpha"] = None
+		result_dataframe["Beta"] = None
+		result_dataframe["Exponent"] = None
 
 	
 	if which_fit_final == 'broken':
@@ -1049,7 +1056,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			
 		##if gamma1<gamma2:
 		#	gamma_temp = gamma1
-		#	gamma_temp_err = gamma1_err
+		#	gamma_temp_err = gamma1_err 
 		#	gamma1 = gamma2
 		#	gamma1_err = gamma2_err
 		#	gamma2 = gamma_temp
@@ -1091,6 +1098,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		result_dataframe["Cutoff err [MeV]"] = None
 		result_dataframe["Alpha"] = alpha
 		result_dataframe["Beta"] = None
+		result_dataframe["Exponent"] = None
+
 
 
 	if which_fit_final == 'cut':
@@ -1107,12 +1116,15 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		gamma1     = result_cut.beta[1]
 		gamma1_err = errors[1]
 		cut_err = errors[2]
+		exponent = result_cut.beta[3]
+		
 			
 		fit_plot = pl_fit.cut_pl_func(result_cut.beta, xplot)
 		fit_plot[fit_plot == 0] = np.nan
 
 		if detailed_legend:
 			ax.plot([], [], ' ', label="single pl + exp cutoff")
+			ax.plot([], [], ' ', label="exponent: "+str(round(exponent, ndigits=2)))
 			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_cut, ndigits=2))
 			#ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$%5.2f' %round(c1, ndigits=2)+"/(s cm² sr MeV)")
 			ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$' +"{:.2e}".format(c1)+"/(s cm² sr MeV)")
@@ -1144,6 +1156,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		result_dataframe["Cutoff err [MeV]"] = cut_err
 		result_dataframe["Alpha"] = None
 		result_dataframe["Beta"] = None
+		result_dataframe["Exponent"] = exponent
+
 		
 		
 	if which_fit_final == 'broken_cut':
@@ -1160,6 +1174,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		breakp_1_err = errors[4]
 		cut_err = errors[5]
 		c1         = result_cut.beta[0]
+		exponent = result_cut.beta[6]
 	
 		if alpha > 0 :
 			gamma1     = result_cut.beta[1]
@@ -1179,6 +1194,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 
 		if detailed_legend:
 			ax.plot([], [], ' ', label="broken pl + exp cutoff")
+			ax.plot([], [], ' ', label="exponent: "+str(round(exponent, ndigits=2)))
 			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_cut, ndigits=2))
 			#ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$%5.2f' %round(c1, ndigits=2)+"/(s cm² sr MeV)")
 			ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$' +"{:.2e}".format(c1)+"/(s cm² sr MeV)")
@@ -1214,6 +1230,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		result_dataframe["Cutoff err [MeV]"] = cut_err
 		result_dataframe["Alpha"] = alpha
 		result_dataframe["Beta"] = None
+		result_dataframe["Exponent"] = exponent
+
 		
 	
 
@@ -1310,6 +1328,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		result_dataframe["Cutoff err [MeV]"] = None
 		result_dataframe["Alpha"] = alpha
 		result_dataframe["Beta"] = beta
+		result_dataframe["Exponent"] = None
+
 		
 		#print('WHICH FIT   '+which_fit)
 
