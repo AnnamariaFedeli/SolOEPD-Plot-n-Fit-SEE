@@ -263,7 +263,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	# These should be changed if using ions
 	direction = direction #'sun'
 
-	intensity_label = 'Flux\n/(s cm² sr MeV)'
+	intensity_label = 'Intensity\n/(s cm² sr MeV)'
 	energy_label = 'Energy (MeV)'
 	peak_info = fit_to+' spectrum'   #+'\n'+window_type
 	legend_title = 'Electrons'  # 'mag' or 'foil' or 'Electrons' if there is more than just ept data
