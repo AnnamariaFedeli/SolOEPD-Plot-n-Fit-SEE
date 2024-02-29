@@ -1450,7 +1450,7 @@ def average_flux_error(flux_err: pd.DataFrame) -> pd.Series:
 
     return np.sqrt((flux_err ** 2).sum(axis=0)) / len(flux_err.values)
 
-def plot_channels_electrons(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', frac_nan_threshold=0.4, rel_err_threshold=0.5, plot_pa=False, coverage=None, sensor = 'ept', viewing='sun'):
+def plot_channels_electrons(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', frac_nan_threshold=0.4, rel_err_threshold=0.5, plot_pa=False, coverage=None, sensor = 'ept', viewing='sun', centre_pix = False, date = None):
     """Creates a timeseries plot showing the particle flux for each energy channel of
         the instrument (STEP, EPT, HET). The timeseries plot shows also the peak window and
         background window. The peak is marked with different color lines:

@@ -45,7 +45,7 @@ def run_all(path, data, savefig, plot_title = '', x_label = 'Intensity [/]', y_l
     
     
     # in make the fit we have two paths. one for pickle files (deleted from here) and path2 to save the fit variables.
-    title_from_path = path[:-4]
+    title_from_path = path
     fit_var_path = title_from_path+'-'+plot_title+'-fit-result-variables_'+which_fit+'.csv'
 
     all_data = data

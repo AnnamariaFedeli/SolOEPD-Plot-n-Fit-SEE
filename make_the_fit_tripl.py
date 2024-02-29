@@ -1330,13 +1330,15 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		result_dataframe["Beta"] = beta
 		result_dataframe["Exponent"] = None
 
+
 		
 		#print('WHICH FIT   '+which_fit)
 
 	
 
 
-
+	result_dataframe['E min [MeV]'] = e_min
+	result_dataframe['E max [MeV]'] = e_max
 	#Debugging in case of errors
 	#print(result.beta, 'beta')
 	#print(result.sd_beta, 'sd_beta')

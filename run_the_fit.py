@@ -13,8 +13,8 @@ import os
 import shutil
 # <--------------------------------------------------------------- ALL NECESSARY INPUTS HERE ----------------------------------------------------------------->
 def quality_factor_PA_coverage(data_ept, coverage, direction = 'sun', angle = 180):
-	qf = 0
-	for j in range(0, len(data_ept)-1):
+	qf = []
+	for j in range(0, len(data_ept[1])-1):
 		df = coverage[direction]
 		df = df.reset_index()
 		df = df.drop(np.where(df['EPOCH'] < data_ept[2][0][j])[0])
@@ -24,58 +24,28 @@ def quality_factor_PA_coverage(data_ept, coverage, direction = 'sun', angle = 18
 		factors = []
 		for i in range(len(df)):
 			r = df.center[i]
+
 			if angle == 180:
-				if r >=165.:
-					factors.append(100)
-				if r<165. and r >=155:
-					factors.append(90)
-				if r<155. and r >=145:
-					factors.append(80)
-				if r<145. and r >=135:
-					factors.append(70)
-				if r<135. and r >=125:
-					factors.append(60)
-				if r<125. and r>=115.:
-					factors.append(50)
-				if r<115. and r>=105.:
-					factors.append(40)
-				if r<105. and r>=90.:
-					factors.append(30)
-				if r<90. and r>=70.:
-					factors.append(20)
-				if r<70. and r>=45.:
-					factors.append(10)
-				if r<45.:
-					factors.append(1)
-
-			if angle == 0:
-				if r <=15.:
-					factors.append(100)
-				if r<25. and r >=15:
-					factors.append(90)
-				if r<35. and r >=25:
-					factors.append(80)
-				if r<45. and r >=35:
-					factors.append(70)
-				if r<55. and r >=45:
-					factors.append(60)
-				if r<65. and r>=55.:
-					factors.append(50)
-				if r<75. and r>=65.:
-					factors.append(40)
-				if r<90. and r>=75.:
-					factors.append(30)
-				if r<110. and r>=90.:
-					factors.append(20)
-				if r<135. and r>=110.:
-					factors.append(10)
-				if r>135.:
-					factors.append(1)
+				r = 180-r
 				
-		qf = sum(factors)/len(factors)
+				
+			if r <=15.:
+				factors.append(100)
 
-	return qf
+			elif r>15:
+				f = np.exp(-np.square(r-12)/2*0.0007)*100
+				factors.append(f)
 
+			else:
+				factors.append(0)
+
+
+		qf.append(sum(factors)/len(factors))	
+		#qf = sum(factors)/len(factors)
+		#print(factors)
+	quality_factor = sum(qf)/len(qf)
+
+	return qf, quality_factor
 
 def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_threshold, fit_to):
 	"""_summary_
@@ -298,6 +268,11 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 				step_data['Bg_subtracted_'+fit_to] = step_data['Bg_subtracted_'+fit_to]/step_shift_factor
 				step_data['Flux_'+fit_to] = step_data['Flux_'+fit_to]/step_shift_factor
 				step_data['Background_flux'] = step_data['Background_flux']/step_shift_factor
+
+				step_data[fit_to_comb+'_electron_uncertainty'] = step_data[fit_to_comb+'_electron_uncertainty']/step_shift_factor
+				step_data['Bg_electron_uncertainty'] = step_data['Bg_electron_uncertainty'] /step_shift_factor
+				step_data['Backsub_peak_uncertainty'] = step_data['Backsub_peak_uncertainty']/step_shift_factor
+
 
 		data_list.append(step_data)
 
