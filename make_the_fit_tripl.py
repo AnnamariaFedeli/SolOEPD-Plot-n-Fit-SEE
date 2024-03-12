@@ -208,8 +208,14 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 				if breakp_low < emax and breakp_low > emin and breakp_high < emax and breakp_high > emin and breakp_low<breakp_high:
 					absolute_val_array = np.abs(spec_e - breakp_low)
 					smallest_difference_index = absolute_val_array.argmin()
-					low = spec_e[smallest_difference_index]-e_err[smallest_difference_index]
-					high = spec_e[smallest_difference_index+1]+e_err[smallest_difference_index+1]
+					low = ''
+					high = ''
+					if smallest_difference_index == len(spec_e)-1:
+						low = spec_e[smallest_difference_index-1]-e_err[smallest_difference_index-1]
+						high = spec_e[smallest_difference_index]+e_err[smallest_difference_index]
+					else:
+						low = spec_e[smallest_difference_index]-e_err[smallest_difference_index]
+						high = spec_e[smallest_difference_index+1]+e_err[smallest_difference_index+1]
 					difference_triple_energy = high-low
 
 					#print('TRIPLE')
@@ -244,8 +250,14 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 				if cut_b > emin and cut_b< emax and breakp_cut> emin and breakp_cut<emax and cut_b>breakp_cut:
 					absolute_val_array = np.abs(spec_e - breakp_cut)
 					smallest_difference_index = absolute_val_array.argmin()
-					low = spec_e[smallest_difference_index]-e_err[smallest_difference_index]
-					high = spec_e[smallest_difference_index+1]+e_err[smallest_difference_index+1]
+					low = ''
+					high = ''
+					if smallest_difference_index == len(spec_e)-1:
+						low = spec_e[smallest_difference_index-1]-e_err[smallest_difference_index-1]
+						high = spec_e[smallest_difference_index]+e_err[smallest_difference_index]
+					else:
+						low = spec_e[smallest_difference_index]-e_err[smallest_difference_index]
+						high = spec_e[smallest_difference_index+1]+e_err[smallest_difference_index+1]
 					difference_cut_energy = high-low
 
 					#print('BC')
@@ -304,8 +316,15 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 		if breakp_low < emax and breakp_low > emin and breakp_high < emax and breakp_high > emin:
 			absolute_val_array = np.abs(spec_e - breakp_low)
 			smallest_difference_index = absolute_val_array.argmin()
-			low = spec_e[smallest_difference_index]-e_err[smallest_difference_index]
-			high = spec_e[smallest_difference_index+1]+e_err[smallest_difference_index+1]
+			low = ''
+			high = ''
+			if smallest_difference_index == len(spec_e)-1:
+				low = spec_e[smallest_difference_index-1]-e_err[smallest_difference_index-1]
+				high = spec_e[smallest_difference_index]+e_err[smallest_difference_index]
+			else:
+				low = spec_e[smallest_difference_index]-e_err[smallest_difference_index]
+				high = spec_e[smallest_difference_index+1]+e_err[smallest_difference_index+1]
+			
 			difference_triple_energy = high-low
 			
 			if breakp_high > breakp_low and difference_triple>difference_triple_energy:
@@ -334,8 +353,15 @@ def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, g
 		if breakp_cut <= emax and breakp_cut > emin and cut_b <= emax and cut_b > emin:	
 			absolute_val_array = np.abs(spec_e - breakp_cut)
 			smallest_difference_index = absolute_val_array.argmin()
-			low = spec_e[smallest_difference_index]-e_err[smallest_difference_index]
-			high = spec_e[smallest_difference_index+1]+e_err[smallest_difference_index+1]
+			low = ''
+			high = ''
+			if smallest_difference_index == len(spec_e)-1:
+				low = spec_e[smallest_difference_index-1]-e_err[smallest_difference_index-1]
+				high = spec_e[smallest_difference_index]+e_err[smallest_difference_index]
+			else:
+				low = spec_e[smallest_difference_index]-e_err[smallest_difference_index]
+				high = spec_e[smallest_difference_index+1]+e_err[smallest_difference_index+1]
+			
 			difference_cut_energy = high-low
 
 			if cut_b > breakp_cut and difference_cut > difference_cut_energy:

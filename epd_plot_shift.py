@@ -622,7 +622,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
             df_electron_fluxes = df_electron_fluxes.resample(averaging).mean()
             df_electron_uncertainties = df_electron_uncertainties.resample(averaging).apply(average_flux_error)
             
-
+         
     # 12.07.2023 The rolling window option should be deleted because it is never used. 
     # The rolling window might be broken, but it's not ever used.
     #elif(averaging_mode == 'rolling_window'):
@@ -641,9 +641,17 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
             Electron_Flux_cont[tt,:] = np.sum(ion_cont_corr_matrix * np.ma.masked_invalid(df_proton_fluxes.values[tt, :]), axis=1)
             # the matrix multiplication np.matmul does not work if there are nan vales in the matrix because it does not have an inbuilt ignore nan variable
             # so for now we can ignore nans by using the above more 'by hand' calculation with np.ma.masked_invalid that ignore both inf and nan values
-            # Electron_Flux_cont[tt, :] = np.matmul(ion_cont_corr_matrix, np.ma.masked_invalid(df_proton_fluxes.values[tt, :]))
-            Electron_Uncertainty_cont[tt, :] = np.sqrt(np.matmul(ion_cont_corr_matrix**2, np.ma.masked_invalid(df_proton_uncertainties.values[tt, :]**2 )))
+            # MATMUL DOES NOT WORKKKKK Electron_Flux_cont[tt, :] = np.matmul(ion_cont_corr_matrix, np.ma.masked_invalid(df_proton_fluxes.values[tt, :]))
+            #print(df_proton_uncertainties.shape)
+            #print(df_proton_uncertainties.values[0, :])
+            #print(np.ma.masked_invalid(df_proton_uncertainties.values[tt, :]).shape)
+            #print(Electron_Flux_cont.shape)
+            #print(Electron_Uncertainty_cont.shape)
             
+            Electron_Uncertainty_cont[tt, :] = np.sqrt(np.sum(ion_cont_corr_matrix**2 * np.ma.masked_invalid(df_proton_uncertainties.values[tt, :]**2),axis = 1 ))
+           
+           # Electron_Uncertainty_cont[tt, :] = np.sqrt(np.matmul(ion_cont_corr_matrix**2, np.ma.masked_invalid(df_proton_uncertainties.values[tt, :]**2) ))
+           
         df_electron_fluxes = df_electron_fluxes - Electron_Flux_cont
         df_electron_uncertainties = np.sqrt(df_electron_uncertainties**2 + Electron_Uncertainty_cont**2 )
     

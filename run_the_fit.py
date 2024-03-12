@@ -10,6 +10,7 @@ import savecsv as save
 import combining_files as comb
 from datetime import *
 import os
+from tabulate import tabulate
 import shutil
 # <--------------------------------------------------------------- ALL NECESSARY INPUTS HERE ----------------------------------------------------------------->
 def quality_factor_PA_coverage(data_ept, coverage, direction = 'sun', angle = 180):
@@ -45,7 +46,48 @@ def quality_factor_PA_coverage(data_ept, coverage, direction = 'sun', angle = 18
 		#print(factors)
 	quality_factor = sum(qf)/len(qf)
 
-	return qf, quality_factor
+	return [qf, quality_factor]
+
+def print_channel(step = None, ept = None, het = None):
+
+	data_name_list  = [step, ept, het]
+	data = pd.concat(data_name_list)
+	data.reset_index(drop=True, inplace=True)
+	data = data.drop(columns = 'Energy_channel')
+
+	
+	ept_start = 0
+	het_start = 0
+
+	if step is not None:
+		ept_start = ept_start+len(step)
+		het_start = het_start+len(step)
+		#chans_step = list(range(0, len(step)))
+		sd = pd.DataFrame()
+		sd['Channel'] = list(range(0, len(step)))
+		sd['Primary Energy [MeV]'] = step.Primary_energy
+
+		print('STEP CHANNELS')
+		print(sd)
+
+	if ept is not None:
+		het_start = het_start+len(ept)
+		#chans_step = list(range(0, len(step)))
+		ed = pd.DataFrame()
+		ed['Channel'] = list(range(ept_start, ept_start+len(ept)))
+		ed['Primary Energy [MeV]'] = ept.Primary_energy
+
+		print('EPT CHANNELS')
+		print(ed)
+
+	if het is not None:
+		hd = pd.DataFrame()
+		hd['Channel'] = list(range(het_start, het_start+len(het)))
+		hd['Primary Energy [MeV]'] = het.Primary_energy
+
+		print('HET CHANNELS')
+		print(hd)
+
 
 def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_threshold, fit_to):
 	"""_summary_
@@ -107,6 +149,8 @@ def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_thresho
 		print(shift_factor)
 		return(shift_factor)
 	
+	
+	
 
 def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run_var_file):
 	"""_summary_
@@ -129,7 +173,7 @@ def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run
 	shutil.copy(newpath+run_var_file, runvariables+run_var_file)
 
 	
-def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False):
+def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best',  channels_to_exclude = None, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False, quality_factor = None):
 
 	     # slope (float, optional): The type of slope used to find the peak (for the title). Defaults to None.
 		 # #slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True):
@@ -196,9 +240,10 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	#av = averaging
 	#if averaging < 1.:
 	#	av_string = str(int(averaging*60))+'s'
-		
 	
-
+	
+	if averaging is None:
+		averaging = 'no'
 	#averaging = str(averaging)+'min'
 
 	separator = ';'
@@ -288,15 +333,15 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 
 
 
-	data = comb.combine_data(data_list, path+date_string+'-all-l2-'+direction+'-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
+	data = comb.combine_data(data_list, path+date_string+'-all-l2-'+direction+'-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb,  channels_to_exclude = channels_to_exclude)
 	data = pd.read_csv(path+date_string+'-all-l2-'+direction+'-'+averaging+'.csv', sep = separator)
 
 	if step and ept:
-		step_ept_data = comb.combine_data([step_data, ept_data], path+date_string+'-step_ept-l2-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
+		step_ept_data = comb.combine_data([step_data, ept_data], path+date_string+'-step_ept-l2-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb,  channels_to_exclude = channels_to_exclude)
 		step_ept_data = pd.read_csv(path+date_string+'-step_ept-l2-'+averaging+'.csv', sep = separator)
 
 	if ept and het:
-		ept_het_data = comb.combine_data([ept_data, het_data], path+date_string+'-ept_het-'+direction+'-l2-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
+		ept_het_data = comb.combine_data([ept_data, het_data], path+date_string+'-ept_het-'+direction+'-l2-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb,  channels_to_exclude = channels_to_exclude)
 		ept_het_data = pd.read_csv(path+date_string+'-ept_het-'+direction+'-l2-'+averaging+'.csv', sep = separator)
 
 	# saving the contaminated data so it can be plotted separately
@@ -304,18 +349,43 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	contaminated_data_sigma = comb.low_sigma_threshold(data_list, sigma = sigma, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
 	contaminated_data_nan   = comb.too_many_nans(data_list, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan)
 	contaminated_data_rel_err = comb.high_rel_err(data_list, rel_err = rel_err, leave_out_1st_het_chan = leave_out_1st_het_chan)
-	contaminated_data = pd.concat([contaminated_data_sigma, contaminated_data_nan, contaminated_data_rel_err ])
-	contaminated_data.reset_index(drop=True, inplace=True)
 
+	step_channels_to_exclude = None
+	ept_channels_to_exclude = None
+	het_channels_to_exclude = None
+
+	channels_to_exclude_copy = channels_to_exclude
+
+	contaminated_data = pd.DataFrame()
+	if channels_to_exclude is not None:
+		excluded_channels = comb.excluded_channels_from_fit(data_list,channels_to_exclude)
+		contaminated_data = pd.concat([contaminated_data_sigma, contaminated_data_nan, contaminated_data_rel_err, excluded_channels])
+
+		for i in channels_to_exclude_copy:
+			if i <= len(step_data):
+				step_channels_to_exclude.append(i)
+				channels_to_exclude_copy.remove(i)
+			elif i >len(step_data) and i<=(len(step_data)+len(ept_data)):
+				l = i-len(step_data)
+				ept_channels_to_exclude.append(l)
+			else:
+				l = i-(len(step_data)+len(ept))
+				het_channels_to_exclude.append(l)
+
+	elif channels_to_exclude is None:
+		contaminated_data = pd.concat([contaminated_data_sigma, contaminated_data_nan, contaminated_data_rel_err])
+		contaminated_data.reset_index(drop=True, inplace=True)
+	
 	#deleting low sigma data so it doesn't overplot 
 
+
 	if step:
-		step_data = comb.delete_bad_data(step_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, fit_to = fit_to_comb)
+		step_data = comb.delete_bad_data(step_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, fit_to = fit_to_comb, channels_to_exclude  = step_channels_to_exclude)
 	if ept:
-		ept_data = comb.delete_bad_data(ept_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, fit_to = fit_to_comb)
+		ept_data = comb.delete_bad_data(ept_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, fit_to = fit_to_comb, channels_to_exclude = ept_channels_to_exclude)
 	if het:
 		first_het_data = comb.first_het_chan(het_data)
-		het_data = comb.delete_bad_data(het_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
+		het_data = comb.delete_bad_data(het_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb, channels_to_exclude = het_channels_to_exclude)
 		
 	#if e_min is None:
 	#	e_min = min(data['Primary_energy'])
@@ -599,7 +669,36 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	# quick change for sec resolution, change later
 	# if av < 1.:
 	# 	averaging = av_string
+	
+	qf_step_av = None
+	qf_step_all = None
+	qf_ept_av = None
+	qf_ept_all = None
+	qf_het_av = None
+	qf_het_all = None
+	qf_step = None
+	qf_ept = None
+	qf_het = None
 
+	n_qf = 0
+	
+	if quality_factor is not None:
+		if step :
+			qf_step = quality_factor[n_qf]
+			qf_step_all = qf_step[0]
+			qf_step_av = qf_step[1]
+			n_qf = n_qf+1
+			
+		if ept:
+			qf_ept = quality_factor[n_qf]
+			qf_step_all = qf_ept[0]
+			qf_step_av = qf_ept[1]
+			n_qf = n_qf+1
+		if het:
+			qf_het = quality_factor[n_qf]
+			qf_step_all = qf_het[0]
+			qf_step_av = qf_het[1]
+			n_qf = n_qf+1
 
 	pickle_path = None
 	if save_pickle:
@@ -616,7 +715,13 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		save.save_info_fit(fitrun_path, date_string, averaging, direction, data_product, dist, step, ept, het,
 		sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, step_shift_factor, fit_type, fit_to,
 		which_fit, min_energy, max_energy, g1_guess, g2_guess, c1_guess, alpha_guess, break_guess_low, cut_guess,
-		use_random, iterations)
+		use_random, iterations, qf_step_av, qf_ept_av, qf_het_av)
+
+		qf_path = path+folder_time+'-quality-factor_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
+
+		save.save_quality_factor(qf_path, qf_step, qf_ept, qf_het)
+
+
 	
 
 

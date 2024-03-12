@@ -3,8 +3,25 @@ import glob
 import pandas as pd
 
 
+def excluded_channels_from_fit(data_name_list, channel_list):
+	combined_csv = pd.concat(data_name_list)
+	combined_csv.reset_index(drop=True, inplace=True)
+	combined_csv = combined_csv.drop(columns = 'Energy_channel')
 
-def combine_data(data_name_list, path = None, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, leave_out_1st_het_chan = False, fit_to = 'Peak'):
+	rows_to_delete = []
+
+	for i in range(0,len(combined_csv)):
+		if i not in channel_list:
+			rows_to_delete.append(i)
+
+	combined_csv = combined_csv.drop(rows_to_delete, axis = 0)
+	combined_csv = combined_csv.sort_values('Primary_energy')
+	combined_csv.reset_index(drop=True, inplace=True)
+	
+
+	return combined_csv
+
+def combine_data(data_name_list, path = None, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, leave_out_1st_het_chan = False, fit_to = 'Peak', channels_to_exclude = None):
 	"""_summary_
 
 	Args:
@@ -17,16 +34,33 @@ def combine_data(data_name_list, path = None, sigma = 3, rel_err = 0.5, frac_nan
 		fit_to (str, optional): _description_. Defaults to 'Peak'.
 	"""
 	#print(data_name_list)
+	combined_csv = None
+	if channels_to_exclude is not None:
+		combined_csv = pd.concat(data_name_list)
+		combined_csv.reset_index(drop=True, inplace=True)
+		combined_csv = combined_csv.drop(columns = 'Energy_channel')
+	
+		combined_csv = combined_csv.drop(channels_to_exclude, axis = 0)
+		combined_csv = combined_csv.sort_values('Primary_energy')
+		combined_csv.reset_index(drop=True, inplace=True)
+
+
 	if leave_out_1st_het_chan and len(data_name_list)>2:
 		het = data_name_list[-1]
 		first_het = het.index[data_name_list[-1]['Primary_energy']< 0.7].tolist()
 		het = het.drop(first_het, axis = 0)
 		het.reset_index(drop=True, inplace=True)
 		data_name_list[-1] = het 
+
+		combined_csv = pd.concat(data_name_list)
+		combined_csv.reset_index(drop=True, inplace=True)
+		combined_csv = combined_csv.drop(columns = 'Energy_channel')
+
+	if combined_csv is None:
+		combined_csv = pd.concat(data_name_list)
+		combined_csv.reset_index(drop=True, inplace=True)
+		combined_csv = combined_csv.drop(columns = 'Energy_channel')
 	
-	combined_csv = pd.concat(data_name_list)
-	combined_csv.reset_index(drop=True, inplace=True)
-	combined_csv = combined_csv.drop(columns = 'Energy_channel')
 	
 	rows_to_delete = combined_csv.index[combined_csv[fit_to+'_significance'] <sigma].tolist()
 	combined_csv = combined_csv.drop(rows_to_delete, axis = 0)
@@ -124,7 +158,7 @@ def high_rel_err(data_name_list, rel_err = 0.5, leave_out_1st_het_chan = False):
 	
 	return(combined_csv)
 	
-def delete_bad_data(data, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, leave_out_1st_het_chan = False, fit_to = 'Peak'):
+def delete_bad_data(data, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, leave_out_1st_het_chan = False, fit_to = 'Peak', channels_to_exclude = None):
 	"""_summary_
 
 	Args:
@@ -135,7 +169,14 @@ def delete_bad_data(data, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, le
 		leave_out_1st_het_chan (bool, optional): _description_. Defaults to False.
 		fit_to (str, optional): _description_. Defaults to 'Peak'.
 	"""
+
+
 	data = data.drop(columns = 'Energy_channel')
+	if channels_to_exclude is not None:
+		data = data.drop(channels_to_exclude, axis = 0)
+	data = data.sort_values('Primary_energy')
+	data.reset_index(drop=True, inplace=True)
+
 	rows_to_delete = data.index[data[fit_to+'_significance'] <sigma].tolist()
 	data = data.drop(rows_to_delete, axis = 0)
 	data.reset_index(drop=True, inplace=True)
@@ -179,8 +220,3 @@ def combine_data_general(data_name_list, path):
 	combined_csv.to_csv(path, sep = ';')
 	
 	return(combined_csv)
-	
-def quality_index(pa_coverage):
-	
-
-	return()
