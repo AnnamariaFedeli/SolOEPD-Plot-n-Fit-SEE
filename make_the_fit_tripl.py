@@ -536,9 +536,15 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	# the break guess should be between min and max energy
 	
 	# have to construct the guesses logarithmically
-	g1_start_value = g1_guess*10.
-	g2_start_value = g2_guess*10.
-	g3_start_value = g3_guess*10.
+	# have to construct the guesses logarithmically
+	g1_start_value = -np.abs(g1_guess)*10.
+	g2_start_value = -np.abs(g2_guess)*10.
+	g3_start_value = -np.abs(g3_guess)*10.
+
+	g1_end_value = np.abs(g1_guess)*10.
+	g2_end_value = np.abs(g2_guess)*10.
+	g3_end_value = np.abs(g3_guess)*10.
+
 
 	g1_step = np.abs(g1_guess/4.)
 	g2_step = np.abs(g2_guess/4.)
@@ -546,9 +552,9 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	
 
 	if use_random :	
-		gamma1_array = closest_values(np.arange(g1_start_value,np.abs(g1_start_value),g1_step), g1_guess)
-		gamma2_array = closest_values(np.arange(g2_start_value,np.abs(g2_start_value),g2_step), g2_guess)
-		gamma3_array = closest_values(np.arange(g3_start_value,np.abs(g3_start_value),g3_step), g3_guess)
+		gamma1_array = closest_values(np.arange(g1_start_value,g1_end_value,g1_step), g1_guess)
+		gamma2_array = closest_values(np.arange(g2_start_value,g2_end_value,g2_step), g2_guess)
+		gamma3_array = closest_values(np.arange(g3_start_value,g3_end_value,g3_step), g3_guess)
 		
 	# c1_array...  we want to get a good approximation of the flux at 1, whatever 1 is in your plot. 
 		c1_array = np.arange(c1_guess/100.,c1_guess*100., c1_guess/500.)
@@ -567,20 +573,20 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	# cut array = break_array *1.8
 		
 		if e_max<0.1:
-			break_array_low = np.arange(e_min, e_max, 0.01)
+			break_array_low = np.arange(e_min, e_max, 0.001)
 		if e_max>=0.1 and e_max<1.0:
-			b1_array = np.arange(e_min, 0.1, 0.01)
-			b2_array = np.arange(0.1, e_max, 0.05)
+			b1_array = np.arange(e_min, 0.1, 0.001)
+			b2_array = np.arange(0.1, e_max, 0.005)
 			break_array_low = np.hstack((b1_array, b2_array))
 		if e_max >=1 and e_max < 10:
-			b1_array = np.arange(e_min, 0.1, 0.01)
-			b2_array = np.arange(0.1, 1, 0.05)
-			b3_array = np.arange(1, e_max, 0.5)
+			b1_array = np.arange(e_min, 0.1, 0.001)
+			b2_array = np.arange(0.1, 1, 0.005)
+			b3_array = np.arange(1, e_max, 0.01)
 			break_array_low = np.hstack((b1_array, b2_array, b3_array))
 		if e_max>=10:
-			b1_array = np.arange(e_min, 0.1, 0.01)
-			b2_array = np.arange(0.1, 1, 0.05)
-			b3_array = np.arange(1, 10, 0.5)
+			b1_array = np.arange(e_min, 0.1, 0.001)
+			b2_array = np.arange(0.1, 1, 0.005)
+			b3_array = np.arange(1, 10, 0.01)
 			b4_array = np.arange(10, e_max, 1)
 			break_array_low = np.hstack((b1_array, b2_array, b3_array, b4_array))
 		

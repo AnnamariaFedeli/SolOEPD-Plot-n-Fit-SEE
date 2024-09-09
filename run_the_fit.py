@@ -13,17 +13,17 @@ import os
 from tabulate import tabulate
 import shutil
 # <--------------------------------------------------------------- ALL NECESSARY INPUTS HERE ----------------------------------------------------------------->
-def quality_factor_PA_coverage(data_ept, coverage, direction = 'sun', angle = 180):
+def quality_factor_PA_coverage(data, coverage, direction = 'sun', angle = 180):
 	qf = []
-	for j in range(0, len(data_ept[1])-1):
+	for j in range(0, len(data[1])):
 		df = coverage[direction]
 		df = df.reset_index()
-		df = df.drop(np.where(df['EPOCH'] < data_ept[2][0][j])[0])
+		df = df.drop(np.where(df['EPOCH'] < data[2][0][j])[0])
 		df.reset_index(drop = True, inplace = True)
-		df = df.drop(np.where(df['EPOCH'] > data_ept[2][1][j])[0])
+		df = df.drop(np.where(df['EPOCH'] > data[2][1][j])[0])
 		df.reset_index(drop = True, inplace = True)
 		factors = []
-		for i in range(len(df)):
+		for i in range(0,len(df)):
 			r = df.center[i]
 
 			if angle == 180:
@@ -149,8 +149,6 @@ def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_thresho
 		print(shift_factor)
 		return(shift_factor)
 	
-	
-	
 
 def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run_var_file):
 	"""_summary_
@@ -245,16 +243,17 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	if averaging is None:
 		averaging = 'no'
 	#averaging = str(averaging)+'min'
+		
+	pix = ''
+	if centre_pix:
+		pix = '-centre_pix'
+
+
 
 	separator = ';'
 
-	step_file_name = ''
-
-	if centre_pix:
-		step_file_name = 'electron_data-'+date_string+'-STEP-'+direction+'-L2-'+averaging+'_averaging-centre_pix.csv'
-	else:
-		step_file_name = 'electron_data-'+date_string+'-STEP-'+direction+'-L2-'+averaging+'_averaging.csv'
-
+	step_file_name = 'electron_data-'+date_string+'-STEP-'+direction+'-L2-'+averaging+'_averaging'+pix+'.csv'
+	
 	ept_file_name = ''
 
 	if ion_correction:
@@ -286,7 +285,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 
 	#date_str = date_string[8:]+'-'+date_string[5:7]+'-'+date_string[0:4] #DO NOT CHANGE. This is used later for the plot title etc.
 	date_str = str(date)[:-3]
-	pos = get_horizons_coord('Solar Orbiter', date_string, 'id')
+	pos = get_horizons_coord('Solar Orbiter', date, 'id')
 	dist = np.round(pos.radius.value, 2)
 	
 
@@ -671,9 +670,9 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	# 	averaging = av_string
 	
 	qf_step_av = None
-	qf_step_all = None
+
 	qf_ept_av = None
-	qf_ept_all = None
+	
 	qf_het_av = None
 	qf_het_all = None
 	qf_step = None
@@ -685,39 +684,36 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	if quality_factor is not None:
 		if step :
 			qf_step = quality_factor[n_qf]
-			qf_step_all = qf_step[0]
 			qf_step_av = qf_step[1]
 			n_qf = n_qf+1
 			
 		if ept:
 			qf_ept = quality_factor[n_qf]
-			qf_step_all = qf_ept[0]
-			qf_step_av = qf_ept[1]
+			qf_ept_av = qf_ept[1]
 			n_qf = n_qf+1
 		if het:
 			qf_het = quality_factor[n_qf]
-			qf_step_all = qf_het[0]
-			qf_step_av = qf_het[1]
+			qf_het_av = qf_het[1]
 			n_qf = n_qf+1
 
 	pickle_path = None
 	if save_pickle:
-		pickle_path = path+folder_time+'-pickle_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.p'
+		pickle_path = path+folder_time+'-pickle_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+pix+'.p'
 
 	fit_var_path = None
 	if save_fit_variables:
-		fit_var_path = path+folder_time+'-fit-result-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
+		fit_var_path = path+folder_time+'-fit-result-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+pix+'.csv'
 
 	fitrun_path = None
 	if save_fitrun:
-		fitrun_path = path+folder_time+'-all-fit-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
+		fitrun_path = path+folder_time+'-all-fit-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+pix+'.csv'
 		
 		save.save_info_fit(fitrun_path, date_string, averaging, direction, data_product, dist, step, ept, het,
 		sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, step_shift_factor, fit_type, fit_to,
 		which_fit, min_energy, max_energy, g1_guess, g2_guess, c1_guess, alpha_guess, break_guess_low, cut_guess,
-		use_random, iterations, qf_step_av, qf_ept_av, qf_het_av)
+		use_random, iterations, qf_step_av, qf_ept_av, qf_het_av, centre_pix)
 
-		qf_path = path+folder_time+'-quality-factor_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
+		qf_path = path+folder_time+'-quality-factor_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+pix+'.csv'
 
 		save.save_quality_factor(qf_path, qf_step, qf_ept, qf_het)
 

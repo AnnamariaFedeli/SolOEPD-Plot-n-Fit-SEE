@@ -54,7 +54,7 @@ traveltime_max, light_tt):
 
 def save_info_fit(path, date_string, averaging, direction, data_product, dist, step, ept, het,
                   sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, shift_factor, fit_type, fit_to, which_fit, e_min, e_max, g1_guess, g2_guess, c1_guess, alpha_guess, break_guess,
-                  cut_guess,use_random, iterations, quality_factor_step, quality_factor_ept, quality_factor_het):
+                  cut_guess,use_random, iterations, quality_factor_step, quality_factor_ept, quality_factor_het,centre_pixels):
 
     df = pd.DataFrame({"Date": date_string, "Averaging [s]":timeparse(averaging), "Direction":direction,
     "Data type":data_product, "Distance [AU]":dist, "STEP":step, "EPT":ept, "HET":het, 
@@ -64,7 +64,7 @@ def save_info_fit(path, date_string, averaging, direction, data_product, dist, s
     "Min energy": e_min, "Max energy": e_max, "Gamma1 guess":g1_guess, "Gamma2 guess":g2_guess,
     "c1 guess": c1_guess, "Alpha guess": alpha_guess, "Break guess [MeV]":break_guess, 
     "Cutoff point guess [MeV]":cut_guess,
-    "Use random":use_random, "Iterations":iterations, "Quality factor average STEP":quality_factor_step,  "Quality factor average EPT":quality_factor_ept,  "Quality factor average HET":quality_factor_het}, index = [0])
+    "Use random":use_random, "Iterations":iterations, "Quality factor average STEP":quality_factor_step,  "Quality factor average EPT":quality_factor_ept,  "Quality factor average HET":quality_factor_het, "Centre pixels": centre_pixels}, index = [0])
 
     df.to_csv(path, sep = ";")
 
@@ -80,7 +80,7 @@ def save_quality_factor(path, qf_step, qf_ept, qf_het):
     
     if qf_step is not None:
         qf_step_all = qf_step[0]
-        qf_ept_av = qf_step[1]
+        qf_step_av = qf_step[1]
     
     if qf_ept is not None:
         qf_ept_all = qf_ept[0]
@@ -92,8 +92,10 @@ def save_quality_factor(path, qf_step, qf_ept, qf_het):
 
 
      
-    df = pd.DataFrame.from_dict({"QF STEP average":qf_step_av, "QF STEP all channels":qf_step_all, "QF EPT average":qf_ept_av, "QF EPT all channels":qf_ept_all, "QF HET average":qf_het_av, "QF HET all channels":qf_het_all}, orient = 'index').T
-     
+    df = {"QF STEP average":qf_step_av, "QF STEP all channels":qf_step_all, "QF EPT average":qf_ept_av, "QF EPT all channels":qf_ept_all, "QF HET average":qf_het_av, "QF HET all channels":qf_het_all}
+    df = dict([ (k,pd.Series(v)) for k,v in df.items() ])  
+    df = pd.DataFrame(df)
+
     df.to_csv(path, sep = ";")
 
     return df

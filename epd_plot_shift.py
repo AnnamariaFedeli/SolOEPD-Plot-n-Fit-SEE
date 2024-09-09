@@ -1164,7 +1164,7 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
 
             ax.get_xaxis().set_visible(True)
             ax.set_xlabel("Time", labelpad=45)
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
             #ax.xaxis.set_minor_locator(hours)
 
         n+=1
@@ -1194,7 +1194,8 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
         ax.set_ylim([0, 180])
         ax.yaxis.set_ticks(np.arange(0, 180+45, 45))
         ax.set_ylabel('PA / °', size=13)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
+        #ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
         plt.tick_params(axis='x', which='major', labelsize=16)
         plt.tick_params(axis='y', which='major', labelsize=13)
         ax.set_xlabel("Time", labelpad=45, size=16)
@@ -1206,7 +1207,7 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
 
     if(savefig):
 
-        plt.savefig(path + filename + str(key) +'.jpg', bbox_inches='tight')
+        plt.savefig(path + filename + str(key) +'.jpg', bbox_inches='tight', dpi = 300)
 
     plt.show()
 
@@ -1646,6 +1647,7 @@ def plot_some_channels(args, bg_subtraction=False, savefig=False, sigma=3, path=
             ax.get_xaxis().set_visible(True)
 
         plt.xlabel("")
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
         #ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
         #ax.xaxis.set_minor_locator(hours)
 
@@ -1658,7 +1660,7 @@ def plot_some_channels(args, bg_subtraction=False, savefig=False, sigma=3, path=
 
     if(savefig):
 
-        plt.savefig(path + filename + str(key) +'.jpg', bbox_inches='tight')
+        plt.savefig(path + filename + str(key) +'.jpg', bbox_inches='tight', dpi = 300)
 
     plt.show()
 

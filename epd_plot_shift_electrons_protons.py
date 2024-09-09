@@ -645,7 +645,9 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
             # the matrix multiplication np.matmul does not work if there are nan vales in the matrix because it does not have an inbuilt ignore nan variable
             # so for now we can ignore nans by using the above more 'by hand' calculation with np.ma.masked_invalid that ignore both inf and nan values
             # Electron_Flux_cont[tt, :] = np.matmul(ion_cont_corr_matrix, np.ma.masked_invalid(df_proton_fluxes.values[tt, :]))
-            Electron_Uncertainty_cont[tt, :] = np.sqrt(np.matmul(ion_cont_corr_matrix**2, np.ma.masked_invalid(df_proton_uncertainties.values[tt, :]**2 )))
+            #Electron_Uncertainty_cont[tt, :] = np.sqrt(np.matmul(ion_cont_corr_matrix**2, np.ma.masked_invalid(df_proton_uncertainties.values[tt, :]**2 )))
+            Electron_Uncertainty_cont[tt, :] = np.sqrt(np.sum(ion_cont_corr_matrix**2 * np.ma.masked_invalid(df_proton_uncertainties.values[tt, :]**2),axis = 1 ))
+           
             
         df_electron_fluxes = df_electron_fluxes - Electron_Flux_cont
         df_electron_uncertainties = np.sqrt(df_electron_uncertainties**2 + Electron_Uncertainty_cont**2 )
@@ -1629,7 +1631,8 @@ def plot_channels_electrons(args, bg_subtraction=False, savefig=False, sigma=3, 
 
             ax.get_xaxis().set_visible(True)
             ax.set_xlabel("Time", labelpad=45)
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
+            #ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
             #ax.xaxis.set_minor_locator(hours)
 
         n+=1
@@ -1659,7 +1662,8 @@ def plot_channels_electrons(args, bg_subtraction=False, savefig=False, sigma=3, 
         ax.set_ylim([0, 180])
         ax.yaxis.set_ticks(np.arange(0, 180+45, 45))
         ax.set_ylabel('PA / °', size=13)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
+        #ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
         plt.tick_params(axis='x', which='major', labelsize=16)
         plt.tick_params(axis='y', which='major', labelsize=13)
         ax.set_xlabel("Time", labelpad=45, size=16)
@@ -1674,6 +1678,7 @@ def plot_channels_electrons(args, bg_subtraction=False, savefig=False, sigma=3, 
         plt.savefig(path + filename + str(key) +'.jpg', bbox_inches='tight')
 
     plt.show()
+    
 def plot_channels_protons(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', frac_nan_threshold=0.4, rel_err_threshold=0.5, plot_pa=False, coverage=None, sensor = 'ept', viewing='sun'):
     """Creates a timeseries plot showing the particle flux for each energy channel of
         the instrument (STEP, EPT, HET). The timeseries plot shows also the peak window and
@@ -1832,7 +1837,7 @@ def plot_channels_protons(args, bg_subtraction=False, savefig=False, sigma=3, pa
 
             ax.get_xaxis().set_visible(True)
             ax.set_xlabel("Time", labelpad=45)
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
             #ax.xaxis.set_minor_locator(hours)
 
         n+=1
@@ -1862,7 +1867,8 @@ def plot_channels_protons(args, bg_subtraction=False, savefig=False, sigma=3, pa
         ax.set_ylim([0, 180])
         ax.yaxis.set_ticks(np.arange(0, 180+45, 45))
         ax.set_ylabel('PA / °', size=13)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
+        #ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
         plt.tick_params(axis='x', which='major', labelsize=16)
         plt.tick_params(axis='y', which='major', labelsize=13)
         ax.set_xlabel("Time", labelpad=45, size=16)
