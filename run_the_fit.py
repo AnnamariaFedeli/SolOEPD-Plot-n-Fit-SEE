@@ -12,6 +12,16 @@ from datetime import *
 import os
 from tabulate import tabulate
 import shutil
+from matplotlib import rc
+import matplotlib.font_manager
+from IPython.core.display import HTML
+
+def make_html(fontname):
+    return "<p>{font}: <span style='font-family:{font}; font-size: 24px;'>{font}</p>".format(font=fontname)
+
+code = "\n".join([make_html(font) for font in sorted(set([f.name for f in matplotlib.font_manager.fontManager.ttflist]))])
+
+HTML("<div style='column-count: 2;'>{}</div>".format(code))
 # <--------------------------------------------------------------- ALL NECESSARY INPUTS HERE ----------------------------------------------------------------->
 def quality_factor_PA_coverage(data, coverage, direction = 'sun', angle = 180):
 	qf = []
@@ -171,7 +181,7 @@ def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run
 	shutil.copy(newpath+run_var_file, runvariables+run_var_file)
 
 	
-def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best',  channels_to_exclude = None, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False, quality_factor = None):
+def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best',  channels_to_exclude = None, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False, quality_factor = None, fsize = 12, legend_outside = False, no_legend = False, do_not_plot_bad_channels = False):
 
 	     # slope (float, optional): The type of slope used to find the peak (for the title). Defaults to None.
 		 # #slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True):
@@ -725,7 +735,11 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	
 	# <----------------------------------------------------------------------FIT AND PLOT------------------------------------------------------------------->
 
-	f, ax = plt.subplots(1, figsize=(8, 6), dpi = 200)
+	f, ax = plt.subplots(1, figsize=(8, 6), dpi = 300)
+	#plt.rcParams["font.family"] = "Times New Roman"
+	matplotlib.rc('font',family='Times New Roman')
+
+
 
 	#distance  = ''
 	distance = f' (R={dist} au)'
@@ -733,37 +747,37 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	
 	if legend_details:
 		if ion_correction:
-			ax.plot([], [], ' ', label="ion corr on")
+			ax.plot([], [], ' ', label="Ion corr on")
 		else:
-			ax.plot([], [], ' ', label="ion corr off")
+			ax.plot([], [], ' ', label="Ion corr off")
 
 		if bg_subtraction:
-			ax.plot([], [], ' ', label="bg subtraction on")
+			ax.plot([], [], ' ', label="Bg subtraction on")
 		else:
-			ax.plot([], [], ' ', label="bg subtraction off")
+			ax.plot([], [], ' ', label="Bg subtraction off")
 		if shift_step_data:
 			ax.plot([], [], ' ', label="Shift factor (STEP) "+ str(np.round(step_shift_factor,2)))
 
 
 	if make_fit:
 		if fit_type == 'step':
-			plot_title = 'SolO '+ distance+' STEP'
+			plot_title = 'Solar Orbiter '+ distance+' STEP'
 			#fit_result = 
 			fitting.MAKE_THE_FIT(spec_energy_step, spec_flux_step, energy_err_step[1], flux_err_step, ax, direction=direction, e_min = e_min, e_max = e_max, which_fit=which_fit, g1_guess=g1_guess, g2_guess=g2_guess, g3_guess = g3_guess, alpha_guess=alpha_guess, beta_guess = beta_guess, break_low_guess=break_guess_low, break_high_guess = break_guess_high, cut_guess = cut_guess, c1_guess = c1_guess, exponent_guess = exponent_guess, use_random = use_random, iterations = iterations, path = pickle_path, path2 = fit_var_path, detailed_legend = legend_details)
 		if fit_type == 'ept':
-			plot_title = 'SolO '+ distance+' EPT'
+			plot_title = 'Solar Orbiter '+ distance+' EPT'
 			fitting.MAKE_THE_FIT(spec_energy_ept, spec_flux_ept, energy_err_ept[1], flux_err_ept, ax, direction=direction, e_min = e_min, e_max = e_max, which_fit=which_fit, g1_guess=g1_guess, g2_guess=g2_guess, g3_guess = g3_guess, alpha_guess=alpha_guess, beta_guess = beta_guess, break_low_guess=break_guess_low, break_high_guess = break_guess_high, cut_guess = cut_guess, c1_guess = c1_guess, exponent_guess = exponent_guess, use_random = use_random, iterations = iterations, path = pickle_path, path2 = fit_var_path, detailed_legend = legend_details)
 		if fit_type == 'het':
-			plot_title = 'SolO '+ distance+' HET'
+			plot_title = 'Solar Orbiter '+ distance+' HET'
 			fitting.MAKE_THE_FIT(spec_energy_het, spec_flux_het, energy_err_het[1], flux_err_het, ax, direction=direction, e_min = e_min, e_max = e_max, which_fit='single', g1_guess=g1_guess, g2_guess=g2_guess, g3_guess = g3_guess, alpha_guess=alpha_guess, beta_guess = beta_guess, break_low_guess=break_guess_low, break_high_guess = break_guess_high, cut_guess = cut_guess,  c1_guess = c1_guess, exponent_guess = exponent_guess, use_random = use_random, iterations = iterations, path = pickle_path, path2 = fit_var_path, detailed_legend = legend_details)
 		if fit_type == 'step_ept':
-			plot_title = 'SolO '+ distance+' STEP and EPT'
+			plot_title = 'Solar Orbiter '+ distance+' STEP and EPT'
 			fitting.MAKE_THE_FIT(spec_energy_step_ept, spec_flux_step_ept, energy_err_step_ept[1], flux_err_step_ept, ax, direction=direction, e_min = e_min, e_max = e_max, which_fit=which_fit, g1_guess=g1_guess, g2_guess=g2_guess, g3_guess = g3_guess, alpha_guess=alpha_guess, beta_guess = beta_guess, break_low_guess=break_guess_low, break_high_guess = break_guess_high, cut_guess = cut_guess, c1_guess = c1_guess, exponent_guess = exponent_guess, use_random = use_random, iterations = iterations, path = pickle_path, path2 = fit_var_path, detailed_legend = legend_details)
 		if fit_type == 'ept_het':
-			plot_title = 'SolO '+ distance+' EPT and HET'
+			plot_title = 'Solar Orbiter '+ distance+' EPT and HET'
 			fitting.MAKE_THE_FIT(spec_energy_ept_het, spec_flux_ept_het, energy_err_ept_het[1], flux_err_ept_het, ax, direction=direction, e_min = e_min, e_max = e_max, which_fit=which_fit, g1_guess=g1_guess, g2_guess=g2_guess, g3_guess = g3_guess, alpha_guess=alpha_guess, beta_guess = beta_guess, break_low_guess=break_guess_low, break_high_guess = break_guess_high, cut_guess = cut_guess, c1_guess = c1_guess, exponent_guess = exponent_guess, use_random = use_random, iterations = iterations, path = pickle_path, path2 = fit_var_path, detailed_legend = legend_details)
 		if fit_type == 'step_ept_het':
-			plot_title = 'SolO '+ distance+' STEP, EPT and HET'
+			plot_title = 'Solar Orbiter '+ distance+' STEP, EPT and HET'
 			fitting.MAKE_THE_FIT(spec_energy, spec_flux, energy_err[1], flux_err, ax, direction=direction, e_min = e_min, e_max = e_max, which_fit=which_fit, g1_guess=g1_guess, g2_guess=g2_guess, g3_guess = g3_guess, alpha_guess=alpha_guess, beta_guess = beta_guess, break_low_guess=break_guess_low, break_high_guess = break_guess_high, cut_guess = cut_guess, c1_guess = c1_guess, exponent_guess = exponent_guess, use_random = use_random, iterations = iterations, path = pickle_path, path2 = fit_var_path, detailed_legend = legend_details)
 		if step:
 			ax.errorbar(spec_energy_step, spec_flux_step, yerr=flux_err_step, xerr = energy_err_step, marker='o', linestyle='',markersize= 3 ,  color='darkorange', label='STEP', zorder = -1)
@@ -773,31 +787,33 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 			ax.errorbar(spec_energy_het, spec_flux_het, yerr=flux_err_het, xerr = energy_err_het, marker='o', linestyle='', markersize= 3, color='maroon', label='HET '+direction, zorder = -1)
 			if leave_out_1st_het_chan:
 				ax.errorbar(spec_energy_first_het, spec_flux_first_het, yerr=flux_err_first_het, xerr = energy_err_first_het, marker='o', linestyle='', markersize= 3, color='black', label='First HET channel', zorder = -1)
-		ax.errorbar(spec_energy_c, spec_flux_c, yerr=flux_err_c, xerr = energy_err_c, marker='o', linestyle='', markersize= 3, color='gray', label='excluded from fit', zorder = -1)
+		if do_not_plot_bad_channels is False :#and len(spec_flux_c)!=0:
+			ax.errorbar(spec_energy_c, spec_flux_c, yerr=flux_err_c, xerr = energy_err_c, marker='o', linestyle='', markersize= 3, color='gray', label='Automatically excluded \n from the fit', zorder = -1)
 		
 
 	if make_fit is False:
-		ax.errorbar(spec_energy_c, spec_flux_c, yerr=flux_err_c, xerr = energy_err_c, marker='o', linestyle='', markersize= 3, color='gray', label = 'cont. data', zorder = -1)
+		if do_not_plot_bad_channels is False:
+			ax.errorbar(spec_energy_c, spec_flux_c, yerr=flux_err_c, xerr = energy_err_c, marker='o', linestyle='', markersize= 3, color='gray', label = 'cont. data', zorder = -1)
 		if step:
 			ax.errorbar(spec_energy_step, spec_flux_step, yerr=flux_err_step, xerr = energy_err_step, marker='o', markersize= 3 , linestyle='', color='darkorange', label='STEP', zorder = -1)
 			if ept and het:
-				plot_title = 'SolO STEP, EPT and HET'
+				plot_title = 'Solar Orbiter STEP, EPT and HET'
 			if ept and het is False:
-				plot_title = 'SolO STEP and EPT'
+				plot_title = 'Solar Orbiter STEP and EPT'
 			if het and ept is False:
-				plot_title = 'SolO STEP and HET'
+				plot_title = 'Solar Orbiter STEP and HET'
 			if ept is False and het is False:
-				plot_title = 'SolO STEP'
+				plot_title = 'Solar Orbiter STEP'
 		if ept:
 			ax.errorbar(spec_energy_ept, spec_flux_ept, yerr=flux_err_ept, xerr = energy_err_ept, marker='o', linestyle='', markersize= 3, color=color[direction], label='EPT '+direction, zorder = -1)
 			if het and step is False:
-				plot_title = 'SolO EPT and HET'
+				plot_title = 'Solar Orbiter EPT and HET'
 			if step is False and het is False:
-				plot_title = 'SolO EPT'
+				plot_title = 'Solar Orbiter EPT'
 		if het:
 			ax.errorbar(spec_energy_het, spec_flux_het, yerr=flux_err_het, xerr = energy_err_het, marker='o', linestyle='', markersize= 3, color='maroon', label='HET '+direction, zorder = -1)
 			if ept is False and step is False:
-				plot_title = 'SolO HET'
+				plot_title = 'Solar Orbiter HET'
 			if leave_out_1st_het_chan:
 				ax.errorbar(spec_energy_first_het, spec_flux_first_het, yerr=flux_err_first_het, xerr = energy_err_first_het, marker='o', linestyle='', markersize= 3, color='black', label='First HET channel', zorder = -1)
 				
@@ -820,7 +836,8 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	#ax.errorbar(spec_energy_c_nan, contaminated_data_nan['Background_flux'], yerr=contaminated_data_nan['Bg_electron_uncertainty'], xerr = energy_err_c_nan, marker='o', markersize= 3, linestyle='', color='gray', alpha=0.3)
 	#ax.errorbar(spec_energy_c_rel_err, contaminated_data_rel_err['Background_flux'], yerr=contaminated_data_rel_err['Bg_electron_uncertainty'], xerr = energy_err_c_rel_err, marker='o', markersize= 3, linestyle='', color='purple', alpha=0.3)
 	if make_fit:
-		ax.errorbar(spec_energy_c, contaminated_data['Background_flux'], yerr=contaminated_data['Bg_electron_uncertainty'], xerr = energy_err_c, marker='o', markersize= 3, linestyle='', color='gray', alpha=0.3)
+		if do_not_plot_bad_channels is False:
+			ax.errorbar(spec_energy_c, contaminated_data['Background_flux'], yerr=contaminated_data['Bg_electron_uncertainty'], xerr = energy_err_c, marker='o', markersize= 3, linestyle='', color='gray', alpha=0.3)
 		if het and leave_out_1st_het_chan:
 			ax.errorbar(spec_energy_first_het, first_het_data['Background_flux'], yerr=first_het_data['Bg_electron_uncertainty'], xerr = energy_err_first_het, marker='o', markersize= 3, linestyle='', color='black', alpha=0.3)
 	
@@ -854,6 +871,10 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	e_range_min = step_energy_range[0]
 	e_range_max = het_energy_range[1]
 
+	if do_not_plot_bad_channels:
+		e_range_min = step_energy_range[0]
+		e_range_max = spec_energy[len(spec_energy)-1]
+
 	ax.set_xscale('log')
 	ax.set_yscale('log')
 	locmin = pltt.LogLocator(base=10.0,subs=(0.2,0.4,0.6,0.8),numticks=12)
@@ -861,15 +882,31 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	ax.yaxis.set_minor_locator(locmin)
 	ax.yaxis.set_minor_formatter(pltt.NullFormatter())
 
+	
+	ax.tick_params(which = 'major', width = 1, length = 4, color = 'black')
+	ax.tick_params(which = 'minor', width = 1, length = 4, color = 'black')
+	ax.tick_params(labelsize = fsize+2)
+	
+	for axis in ['top','bottom','left','right']:
+		ax.spines[axis].set_linewidth(1)
 
 
-	plt.legend(title=legend_title,  prop={'size': 7})
-	plt.ylabel(intensity_label)
-	plt.xlabel(energy_label)
+
+
+
+	plt.xticks(fontsize = fsize)
+	plt.yticks(fontsize = fsize)
+	if no_legend is False:
+		if legend_outside:
+			plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), title=legend_title,  prop={'size': fsize}, fontsize = fsize-2, title_fontsize = fsize)
+		else:
+			plt.legend(title=legend_title,  prop={'size': fsize-2}, fontsize = fsize-2, title_fontsize = fsize)#, loc="lower left")
+	plt.ylabel(intensity_label, fontsize = fsize)
+	plt.xlabel(energy_label, fontsize = fsize)
 	if centre_pix:
-		plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging, centre pixels')
+		plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging, centre pixels', fontsize = fsize+2)
 	else:
-		plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging')
+		plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging', fontsize = fsize+2)
 
 	plot_path = path
 	if fit_to_separate_folder:

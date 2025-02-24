@@ -1513,7 +1513,7 @@ def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key
     plt.show()
 
 
-def plot_some_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', frac_nan_threshold=0.9, rel_err_threshold=0.5, channels = [0,1,2,3,4], figsize_x = 15, figsize_y = 8, f_scale = 1, f_size = 12):
+def plot_some_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', plot_pa=False, coverage=None, sensor = 'ept', viewing='sun', frac_nan_threshold=0.9, rel_err_threshold=0.5, channels = [0,1,2,3,4], figsize_x = 15, figsize_y = 8, f_scale = 1, f_size = 12):
     """Creates a timeseries plot showing the particle flux for each energy channel of
         the instrument (STEP, EPT, HET). The timeseries plot shows also the peak window and
         background window. The peak is marked with different color lines:
@@ -1602,6 +1602,9 @@ def plot_some_channels(args, bg_subtraction=False, savefig=False, sigma=3, path=
 
     # Plotting part.
     # Initialized the main figure.
+
+
+
     fig = plt.figure()
     plt.xticks([],fontsize=12)
     plt.yticks([],fontsize=12)
@@ -1610,13 +1613,17 @@ def plot_some_channels(args, bg_subtraction=False, savefig=False, sigma=3, path=
     plt.title(title_string, size = f_size)
  
 
+
     # Loop through selected energy channels and create a subplot for each.
     n=1
+
     for channel in channels:
         sns.set_theme(style="white",font_scale = f_scale)
         m = len(channels)
-
-        ax = fig.add_subplot(len(channels),1,n)
+        if plot_pa is False:
+            ax = fig.add_subplot(len(channels),1,n)
+        if plot_pa:
+            ax = fig.add_subplot(len(channels)+1,1,n)
         ax = df_electron_fluxes['Electron_Flux_{}'.format(df_info['Energy_channel'][channel])].plot(logy=True, figsize=(figsize_x,figsize_y), color='red', drawstyle='steps-mid')
 
         plt.text(0.025,0.7, str(energy_bin[0][channel]) + " - " + str(energy_bin[1][channel]) + " MeV", transform=ax.transAxes, size=f_size)
@@ -1642,16 +1649,57 @@ def plot_some_channels(args, bg_subtraction=False, savefig=False, sigma=3, path=
 
         ax.get_xaxis().set_visible(False)
 
-        if(n == len(channels)):
+        if plot_pa is False:
+            if(n == len(channels)):
+                ax.get_xaxis().set_visible(True)
 
-            ax.get_xaxis().set_visible(True)
-
-        plt.xlabel("")
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
+            plt.xlabel("")
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
         #ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
         #ax.xaxis.set_minor_locator(hours)
 
+
+
+       
+
+        if plot_pa:  # add a panel that shows the pitch angle of the telescope
+            if(n == len(channels)+1):
+                color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
+                ax.get_xaxis().set_visible(True)
+                plt.xlabel("")
+                #ax = fig.add_subplot(len(channels)+1,1,len(channels)+2)
+                #ax = axes[n]
+                if sensor in ['HET', 'het', 'EPT', 'ept']: 
+                    #for direction in ['sun', 'asun', 'north', 'south']: 
+                    col = color[viewing]
+                    # fill the minimum-maximum range of the pitch angle coverage
+                    ax.fill_between(coverage.index, coverage[viewing]['min'], coverage[viewing]['max'], alpha=0.5, color=col, edgecolor=col, linewidth=0.0, step='mid')
+                    # plot the central pitch angle as a thin line
+                    ax.plot(coverage.index, coverage[viewing]['center'], linewidth=0.7, label=viewing, color=col, drawstyle='steps-mid')
+
+                if sensor in ['STEP', 'step']:
+                    col_list = plt.cm.viridis(np.linspace(0.,0.95,16))
+                    for p in range(1, 16):  # loop over 15 sectors/pixels
+                        # plot the central pitch angle as a thin line
+                        ax.plot(coverage.index, coverage[f'Pixel_{p}']['center'], color = col_list[p-1], linewidth=1, label=f'Pixel_{p}', drawstyle='steps-mid')
+
+                ax.axhline(y=90, color='gray', linewidth=0.8, linestyle='--')
+                ax.axhline(y=45, color='gray', linewidth=0.8, linestyle='--')
+                ax.axhline(y=135, color='gray', linewidth=0.8, linestyle='--')
+
+            
+                ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), title=instrument)
+                ax.set_ylim([0, 180])
+                ax.yaxis.set_ticks(np.arange(0, 180+45, 45))
+                ax.set_ylabel('PA / °', size=f_size)
+                #ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
+                ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
+                plt.tick_params(axis='x', which='major', labelsize=f_size)
+                plt.tick_params(axis='y', which='major', labelsize=f_size)
+                ax.set_xlabel("Time", labelpad=45, size=f_size)
+
         n+=1
+        
 
     # Saves figure, if enabled.
     if(path[len(path)-1] != '/'):

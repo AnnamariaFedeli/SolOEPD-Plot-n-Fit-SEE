@@ -1028,15 +1028,17 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		errors      = t_val * result_single_pl.sd_beta  #np.sqrt(np.diag(final_fit.cov_beta))
 		gamma1_err  = errors[1]
 
+		
+
 		if detailed_legend:
-			ax.plot([], [], ' ', label="single pl")
+			ax.plot([], [], ' ', label="Single pl")
 			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_single, ndigits=2))
 			ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$' +"{:.2e}".format(c1)+"/(s cm² sr MeV)")
 			#ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$%5.2f' %round(c1, ndigits=2)+"/(s cm² sr MeV)")
 			
 
 
-		ax.plot(xplot, pl_fit.simple_pl([c1, gamma1], xplot), '-', color=color[direction], label=r'$\mathregular{\delta=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err))
+		ax.plot(xplot, pl_fit.simple_pl([c1, gamma1], xplot), '-', color=color[direction], label=r'$\mathregular{\gamma=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err))
 		ax.plot(xplot, pl_fit.simple_pl([c1, gamma1], xplot), '--k', zorder=10)
 
 
@@ -1080,11 +1082,23 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			gamma2     = result_broken.beta[2]
 			gamma2_err = errors[2]
 			
+
 		if alpha < 0 :
 			gamma1     = result_broken.beta[2]
 			gamma1_err = errors[2]
 			gamma2     = result_broken.beta[1]
 			gamma2_err = errors[1]
+
+
+		
+#Added this on Nov 18 2024 change if causes problems !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			
+		if gamma1<gamma2 and alpha>0:
+			alpha = -abs(alpha)
+
+		elif gamma2<gamma1 and alpha<0:
+			alpha = -abs(alpha)
+
 			
 		##if gamma1<gamma2:
 		#	gamma_temp = gamma1
@@ -1099,14 +1113,14 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		fit_plot[fit_plot == 0] = np.nan
 
 		if detailed_legend:
-			ax.plot([], [], ' ', label="broken pl")
+			ax.plot([], [], ' ', label="Broken pl")
 			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_broken, ndigits=2))
 			ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$' +"{:.2e}".format(c1)+"/(s cm² sr MeV)")
 			#ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$%5.2f' %round(c1, ndigits=2)+"/(s cm² sr MeV)")
 			
 
 
-		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\delta_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2))#, lw=lwd)
+		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\gamma_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\gamma_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2))#, lw=lwd)
 		if len(str(breakp_1*1e3).split('.')[0])>3:
 			ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b=}$ '+str(round(breakp_1, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err, ndigits=0))+' MeV')
 		elif len(str(breakp_1*1e3).split('.')[0])<=3:
@@ -1155,7 +1169,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		fit_plot[fit_plot == 0] = np.nan
 
 		if detailed_legend:
-			ax.plot([], [], ' ', label="single pl + exp cutoff")
+			ax.plot([], [], ' ', label="Single pl + exp cutoff")
 			ax.plot([], [], ' ', label="exponent: "+str(round(exponent, ndigits=2)))
 			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_cut, ndigits=2))
 			#ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$%5.2f' %round(c1, ndigits=2)+"/(s cm² sr MeV)")
@@ -1164,7 +1178,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			
 
 
-		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err))#, lw=lwd)
+		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\gamma_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err))#, lw=lwd)
 		if len(str(cut*1e3).split('.')[0])>3:
 			ax.axvline(x=cut, color='purple', linestyle='--', label=r'$\mathregular{E_c=}$ '+str(round(cut, ndigits=1))+'\n'+r"$\pm$"+str(round(cut_err, ndigits=0))+' MeV')
 		elif len(str(cut*1e3).split('.')[0])<=3:
@@ -1214,18 +1228,27 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			gamma2     = result_cut.beta[2]
 			gamma2_err = errors[2]
 			
+			
 		if alpha < 0 :
 			gamma1     = result_cut.beta[2]
 			gamma1_err = errors[2]
 			gamma2     = result_cut.beta[1]
 			gamma2_err = errors[1]
+			
+
+		if gamma1<gamma2 and alpha>0:
+			alpha = -abs(alpha)
+
+		elif gamma2<gamma1 and alpha<0:
+			alpha = -abs(alpha)
+
 	
 			
 		fit_plot = pl_fit.cut_break_pl_func(result_cut.beta, xplot)
 		fit_plot[fit_plot == 0] = np.nan
 
 		if detailed_legend:
-			ax.plot([], [], ' ', label="broken pl + exp cutoff")
+			ax.plot([], [], ' ', label="Broken pl + exp cutoff")
 			ax.plot([], [], ' ', label="exponent: "+str(round(exponent, ndigits=2)))
 			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_cut, ndigits=2))
 			#ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$%5.2f' %round(c1, ndigits=2)+"/(s cm² sr MeV)")
@@ -1233,7 +1256,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			
 	
 
-		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\delta_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2))#, lw=lwd)
+		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\gamma_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\gamma_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2))#, lw=lwd)
 		if len(str(breakp_1*1e3).split('.')[0])>3:
 			ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b=}$ '+str(round(breakp_1, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err, ndigits=0))+' MeV')
 		if len(str(cut*1e3).split('.')[0])>3:
@@ -1307,8 +1330,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			gamma2_err = errors[1]
 			gamma3 = result_triple.beta[3]
 			gamma3_err = errors[3]
-
 			
+
 		if beta < 0 and alpha >0:
 			gamma1     = result_triple.beta[1]
 			gamma1_err = errors[1]
@@ -1316,20 +1339,63 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 			gamma2_err = errors[3]
 			gamma3 = result_triple.beta[2]
 			gamma3_err = errors[2]
+			
 	
+		
+		if gamma1>gamma2 and gamma2>gamma3:
+			#if alpha>0 and beta>0:
+				#all ok
+			if alpha<0 and beta>0:
+				alpha = -abs(alpha)
+			if alpha>0 and beta<0:
+				beta = -abs(beta)
+			if alpha<0 and beta<0:
+				#something went wrong
+				alpha = -abs(alpha)
+				beta = -abs(beta)
+
+		if gamma1>gamma2 and gamma2<gamma3:
+			if alpha>0 and beta>0:
+				beta = -abs(beta)
+			#if alpha >0 and beta<0:
+				#all ok
+			if alpha<0 and beta>0:
+				a = alpha
+				b = beta
+				alpha = b
+				beta = a
+			if alpha <0 and beta<0:
+				alpha = -abs(alpha)
+
+		if gamma1<gamma2 and gamma2>gamma3:
+			if alpha >0 and beta >0 :
+				alpha = -abs(alpha)
+			if alpha >0 and beta <0:
+				a = alpha
+				b = beta
+				alpha = b
+				beta = a
+			#if alpha<0 and beta>0:
+				#all ok
+			if alpha<0 and beta<0:
+				beta = -abs(beta)
+
+
+			
+
 			
 		fit_plot = pl_fit.triple_pl_func(result_triple.beta, xplot)
 		fit_plot[fit_plot == 0] = np.nan
 
 		if detailed_legend:
-			ax.plot([], [], ' ', label="triple pl")
+			ax.plot([], [], ' ', label="Triple pl")
 			ax.plot([], [], ' ', label=r'$\mathregular{\chi²=}$%5.2f' %round(redchi_triple, ndigits=2))
 			#ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$%5.2f' %round(c1, ndigits=2)+"/(s cm² sr MeV)")
 			ax.plot([], [], ' ', label=r'$\mathregular{I_0=}$' +"{:.2e}".format(c1)+"/(s cm² sr MeV)")
 			
 			
 
-		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\delta_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\delta_3=}$%5.2f' %round(gamma3, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma3_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2)+'\n'+r'$\mathregular{\beta=}$%5.2f' %round(beta, ndigits=2))#, lw=lwd)
+		ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\gamma_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\gamma_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\gamma_3=}$%5.2f' %round(gamma3, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma3_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2)+'\n'+r'$\mathregular{\beta=}$%5.2f' %round(beta, ndigits=2))#, lw=lwd)
 		if len(str(breakp_1*1e3).split('.')[0])>3:
 			ax.axvline(x=breakp_1, color='blue', linestyle='--', label=r'$\mathregular{E_b1=}$ '+str(round(breakp_1, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_1_err, ndigits=0))+' MeV')
 		
