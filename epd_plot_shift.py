@@ -641,7 +641,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
             Electron_Flux_cont[tt,:] = np.sum(ion_cont_corr_matrix * np.ma.masked_invalid(df_proton_fluxes.values[tt, :]), axis=1)
             # the matrix multiplication np.matmul does not work if there are nan vales in the matrix because it does not have an inbuilt ignore nan variable
             # so for now we can ignore nans by using the above more 'by hand' calculation with np.ma.masked_invalid that ignore both inf and nan values
-            # MATMUL DOES NOT WORKKKKK Electron_Flux_cont[tt, :] = np.matmul(ion_cont_corr_matrix, np.ma.masked_invalid(df_proton_fluxes.values[tt, :]))
+            # MATMUL DOES NOT WORK Electron_Flux_cont[tt, :] = np.matmul(ion_cont_corr_matrix, np.ma.masked_invalid(df_proton_fluxes.values[tt, :]))
             #print(df_proton_uncertainties.shape)
             #print(df_proton_uncertainties.values[0, :])
             #print(np.ma.masked_invalid(df_proton_uncertainties.values[tt, :]).shape)

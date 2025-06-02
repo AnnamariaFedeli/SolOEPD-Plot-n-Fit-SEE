@@ -4,6 +4,15 @@ import pandas as pd
 
 
 def excluded_channels_from_fit(data_name_list, channel_list):
+	"""_summary_
+
+	Args:
+		data_name_list (_type_): _description_
+		channel_list (_type_): _description_
+
+	Returns:
+		_type_: _description_
+	"""
 	combined_csv = pd.concat(data_name_list)
 	combined_csv.reset_index(drop=True, inplace=True)
 	combined_csv = combined_csv.drop(columns = 'Energy_channel')
