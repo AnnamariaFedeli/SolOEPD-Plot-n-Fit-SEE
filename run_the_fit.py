@@ -181,7 +181,7 @@ def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run
 	shutil.copy(newpath+run_var_file, runvariables+run_var_file)
 
 	
-def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best',  channels_to_exclude = None, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False, quality_factor = None, fsize = 12, legend_outside = False, no_legend = False, do_not_plot_bad_channels = False):
+def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best',  channels_to_exclude = None, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False, quality_factor = None, fsize = 12, legend_outside = False, no_legend = False, do_not_plot_bad_channels = False, title_of_plot = None, make_the_fit = True):
 
 	     # slope (float, optional): The type of slope used to find the peak (for the title). Defaults to None.
 		 # #slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True):
@@ -278,7 +278,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	# <-------------------------------------------------------------- END OF NECESSARY INPUTS ---------------------------------------------------------------->
 
 
-	make_fit = True
+	make_fit = make_the_fit
 	#peak_spec = True
 	#backsub = True
 
@@ -287,8 +287,8 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	# These should be changed if using ions
 	direction = direction #'sun'
 
-	intensity_label = 'Intensity\n/(s cm² sr MeV)'
-	energy_label = 'Energy (MeV)'
+	intensity_label = 'Intensity\n[1/(s cm² sr MeV)]'
+	energy_label = 'Energy [MeV]'
 	peak_info = fit_to+' spectrum'   #+'\n'+window_type
 	legend_title = 'Electrons'  # 'mag' or 'foil' or 'Electrons' if there is more than just ept data
 	data_product = 'l2'
@@ -788,12 +788,12 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 			if leave_out_1st_het_chan:
 				ax.errorbar(spec_energy_first_het, spec_flux_first_het, yerr=flux_err_first_het, xerr = energy_err_first_het, marker='o', linestyle='', markersize= 3, color='black', label='First HET channel', zorder = -1)
 		if do_not_plot_bad_channels is False :#and len(spec_flux_c)!=0:
-			ax.errorbar(spec_energy_c, spec_flux_c, yerr=flux_err_c, xerr = energy_err_c, marker='o', linestyle='', markersize= 3, color='gray', label='Automatically excluded \n from the fit', zorder = -1)
+			ax.errorbar(spec_energy_c, spec_flux_c, yerr=flux_err_c, xerr = energy_err_c, marker='o', linestyle='', markersize= 3, color='gray', label='Excluded from the fit', zorder = -1)
 		
 
 	if make_fit is False:
 		if do_not_plot_bad_channels is False:
-			ax.errorbar(spec_energy_c, spec_flux_c, yerr=flux_err_c, xerr = energy_err_c, marker='o', linestyle='', markersize= 3, color='gray', label = 'cont. data', zorder = -1)
+			ax.errorbar(spec_energy_c, spec_flux_c, yerr=flux_err_c, xerr = energy_err_c, marker='o', linestyle='', markersize= 3, color='gray', label = 'Non-significant channels', zorder = -1)
 		if step:
 			ax.errorbar(spec_energy_step, spec_flux_step, yerr=flux_err_step, xerr = energy_err_step, marker='o', markersize= 3 , linestyle='', color='darkorange', label='STEP', zorder = -1)
 			if ept and het:
@@ -904,9 +904,15 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	plt.ylabel(intensity_label, fontsize = fsize)
 	plt.xlabel(energy_label, fontsize = fsize)
 	if centre_pix:
-		plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging, centre pixels', fontsize = fsize+2)
+		if title_of_plot is None:
+			plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging, centre pixels', fontsize = fsize+2)
+		else:
+			plt.title(title_of_plot, fontsize = fsize+2)
 	else:
-		plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging', fontsize = fsize+2)
+		if title_of_plot is None:
+			plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging', fontsize = fsize+2)
+		else:
+			plt.title(title_of_plot, fontsize = fsize+2)
 
 	plot_path = path
 	if fit_to_separate_folder:

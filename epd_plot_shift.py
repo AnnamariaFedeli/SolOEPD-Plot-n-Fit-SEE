@@ -985,7 +985,7 @@ def average_flux_error(flux_err: pd.DataFrame) -> pd.Series:
 
     return np.sqrt((flux_err ** 2).sum(axis=0)) / len(flux_err.values)
 
-def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', frac_nan_threshold=0.4, rel_err_threshold=0.5, plot_pa=False, coverage=None, sensor = 'ept', viewing='sun', centre_pix = False, date = None):
+def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', frac_nan_threshold=0.4, rel_err_threshold=0.5, plot_pa=False, coverage=None, sensor = 'ept', viewing='sun', centre_pix = False, date = None, size = 20):
     """Creates a timeseries plot showing the particle flux for each energy channel of
         the instrument (STEP, EPT, HET). The timeseries plot shows also the peak window and
         background window. The peak is marked with different color lines:
@@ -1118,8 +1118,8 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
     # plt.xticks([])
     # plt.yticks([])
     # plt.ylabel("Flux \n [1/s cm$^2$ sr MeV]", labelpad=40)
-    fig.supylabel("Intensity [1/s cm$^2$ sr MeV]", size=20)
-    axes[0].set_title(title_string, size=20)
+    fig.supylabel("Intensity [1/s cm$^2$ sr MeV]", size=size)
+    axes[0].set_title(title_string+"\n", size=size)
 
 
     # Loop through selected energy channels and create a subplot for each.
@@ -1130,7 +1130,9 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
         ax = axes[n]
         ax.plot(df_electron_fluxes.index, df_electron_fluxes['Electron_Flux_{}'.format(channel)], color=color[viewing], drawstyle='steps-mid')
         ax.set_yscale('log')
-        plt.text(0.025,0.7, str(energy_bin[0][channel]) + " - " + str(energy_bin[1][channel]) + " MeV", transform=ax.transAxes, size=13)
+        plt.text(0.025,0.7, str(energy_bin[0][channel]) + " - " + str(energy_bin[1][channel]) + " MeV", transform=ax.transAxes, size=size-2) #was13
+
+        ax.tick_params(axis = 'y', which = 'major', labelsize = size-2)
 
         # Search area vertical lines.
         ax.axvline(search_area[0][n], color='black')
@@ -1193,12 +1195,12 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), title=instrument)
         ax.set_ylim([0, 180])
         ax.yaxis.set_ticks(np.arange(0, 180+45, 45))
-        ax.set_ylabel('PA / °', size=13)
+        ax.set_ylabel('PA [°]', size=size-2)#was13
         #ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
-        plt.tick_params(axis='x', which='major', labelsize=16)
-        plt.tick_params(axis='y', which='major', labelsize=13)
-        ax.set_xlabel("Time", labelpad=45, size=16)
+        plt.tick_params(axis='x', which='major', labelsize=size-2) #was 16
+        plt.tick_params(axis='y', which='major', labelsize=size-2)#was13
+        ax.set_xlabel("Time", labelpad=45, size=size) #was 16
     
     # Saves figure, if enabled.
     if(path[len(path)-1] != '/'):
