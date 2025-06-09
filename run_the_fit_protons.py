@@ -4,95 +4,100 @@ import datetime as dt
 import matplotlib.pyplot as plt
 import matplotlib.ticker as pltt
 from sunpy.coordinates import get_horizons_coord
-#from make_the_fit import  *
-#from combining_files import *
 from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
-# Import mymodule
-#from savecsv import *
-#from combining_files import *
 import make_the_fit_tripl as fitting
 import savecsv as save
 import combining_files as comb
 from datetime import *
 import os
+from tabulate import tabulate
 import shutil
+from matplotlib import rc
+import matplotlib.font_manager
+from IPython.core.display import HTML
+
+def make_html(fontname):
+    return "<p>{font}: <span style='font-family:{font}; font-size: 24px;'>{font}</p>".format(font=fontname)
+
+code = "\n".join([make_html(font) for font in sorted(set([f.name for f in matplotlib.font_manager.fontManager.ttflist]))])
+
+HTML("<div style='column-count: 2;'>{}</div>".format(code))
 # <--------------------------------------------------------------- ALL NECESSARY INPUTS HERE ----------------------------------------------------------------->
-
-#source_folder = r"E:\demos\files\reports\\"
-#destination_folder = r"E:\demos\files\account\\"
-
-# fetch all files
-#for file_name in os.listdir(source_folder):
-    # construct full file path
-#    source = source_folder + file_name
-#    destination = destination_folder + file_name
-    # copy only files
-#    if os.path.isfile(source):
-#        shutil.copy(source, destination)
-#        print('copied', file_name)
-def quality_factor_PA_coverage(data_ept, coverage, direction = 'sun', angle = 180):
-	qf = 0
-	for j in range(0, len(data_ept)-1):
+def quality_factor_PA_coverage(data, coverage, direction = 'sun', angle = 180):
+	qf = []
+	for j in range(0, len(data[1])):
 		df = coverage[direction]
 		df = df.reset_index()
-		df = df.drop(np.where(df['EPOCH'] < data_ept[2][0][j])[0])
+		df = df.drop(np.where(df['EPOCH'] < data[2][0][j])[0])
 		df.reset_index(drop = True, inplace = True)
-		df = df.drop(np.where(df['EPOCH'] > data_ept[2][1][j])[0])
+		df = df.drop(np.where(df['EPOCH'] > data[2][1][j])[0])
 		df.reset_index(drop = True, inplace = True)
 		factors = []
-		for i in range(len(df)):
+		for i in range(0,len(df)):
 			r = df.center[i]
+
 			if angle == 180:
-				if r >=165.:
-					factors.append(100)
-				if r<165. and r >=155:
-					factors.append(90)
-				if r<155. and r >=145:
-					factors.append(80)
-				if r<145. and r >=135:
-					factors.append(70)
-				if r<135. and r >=125:
-					factors.append(60)
-				if r<125. and r>=115.:
-					factors.append(50)
-				if r<115. and r>=105.:
-					factors.append(40)
-				if r<105. and r>=90.:
-					factors.append(30)
-				if r<90. and r>=70.:
-					factors.append(20)
-				if r<70. and r>=45.:
-					factors.append(10)
-				if r<45.:
-					factors.append(1)
-
-			if angle == 0:
-				if r <=15.:
-					factors.append(100)
-				if r<25. and r >=15:
-					factors.append(90)
-				if r<35. and r >=25:
-					factors.append(80)
-				if r<45. and r >=35:
-					factors.append(70)
-				if r<55. and r >=45:
-					factors.append(60)
-				if r<65. and r>=55.:
-					factors.append(50)
-				if r<75. and r>=65.:
-					factors.append(40)
-				if r<90. and r>=75.:
-					factors.append(30)
-				if r<110. and r>=90.:
-					factors.append(20)
-				if r<135. and r>=110.:
-					factors.append(10)
-				if r>135.:
-					factors.append(1)
+				r = 180-r
 				
-		qf = sum(factors)/len(factors)
+				
+			if r <=15.:
+				factors.append(100)
 
-	return qf
+			elif r>15:
+				f = np.exp(-np.square(r-12)/2*0.0007)*100
+				factors.append(f)
+
+			else:
+				factors.append(0)
+
+
+		qf.append(sum(factors)/len(factors))	
+		#qf = sum(factors)/len(factors)
+		#print(factors)
+	quality_factor = sum(qf)/len(qf)
+
+	return [qf, quality_factor]
+
+def print_channel(step = None, ept = None, het = None):
+
+	data_name_list  = [step, ept, het]
+	data = pd.concat(data_name_list)
+	data.reset_index(drop=True, inplace=True)
+	data = data.drop(columns = 'Energy_channel')
+
+	
+	ept_start = 0
+	het_start = 0
+
+	if step is not None:
+		ept_start = ept_start+len(step)
+		het_start = het_start+len(step)
+		#chans_step = list(range(0, len(step)))
+		sd = pd.DataFrame()
+		sd['Channel'] = list(range(0, len(step)))
+		sd['Primary Energy [MeV]'] = step.Primary_energy
+
+		print('STEP CHANNELS')
+		print(sd)
+
+	if ept is not None:
+		het_start = het_start+len(ept)
+		#chans_step = list(range(0, len(step)))
+		ed = pd.DataFrame()
+		ed['Channel'] = list(range(ept_start, ept_start+len(ept)))
+		ed['Primary Energy [MeV]'] = ept.Primary_energy
+
+		print('EPT CHANNELS')
+		print(ed)
+
+	if het is not None:
+		hd = pd.DataFrame()
+		hd['Channel'] = list(range(het_start, het_start+len(het)))
+		hd['Primary Energy [MeV]'] = het.Primary_energy
+
+		print('HET CHANNELS')
+		print(hd)
+
 
 def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_threshold, fit_to):
 	"""_summary_
@@ -108,12 +113,12 @@ def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_thresho
 
 	#print(step_data['Primary_energy'])
 	fit = fit_to[0].upper()+fit_to[1:]
-	bad_step_data = step_data.index[step_data['Primary_energy'] <0.05 ].tolist()
+	bad_step_data = step_data.index[step_data['Primary_energy'] <0.037 ].tolist()
 	data_step = step_data.drop(bad_step_data, axis = 0)
 	data_step.reset_index(drop=True, inplace=True)
 	#print(bad_step_data)
 
-	bad_step_data = data_step.index[data_step['Primary_energy']>0.07].tolist()
+	bad_step_data = data_step.index[data_step['Primary_energy']>0.057].tolist()
 	data_step = data_step.drop(bad_step_data, axis = 0)
 	data_step.reset_index(drop=True, inplace=True)
 	#print(bad_step_data)
@@ -130,12 +135,12 @@ def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_thresho
 	else:
 		n_step_chans = 1
 
-	bad_ept_data = ept_data.index[ept_data['Primary_energy'] <0.05].tolist()
+	bad_ept_data = ept_data.index[ept_data['Primary_energy'] <0.037].tolist()
 	data_ept = ept_data.drop(bad_ept_data, axis = 0)
 	data_ept.reset_index(drop=True, inplace=True)
 	#print(bad_ept_data)
 
-	bad_ept_data = data_ept.index[data_ept['Primary_energy']>0.07].tolist()
+	bad_ept_data = data_ept.index[data_ept['Primary_energy']>0.057].tolist()
 	data_ept = data_ept.drop(bad_ept_data, axis = 0)
 	data_ept.reset_index(drop=True, inplace=True)
 	#print(bad_ept_data)
@@ -149,12 +154,13 @@ def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_thresho
 		step_intensity_average = data_step['Flux_'+fit_to].mean()
 		ept_intensity_average = data_ept['Flux_'+fit_to].mean()
 		shift_factor = step_intensity_average/ept_intensity_average
-		print('STEP INTENSITY AVG '+ str(step_intensity_average))
-		print('EPT INTENSITY AVG '+ str(ept_intensity_average))
+		#print('STEP INTENSITY AVG '+ str(step_intensity_average))
+		#print('EPT INTENSITY AVG '+ str(ept_intensity_average))
 		print(shift_factor)
 		return(shift_factor)
+	
 
-def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run_var_file):
+def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run_var_file, separate_folders = False):
 	"""_summary_
 
 	Args:
@@ -162,20 +168,27 @@ def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run
 		date (_type_): _description_
 		fit_var_file (_type_): _description_
 		run_var_file (_type_): _description_
+
 	"""
+	datapath = path+date+'/'
+	if separate_folders:
+		datapath = datapath+'data/'
+	
 	fitvariables = path+'fit_variables/'
 	runvariables = path+'run_variables/'
-	newpath = path+date+'/'
+	
 	if not os.path.exists(fitvariables):
 		os.makedirs(fitvariables)
 	if not os.path.exists(runvariables):
 		os.makedirs(runvariables)
 
-	shutil.copy(newpath+fit_var_file, fitvariables+fit_var_file)
-	shutil.copy(newpath+run_var_file, runvariables+run_var_file)
+	shutil.copy(datapath+fit_var_file, fitvariables+fit_var_file)
+	shutil.copy(datapath+run_var_file, runvariables+run_var_file)
 
 	
-def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False,  shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False, fsize = 12):
+def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best',  channels_to_exclude = None, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, bg_subtraction = True, separate_folders = False, centre_pix = False, quality_factor = None, fsize = 12, legend_outside = False, no_legend = False, do_not_plot_bad_channels = False, title_of_plot = None, make_the_fit = True):
+#def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best',  channels_to_exclude = None, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, separate_folders = False, centre_pix = False, quality_factor = None, fsize = 12, legend_outside = False, no_legend = False, do_not_plot_bad_channels = False, title_of_plot = None, make_the_fit = True):
+
 
 	     # slope (float, optional): The type of slope used to find the peak (for the title). Defaults to None.
 		 # #slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True):
@@ -238,13 +251,21 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		date_string = str(date.date())
 		folder_time = str(date)[:-3].replace(' ', '-').replace(':', '')
 
-	# #quick change if submin av
-	# av = averaging
-	# if averaging < 1.:
-	# 	av_string = str(int(averaging*60))+'s'
+#quick change if submin av
+	#av = averaging
+	#if averaging < 1.:
+	#	av_string = str(int(averaging*60))+'s'
+	
+	
+	if averaging is None:
+		averaging = 'no'
+	#averaging = str(averaging)+'min'
+		
+	pix = ''
+	if centre_pix:
+		pix = '-centre_pix'
 
-	# averaging = str(averaging)+'min'
- 
+
 
 	separator = ';'
 
@@ -264,7 +285,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	# <-------------------------------------------------------------- END OF NECESSARY INPUTS ---------------------------------------------------------------->
 
 
-	make_fit = True
+	make_fit = make_the_fit
 	#peak_spec = True
 	#backsub = True
 
@@ -273,26 +294,35 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	# These should be changed if using ions
 	direction = direction #'sun'
 
-	intensity_label = 'Intensity\n/(s cm² sr MeV)'
-	energy_label = 'Energy (MeV)'
+	intensity_label = 'Intensity\n[1/(s cm² sr MeV)]'
+	energy_label = 'Energy [MeV]'
 	peak_info = fit_to+' spectrum'   #+'\n'+window_type
 	legend_title = 'Protons'  # 'mag' or 'foil' or 'Electrons' if there is more than just ept data
 	data_product = 'l2'
 
 	#date_str = date_string[8:]+'-'+date_string[5:7]+'-'+date_string[0:4] #DO NOT CHANGE. This is used later for the plot title etc.
 	date_str = str(date)[:-3]
-	pos = get_horizons_coord('Solar Orbiter', date_string, 'id')
+	pos = get_horizons_coord('Solar Orbiter', date, 'id')
 	dist = np.round(pos.radius.value, 2)
 	
 
 	# <---------------------------------------------------------------LOADING AND SAVING FILES------------------------------------------------------------------->
 
-	#print(e_min, e_max)
+	#print(path_to_file+step_file_name)
+	plot_path = path
+
+	if separate_folders:
+		plot_path = path+'plots/'
+		path = path+'data/'
+		if not os.path.exists(plot_path):
+			os.makedirs(plot_path)
+		
 	data_list = []
-	step_shift_factor = 1
+	step_shift_factor = shift_factor
 	#SHIFTING DATA 
 	if step:
 		step_data = pd.read_csv(path+step_file_name, sep = separator)
+		
 		if ept:
 			ept_data = pd.read_csv(path+ept_file_name, sep = separator)
 
@@ -307,8 +337,15 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 				step_data['Flux_'+fit_to] = step_data['Flux_'+fit_to]/step_shift_factor
 				step_data['Background_flux'] = step_data['Background_flux']/step_shift_factor
 
+				# 6.6.25 next 3 lines from electron files. Check if they cause issues
+				step_data[fit_to_comb+'_proton_uncertainty'] = step_data[fit_to_comb+'_proton_uncertainty']/step_shift_factor
+				step_data['Bg_proton_uncertainty'] = step_data['Bg_proton_uncertainty'] /step_shift_factor
+				step_data['Backsub_peak_uncertainty'] = step_data['Backsub_peak_uncertainty']/step_shift_factor
+
+
 		data_list.append(step_data)
-		
+
+
 	if ept :
 		ept_data = pd.read_csv(path+ept_file_name, sep = separator)
 		data_list.append(ept_data)
@@ -316,15 +353,19 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		het_data = pd.read_csv(path+het_file_name, sep = separator)
 		data_list.append(het_data)
 
-	data = comb.combine_data(data_list, path+date_string+'-all-l2-'+direction+'-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
+
+
+
+
+	data = comb.combine_data(data_list, path+date_string+'-all-l2-'+direction+'-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb,  channels_to_exclude = channels_to_exclude)
 	data = pd.read_csv(path+date_string+'-all-l2-'+direction+'-'+averaging+'.csv', sep = separator)
 
 	if step and ept:
-		step_ept_data = comb.combine_data([step_data, ept_data], path+date_string+'-step_ept-l2-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
+		step_ept_data = comb.combine_data([step_data, ept_data], path+date_string+'-step_ept-l2-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb,  channels_to_exclude = channels_to_exclude)
 		step_ept_data = pd.read_csv(path+date_string+'-step_ept-l2-'+averaging+'.csv', sep = separator)
 
 	if ept and het:
-		ept_het_data = comb.combine_data([ept_data, het_data], path+date_string+'-ept_het-'+direction+'-l2-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
+		ept_het_data = comb.combine_data([ept_data, het_data], path+date_string+'-ept_het-'+direction+'-l2-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb,  channels_to_exclude = channels_to_exclude)
 		ept_het_data = pd.read_csv(path+date_string+'-ept_het-'+direction+'-l2-'+averaging+'.csv', sep = separator)
 
 	# saving the contaminated data so it can be plotted separately
@@ -332,22 +373,44 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	contaminated_data_sigma = comb.low_sigma_threshold(data_list, sigma = sigma, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
 	contaminated_data_nan   = comb.too_many_nans(data_list, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan)
 	contaminated_data_rel_err = comb.high_rel_err(data_list, rel_err = rel_err, leave_out_1st_het_chan = leave_out_1st_het_chan)
-	contaminated_data = pd.concat([contaminated_data_sigma, contaminated_data_nan, contaminated_data_rel_err ])
-	contaminated_data.reset_index(drop=True, inplace=True)
 
+	step_channels_to_exclude = None
+	ept_channels_to_exclude = None
+	het_channels_to_exclude = None
+
+	channels_to_exclude_copy = channels_to_exclude
+
+	contaminated_data = pd.DataFrame()
+	if channels_to_exclude is not None:
+		excluded_channels = comb.excluded_channels_from_fit(data_list,channels_to_exclude)
+		contaminated_data = pd.concat([contaminated_data_sigma, contaminated_data_nan, contaminated_data_rel_err, excluded_channels])
+
+		for i in channels_to_exclude_copy:
+			if i <= len(step_data):
+				step_channels_to_exclude.append(i)
+				channels_to_exclude_copy.remove(i)
+			elif i >len(step_data) and i<=(len(step_data)+len(ept_data)):
+				l = i-len(step_data)
+				ept_channels_to_exclude.append(l)
+			else:
+				l = i-(len(step_data)+len(ept))
+				het_channels_to_exclude.append(l)
+
+	elif channels_to_exclude is None:
+		contaminated_data = pd.concat([contaminated_data_sigma, contaminated_data_nan, contaminated_data_rel_err])
+		contaminated_data.reset_index(drop=True, inplace=True)
+	
 	#deleting low sigma data so it doesn't overplot 
 
+
 	if step:
-		step_data = comb.delete_bad_data(step_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, fit_to = fit_to_comb)
-		#print('STEP   ',step_data)
+		step_data = comb.delete_bad_data(step_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, fit_to = fit_to_comb, channels_to_exclude  = step_channels_to_exclude)
 	if ept:
-		ept_data = comb.delete_bad_data(ept_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, fit_to = fit_to_comb)
-		#print('EPT  ',ept_data)
+		ept_data = comb.delete_bad_data(ept_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, fit_to = fit_to_comb, channels_to_exclude = ept_channels_to_exclude)
 	if het:
 		first_het_data = comb.first_het_chan(het_data)
-		het_data = comb.delete_bad_data(het_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
-	
-	
+		het_data = comb.delete_bad_data(het_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb, channels_to_exclude = het_channels_to_exclude)
+		
 	#if e_min is None:
 #		e_min = min(data['Primary_energy'])
 
@@ -605,28 +668,61 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	# quick change for sec resolution, change later
 	# if av < 1.:
 	# 	averaging = av_string
+	
+	qf_step_av = None
 
+	qf_ept_av = None
+	
+	qf_het_av = None
+	qf_het_all = None
+	qf_step = None
+	qf_ept = None
+	qf_het = None
+
+	n_qf = 0
+	
+	if quality_factor is not None:
+		if step :
+			qf_step = quality_factor[n_qf]
+			qf_step_av = qf_step[1]
+			n_qf = n_qf+1
+			
+		if ept:
+			qf_ept = quality_factor[n_qf]
+			qf_ept_av = qf_ept[1]
+			n_qf = n_qf+1
+		if het:
+			qf_het = quality_factor[n_qf]
+			qf_het_av = qf_het[1]
+			n_qf = n_qf+1
 
 	pickle_path = None
 	if save_pickle:
-		pickle_path = path+folder_time+'-pickle_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.p'
+		pickle_path = path+folder_time+'-pickle_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+pix+'.p'
 
 	fit_var_path = None
 	if save_fit_variables:
-		fit_var_path = path+folder_time+'-fit-result-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
+		fit_var_path = path+folder_time+'-fit-result-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+pix+'.csv'
 
 	fitrun_path = None
 	if save_fitrun:
-		fitrun_path = path+folder_time+'-all-fit-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+'.csv'
+		fitrun_path = path+folder_time+'-all-fit-variables_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+pix+'.csv'
 		
 		save.save_info_fit(fitrun_path, date_string, averaging, direction, data_product, dist, step, ept, het,
 		sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, step_shift_factor, fit_type, fit_to,
 		which_fit, min_energy, max_energy, g1_guess, g2_guess, c1_guess, alpha_guess, break_guess_low, cut_guess,
-		use_random, iterations)
+		use_random, iterations, qf_step_av, qf_ept_av, qf_het_av, centre_pix)
+
+		qf_path = path+folder_time+'-quality-factor_'+fit_type+'-'+fit_to+'-'+which_fit+'-l2-'+averaging+'-'+direction+pix+'.csv'
+
+		save.save_quality_factor(qf_path, qf_step, qf_ept, qf_het)
+
+
 	
 
 
 
+	
 	# <----------------------------------------------------------------------FIT AND PLOT------------------------------------------------------------------->
 
 	f, ax = plt.subplots(1, figsize=(8, 6), dpi = 300)
@@ -643,9 +739,9 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 			#ax.plot([], [], ' ', label="ion corr off")
 
 		if bg_subtraction:
-			ax.plot([], [], ' ', label="bg subtraction on")
+			ax.plot([], [], ' ', label="Bg subtraction on")
 		else:
-			ax.plot([], [], ' ', label="bg subtraction off")
+			ax.plot([], [], ' ', label="Bg subtraction off")
 		if shift_step_data:
 			ax.plot([], [], ' ', label="Shift factor (STEP) "+ str(np.round(step_shift_factor,2)))
 
@@ -678,11 +774,13 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 			ax.errorbar(spec_energy_het, spec_flux_het, yerr=flux_err_het, xerr = energy_err_het, marker='o', linestyle='', markersize= 3, color='maroon', label='HET '+direction, zorder = -1)
 			if leave_out_1st_het_chan:
 				ax.errorbar(spec_energy_first_het, spec_flux_first_het, yerr=flux_err_first_het, xerr = energy_err_first_het, marker='o', linestyle='', markersize= 3, color='black', label='First HET channel', zorder = -1)
-		ax.errorbar(spec_energy_c, spec_flux_c, yerr=flux_err_c, xerr = energy_err_c, marker='o', linestyle='', markersize= 3, color='gray', label='excluded from fit', zorder = -1)
+		if do_not_plot_bad_channels is False :#and len(spec_flux_c)!=0:
+			ax.errorbar(spec_energy_c, spec_flux_c, yerr=flux_err_c, xerr = energy_err_c, marker='o', linestyle='', markersize= 3, color='gray', label='Excluded from the fit', zorder = -1)
 		
 
 	if make_fit is False:
-		ax.errorbar(spec_energy_c, spec_flux_c, yerr=flux_err_c, xerr = energy_err_c, marker='o', linestyle='', markersize= 3, color='gray', label = 'cont. data', zorder = -1)
+		if do_not_plot_bad_channels is False:
+			ax.errorbar(spec_energy_c, spec_flux_c, yerr=flux_err_c, xerr = energy_err_c, marker='o', linestyle='', markersize= 3, color='gray', label = 'Non-significant channels', zorder = -1)
 		if step:
 			ax.errorbar(spec_energy_step, spec_flux_step, yerr=flux_err_step, xerr = energy_err_step, marker='o', markersize= 3 , linestyle='', color='darkorange', label='STEP', zorder = -1)
 			if ept and het:
@@ -759,6 +857,10 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	e_range_min = step_energy_range[0]
 	e_range_max = het_energy_range[1]
 
+	if do_not_plot_bad_channels:
+		e_range_min = step_energy_range[0]
+		e_range_max = spec_energy[len(spec_energy)-1]
+
 	ax.set_xscale('log')
 	ax.set_yscale('log')
 	locmin = pltt.LogLocator(base=10.0,subs=(0.2,0.4,0.6,0.8),numticks=12)
@@ -766,23 +868,38 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	ax.yaxis.set_minor_locator(locmin)
 	ax.yaxis.set_minor_formatter(pltt.NullFormatter())
 
+	
+	ax.tick_params(which = 'major', width = 1, length = 4, color = 'black')
+	ax.tick_params(which = 'minor', width = 1, length = 4, color = 'black')
+	ax.tick_params(labelsize = fsize+2)
+	
+	for axis in ['top','bottom','left','right']:
+		ax.spines[axis].set_linewidth(1)
+
+
+
+
 
 	plt.xticks(fontsize = fsize)
 	plt.yticks(fontsize = fsize)
-	plt.legend(title=legend_title,  prop={'size': 7}, fontsize = fsize-2, title_fontsize = fsize)
+	if no_legend is False:
+		if legend_outside:
+			plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), title=legend_title,  prop={'size': fsize}, fontsize = fsize-2, title_fontsize = fsize)
+		else:
+			plt.legend(title=legend_title,  prop={'size': fsize-2}, fontsize = fsize-2, title_fontsize = fsize)#, loc="lower left")
 	plt.ylabel(intensity_label, fontsize = fsize)
 	plt.xlabel(energy_label, fontsize = fsize)
 	if centre_pix:
-		plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging, centre pixels', fontsize = fsize+2)
+		if title_of_plot is None:
+			plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging, centre pixels', fontsize = fsize+2)
+		else:
+			plt.title(title_of_plot, fontsize = fsize+2)
 	else:
-		plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging', fontsize = fsize+2)
-		
+		if title_of_plot is None:
+			plt.title(plot_title+'  '+peak_info+'\n'+date_str+'  '+averaging+'  averaging', fontsize = fsize+2)
+		else:
+			plt.title(title_of_plot, fontsize = fsize+2)
 
-	plot_path = path
-	if fit_to_separate_folder:
-		plot_path = path+'plots/'
-		if not os.path.exists(plot_path):
-			os.makedirs(plot_path)
 
 	pix = ''
 	if centre_pix:

@@ -23,6 +23,7 @@ import os
 import re
 import seaborn as sns
 
+
 # Add folder for data and one for plots
 def create_new_path(path, date, threshold_folders = False, contamination_threshold = None, plots_n_data = True):
     """This function creates new folders to a given path based on different options.
@@ -229,10 +230,6 @@ def solo_mag_loader(sdate, edate, level='l2', type='normal', frame='rtn', av=Non
     return mag_data
 
 
-
-
-
-
 def evolt2beta(ekin, which):
     """ This function calculates the plasma beta for particles 
     (electrons or protons) with a certain energy ekin.
@@ -391,7 +388,7 @@ def position_and_traveltime(date, species):
     print(tabulate(table_data))
     return(table_data)
 
-def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj, bgstart = None, bgend = None, bg_distance_from_window = '2h', bg_period = '60min', travel_distance = 0,  travel_distance_second_slope = None, fixed_window = None, instrument = 'ept', data_type = 'l2', averaging=None, masking=True, ion_conta_corr=False, df_protons = None, centre_pix = False):
+def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj, bgstart = None, bgend = None, bg_distance_from_window = '2h', bg_period = '60min', travel_distance = 0,  travel_distance_second_slope = None, fixed_window = None, instrument = 'ept', data_type = 'l2', averaging=None, masking=False, ion_conta_corr=False, df_protons = None, centre_pix = False):
     """This function determines an energy spectrum from time series data for any of the Solar Orbiter / EPD 
     sensors uses energy-dependent time windows to determine the flux points for the spectrum. 
     The dependence is determined according to an expected velocity dispersion assuming a certain 
@@ -630,7 +627,8 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
      #   if(instrument!='step'):
       #      df_electron_fluxes = df_electron_fluxes.rolling(window=averaging, min_periods=1).mean()
 
-
+# 5.6.25 following block can be removed after implementation of the contamination in the notebook
+# but the keyword and also the first line, should stay because we need the "ion string" for file names
     if(ion_conta_corr and (instrument == 'ept')):
 
         ion_cont_corr_matrix = np.loadtxt('EPT_ion_contamination_flux_paco.dat')
@@ -911,11 +909,10 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
     df_info['frac_nonan'] = list_frac_nonan
 
     
-
     return df_electron_fluxes, df_info, [searchstart, searchend], [e_low, e_high], [instrument, data_type]
 
 
-
+# The following function is not used anymore checked 5.6.2025
 def make_step_electron_flux(stepdata, mask_conta=True):
     """
     We use the calibration factors from Paco (Alcala) to calculate the electron flux 

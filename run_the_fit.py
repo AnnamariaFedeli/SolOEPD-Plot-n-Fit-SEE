@@ -160,7 +160,7 @@ def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_thresho
 		return(shift_factor)
 	
 
-def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run_var_file):
+def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run_var_file, separate_folders = False):
 	"""_summary_
 
 	Args:
@@ -168,20 +168,25 @@ def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run
 		date (_type_): _description_
 		fit_var_file (_type_): _description_
 		run_var_file (_type_): _description_
+
 	"""
+	datapath = path+date+'/'
+	if separate_folders:
+		datapath = datapath+'data/'
+	
 	fitvariables = path+'fit_variables/'
 	runvariables = path+'run_variables/'
-	newpath = path+date+'/'
+	
 	if not os.path.exists(fitvariables):
 		os.makedirs(fitvariables)
 	if not os.path.exists(runvariables):
 		os.makedirs(runvariables)
 
-	shutil.copy(newpath+fit_var_file, fitvariables+fit_var_file)
-	shutil.copy(newpath+run_var_file, runvariables+run_var_file)
+	shutil.copy(datapath+fit_var_file, fitvariables+fit_var_file)
+	shutil.copy(datapath+run_var_file, runvariables+run_var_file)
 
 	
-def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best',  channels_to_exclude = None, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False, quality_factor = None, fsize = 12, legend_outside = False, no_legend = False, do_not_plot_bad_channels = False, title_of_plot = None, make_the_fit = True):
+def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best',  channels_to_exclude = None, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, separate_folders = False, centre_pix = False, quality_factor = None, fsize = 12, legend_outside = False, no_legend = False, do_not_plot_bad_channels = False, title_of_plot = None, make_the_fit = True):
 
 	     # slope (float, optional): The type of slope used to find the peak (for the title). Defaults to None.
 		 # #slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True):
@@ -302,7 +307,14 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	# <---------------------------------------------------------------LOADING AND SAVING FILES------------------------------------------------------------------->
 
 	#print(path_to_file+step_file_name)
-	
+	plot_path = path
+
+	if separate_folders:
+		plot_path = path+'plots/'
+		path = path+'data/'
+		if not os.path.exists(plot_path):
+			os.makedirs(plot_path)
+		
 	data_list = []
 	step_shift_factor = shift_factor
 	#SHIFTING DATA 
@@ -914,11 +926,6 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		else:
 			plt.title(title_of_plot, fontsize = fsize+2)
 
-	plot_path = path
-	if fit_to_separate_folder:
-		plot_path = path+'plots/'
-		if not os.path.exists(plot_path):
-			os.makedirs(plot_path)
 
 	pix = ''
 	if centre_pix:
