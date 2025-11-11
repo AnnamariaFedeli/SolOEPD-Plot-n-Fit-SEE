@@ -28,6 +28,7 @@ def power_law_fit(x,y,xerr,yerr, gamma1=-1.8, c1=None, print_report=False):
 	if print_report:
 		
 		result.pprint()
+		result.stopreason
 		#print(type(result))
 		#print(result.keys)
 		
@@ -64,6 +65,7 @@ def broken_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None, 
 	#iprint = odr.set_iprint(init=2,  iter=2, iter_step = 1, final=2)
 	if print_report:
 		result.pprint()
+		result.stopreason
 		#print(result.keys)
 
 	return result
@@ -100,6 +102,7 @@ def triple_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, gamma3 = -3, c1=None,
 	#iprint = odr.set_iprint(init=2,  iter=2, iter_step = 1, final=2)
 	if print_report:
 		result.pprint()
+		result.stopreason
 		#print(result.keys)
 
 	return result
@@ -130,6 +133,7 @@ def cut_break_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=Non
 
 	if print_report:
 		result.pprint()
+		result.stopreason
 
 	return result
 	
@@ -160,6 +164,7 @@ def cut_pl_fit(x,y, xerr, yerr, gamma1=-1.8, c1=None, E_cut = 0.35, exponent = 2
 
 	if print_report:
 		result.pprint()
+		result.stopreason
 
 	return result
 

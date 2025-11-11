@@ -1014,6 +1014,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	
 	result_dataframe = pd.DataFrame({"FInal fit type":which_fit_final}, index = [0])
 	result = result_final
+	#result.pprint()
 	#print(which_fit_final)
 	if which_fit_final == 'single':
 		#result_single_pl = pl_fit.power_law_fit(x = spec_e, y = spec_flux, xerr = e_err, yerr = flux_err, gamma1=gamma1_final, c1=c1_final)
@@ -1026,6 +1027,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		dof         = len(spec_e) - len(result_single_pl.beta)
 		t_val       = studentt.interval(0.95, dof)[1]
 		errors      = t_val * result_single_pl.sd_beta  #np.sqrt(np.diag(final_fit.cov_beta))
+		#errors      =  result_single_pl.sd_beta
 		gamma1_err  = errors[1]
 
 		
@@ -1093,6 +1095,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		redchi_broken = result_broken.res_var
 		t_val      = studentt.interval(0.95, dof)[1]
 		errors     = t_val * result_broken.sd_beta  #np.sqrt(np.diag(result_broken.cov_beta))
+		#errors     = result_broken.sd_beta
 		breakp_1_err = errors[4]
 		c1         = result_broken.beta[0]
 # NINA SAID THERE IS AN ISSUE HERE. THE CODE BREAKS SOMEHOW.gamma1 is not found. 02.11.23
@@ -1178,6 +1181,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		redchi_cut = result_cut.res_var
 		t_val      = studentt.interval(0.95, dof)[1]
 		errors     = t_val * result_cut.sd_beta  #np.sqrt(np.diag(result_broken.cov_beta))
+		#errors     = result_cut.sd_beta
 		c1         = result_cut.beta[0]
 		gamma1     = result_cut.beta[1]
 		gamma1_err = errors[1]
@@ -1237,6 +1241,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		redchi_cut = result_cut.res_var
 		t_val      = studentt.interval(0.95, dof)[1]
 		errors     = t_val * result_cut.sd_beta  #np.sqrt(np.diag(result_cut.cov_beta))
+		#errors     = result_cut.sd_beta
 		breakp_1_err = errors[4]
 		cut_err = errors[5]
 		c1         = result_cut.beta[0]
@@ -1323,6 +1328,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		redchi_triple = result_triple.res_var
 		t_val      = studentt.interval(0.95, dof)[1]
 		errors     = t_val * result_triple.sd_beta  #np.sqrt(np.diag(result_cut.cov_beta))
+		#errors     =  result_triple.sd_beta
 		breakp_1_err = errors[6]
 		breakp_2_err = errors[7]
 		c1         = result_triple.beta[0]
