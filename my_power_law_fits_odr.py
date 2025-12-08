@@ -3,7 +3,7 @@ from scipy.odr import *
 
 
 
-def power_law_fit(x,y,xerr,yerr, gamma1=-1.8, c1=None, print_report=False):
+def power_law_fit(x,y,xerr = None,yerr = None, gamma1=-1.8, c1=None, print_report=False):
 	'''
 	fits a power law to the data using scipy.odr
 
@@ -46,7 +46,7 @@ def broken_pl_func(p, x):#, c1, gamma1, gamma2, alpha, E_break):
     return y
 
 
-def broken_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None, E_break=0.1, print_report=False, maxit=20):
+def broken_pl_fit(x,y, xerr = None, yerr = None, gamma1=-1.8, gamma2=-2, c1=None, alpha=None, E_break=0.1, print_report=False, maxit=20):
 	#covMatrix = np.cov(xerr,bias=False)
 
 	c1 = y[3] if c1==None else c1
@@ -82,7 +82,7 @@ def triple_pl_func(p, x):#, c1, gamma1, gamma2, alpha, E_break):
     return y
 
 
-def triple_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, gamma3 = -3, c1=None, alpha=None, beta = None, E_break_low=0.06, E_break_high = 0.12, print_report=False, maxit=20):
+def triple_pl_fit(x,y, xerr = None, yerr = None, gamma1=-1.8, gamma2=-2, gamma3 = -3, c1=None, alpha=None, beta = None, E_break_low=0.06, E_break_high = 0.12, print_report=False, maxit=20):
 	#covMatrix = np.cov(xerr,bias=False)
 
 	c1 = y[3] if c1==None else c1
@@ -116,7 +116,7 @@ def cut_break_pl_func(p, x): #c1, gamma1, gamma2, alpha, E_break, E_cut
 	return y
 
 	
-def cut_break_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None, E_break=0.1, E_cut = 0.35, exponent = 2, print_report=False, maxit=20):
+def cut_break_pl_fit(x,y, xerr = None, yerr = None, gamma1=-1.8, gamma2=-2, c1=None, alpha=None, E_break=0.1, E_cut = 0.35, exponent = 2, print_report=False, maxit=20):
 	c1 = y[4] if c1==None else c1
 	#c2 = y[-1]*1e-2 if c2==None else c2
 	alpha = 0.1 if alpha==None else alpha
@@ -146,7 +146,7 @@ def cut_pl_func(p, x): #c1, gamma1, gamma2, alpha, E_break, E_cut
 	return y
 
 	
-def cut_pl_fit(x,y, xerr, yerr, gamma1=-1.8, c1=None, E_cut = 0.35, exponent = 2, print_report=False, maxit=20):
+def cut_pl_fit(x,y, xerr = None, yerr = None, gamma1=-1.8, c1=None, E_cut = 0.35, exponent = 2, print_report=False, maxit=20):
 	c1 = y[4] if c1==None else c1
 	#c2 = y[-1]*1e-2 if c2==None else c2
 	#alpha = 0.1 if alpha==None else alpha

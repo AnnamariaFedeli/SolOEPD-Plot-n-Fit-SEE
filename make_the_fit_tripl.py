@@ -608,11 +608,25 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	xplot = np.logspace(np.log10(np.nanmin(spec_e)), np.log10(np.nanmax(spec_e)), num=500)
 	xplot = xplot[np.where((xplot >= e_min) & (xplot <= e_max))[0]]
 	
-	fit_ind   = np.where((spec_e >= e_min) & (spec_e <= e_max) & (np.isfinite(spec_flux) == True) & (np.isfinite(flux_err) == True))[0]
-	spec_e    = spec_e[fit_ind]
-	spec_flux = spec_flux[fit_ind]
-	e_err     = e_err[fit_ind]
-	flux_err  = flux_err[fit_ind]
+	# 05.12.2025 made changes to block below. If issues check.
+	fit_ind = []
+
+	if flux_err is None:
+		fit_ind   = np.where((spec_e >= e_min) & (spec_e <= e_max) & (np.isfinite(spec_flux) == True))[0]
+		spec_e    = spec_e[fit_ind]
+		spec_flux = spec_flux[fit_ind]
+		if e_err != None:
+			e_err = e_err[fit_ind]
+		#flux_err  = flux_err[fit_ind]
+	
+	if flux_err != None:
+		fit_ind   = np.where((spec_e >= e_min) & (spec_e <= e_max) & (np.isfinite(spec_flux) == True) & (np.isfinite(flux_err) == True))[0]
+		spec_e    = spec_e[fit_ind]
+		spec_flux = spec_flux[fit_ind]
+		flux_err  = flux_err[fit_ind]
+		if e_err != None:
+			e_err = e_err[fit_ind]
+
 
 	# everything is in a for loop that chooses random values between the 
 	# closest_values (n times) and checks the redchis and chooses the best one
