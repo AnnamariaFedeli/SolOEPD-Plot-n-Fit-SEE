@@ -71,7 +71,7 @@ def run_the_fit(path, data, save, channels_to_exclude = None, plot_title = '', x
 
     f, ax = plt.subplots(1, figsize=(6, 5), dpi = 300)
     
-    fitting.MAKE_THE_FIT(x_data, y_data, x_err, None, ax, direction='sun', e_min = e_min, e_max = e_max, which_fit=which_fit, g1_guess=g1_guess, g2_guess=g2_guess, g3_guess = g3_guess, alpha_guess=alpha_guess, beta_guess = beta_guess, break_low_guess=break_guess_low, break_high_guess = break_guess_high, cut_guess = cut_guess, c1_guess = c1_guess, exponent_guess = exponent_guess, use_random = use_random, iterations = iterations, path = None, path2 = fit_var_path, detailed_legend = legend_details)
+    fitting.MAKE_THE_FIT(x_data, y_data, x_err, y_err, ax, direction='sun', e_min = e_min, e_max = e_max, which_fit=which_fit, g1_guess=g1_guess, g2_guess=g2_guess, g3_guess = g3_guess, alpha_guess=alpha_guess, beta_guess = beta_guess, break_low_guess=break_guess_low, break_high_guess = break_guess_high, cut_guess = cut_guess, c1_guess = c1_guess, exponent_guess = exponent_guess, use_random = use_random, iterations = iterations, path = None, path2 = fit_var_path, detailed_legend = legend_details)
 	                    
 
     #colors = ['red', 'darkorange', 'marroon', 'blue']
@@ -87,7 +87,7 @@ def run_the_fit(path, data, save, channels_to_exclude = None, plot_title = '', x
     #   y_data   = data[i]['y']
     #   y_data_err    = data[i]['y error']
         #print(x_data)    
-    ax.errorbar(x_data, y_data, xerr = x_err, yerr=None, marker='o', markersize= 3 , linestyle='', color='red', alpha = 0.5, label=data_label_for_legend, zorder = -1)
+    ax.errorbar(x_data, y_data, xerr = x_err, yerr=y_err, marker='o', markersize= 3 , linestyle='', color='red', alpha = 0.5, label=data_label_for_legend, zorder = -1)
     if channels_to_exclude != None:
         ax.errorbar(dataframe_to_exclude['Energy'], dataframe_to_exclude['Intensity'], xerr = dataframe_to_exclude['E_err'], yerr=dataframe_to_exclude['I_err'], marker='o', markersize= 3 , linestyle='', color='gray', alpha = 0.5, label='excluded channels', zorder = -1)
    
