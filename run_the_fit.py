@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as pltt
 from sunpy.coordinates import get_horizons_coord
 from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
-import make_the_fit_tripl as fitting
+import make_the_fit as fitting
 import savecsv as save
 import combining_files as comb
 from datetime import *
@@ -181,7 +181,7 @@ def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run
 	shutil.copy(newpath+run_var_file, runvariables+run_var_file)
 
 	
-def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best',  channels_to_exclude = None, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False, quality_factor = None, fsize = 12, legend_outside = False, no_legend = False, do_not_plot_bad_channels = False, title_of_plot = None, make_the_fit = True):
+def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best',  channels_to_exclude = None, sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = False, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False, quality_factor = None, fsize = 12, legend_outside = False, no_legend = False, do_not_plot_bad_channels = False, title_of_plot = None, make_the_fit = True):
 
 	     # slope (float, optional): The type of slope used to find the peak (for the title). Defaults to None.
 		 # #slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True):
@@ -216,11 +216,11 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		c1_guess (int, optional): The intensity/flux value at 0.1 MeV. Defaults to 1000.
 		alpha_guess (int, optional): The smoothness of the transition between gamma1 and gamma2. Defaults to 10.
 		beta_guess (int, optional): The smoothness of the transition between gamma3 and gamma2. Defaults to 10.
-		break_guess_low (float, optional): Guess value for the energy correponding to the break in the broken pl and first break for the triple pl. Defaults to 0.6.
-		break_guess_high (float, optional): Guess value for the energy correponding to the second break for the triple pl.. Defaults to 1.2.
-		cut_guess (float, optional): Guess value for the energy corresponding to the exponential cutoff.. Defaults to 1.2.
+		break_guess_low (float, optional): Guess value for the energy correponding to the break in the broken pl and first break for the triple pl. Input in MeV.  Defaults to 0.6.
+		break_guess_high (float, optional): Guess value for the energy correponding to the second break for the triple pl.Input in MeV. Defaults to 1.2.
+		cut_guess (float, optional): Guess value for the energy corresponding to the exponential cutoff.Input in MeV.  Defaults to 1.2.
 		use_random (bool, optional): If True the fitting function will, in addition to the guess values, choose random values from a predifined list of values for each variable. 
-					These values are chosen close to the guess values. Defaults to True.
+					These values are chosen close to the guess values. Defaults to False.
 		iterations (int, optional): The number of times the function will choose random values to use in the fit to the data. Defaults to 20.
 		leave_out_1st_het_chan (bool, optional): If True, the first HET channel will be left out from the fit. Defaults to True.
 		shift_step_data (bool, optional): If True, STEP data will be shifted (up or down, intensity wise) by a factor equal to shift_factor. Defaults to False.

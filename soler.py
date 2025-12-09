@@ -7,50 +7,70 @@ import datetime as dt
 import matplotlib.pyplot as plt
 import matplotlib.ticker as pltt
 from sunpy.coordinates import get_horizons_coord
-import make_the_fit_tripl as fitting
+import make_the_fit as fitting
 #from make_the_fit_tripl import  MAKE_THE_FIT
 #from make_the_fit import closest_values
 #from make_the_fit import find_c1
 import combining_files as comb
 from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 import soler_functions as sf
+import os
+from pathlib import Path
 
 
-def run_the_fit(path, data, save, channels_to_exclude = None, plot_title = '', x_label = 'Intensity [/]', y_label = 'Energy [MeV]', legend_title = '', data_label_for_legend = 'data', which_fit = 'best', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20 , legend_details = False):
+def run_the_fit(path, data, save, use_filename_as_title = False, channels_to_exclude = None, plot_title = '', x_label = 'Intensity [/]', y_label = 'Energy [MeV]', legend_title = '', data_label_for_legend = 'data', which_fit = 'best', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20 , legend_details = False):
     """This function calls the make_the_fit functoin that creates the fit. It plots and saves the results of the fit.
 
     Args:
-        path (string): The path to the folder where the fit results and plots will be saved.
-        data (dataframe): The data that will be fit (energy, energy uncertainty, intensity and intensity uncertainty)
-        save (bool): if True the plots and fit results will be saved. Note: the title of the plot will be used as the file name
-        channels_to_exclude (list): Defaults to 'None'
+        path (string): The full path to the file that will be used for the fit inclufing the file name. e.g. '/home/admin/folder1/folder2/file.csv' 
+        data (dataframe): The data that will be fit (energy, energy uncertainty, intensity and intensity uncertainty). The columns should be named 'Energy', 'Intensity', 'E_err', 'I_err'
+                          the order does not matter.
+        save (bool): if True the plots and fit results will be saved. Note: the original filename and possible new title of the plot will be used as the file name. Possible spaces will be replaced by '_'
+        channels_to_exclude (list): list of channels to be excluded. List of indices corresponding to the cannels. Defaults to 'None'
         plot_title (str, optional): The title of the plot, will also be used when saving the results. Defaults to ''.
         x_label (str, optional): label for the x axis. Defaults to 'Intensity [/]'.
         y_label (str, optional): label for the y axis. Defaults to 'Energy [MeV]'.
         legend_title (str, optional): title for the legend. Defaults to ''.
-        which_fit (str, optional): _description_. Defaults to 'best'.
-        e_min (_type_, optional): _description_. Defaults to None.
-        e_max (_type_, optional): _description_. Defaults to None.
-        g1_guess (float, optional): _description_. Defaults to -1.9.
-        g2_guess (float, optional): _description_. Defaults to -2.5.
-        g3_guess (int, optional): _description_. Defaults to -4.
-        c1_guess (int, optional): _description_. Defaults to 1000.
-        alpha_guess (int, optional): _description_. Defaults to 10.
-        beta_guess (int, optional): _description_. Defaults to 10.
-        break_guess_low (float, optional): _description_. Defaults to 0.6.
-        break_guess_high (float, optional): _description_. Defaults to 1.2.
-        cut_guess (float, optional): _description_. Defaults to 1.2.
-        use_random (bool, optional): _description_. Defaults to True.
-        iterations (int, optional): _description_. Defaults to 20.
+        which_fit (str, optional): which_fit options: 'single' will force a single pl fit to the data
+		  			'broken' will force a broken pl fit to the data but ONLY if the break point is within the energy range otherwise a sigle pl fit will be produced instead
+		  			'best_sb' will choose automatically the best fit type between single and broken by comparing the redchis of the fits
+		    		'cut' will produce a single pl fit with an exponential cutoff point. If the cutoff point is outside of the energy range a broken or single pl will be fit instead
+			  		'broken_cut' will produce a broken pl fit with an exponential cutoff point. If the cutoff point is outside of the energy range a broken or single pl will be fit instead
+				  	'best_cb'. Defaults to 'best'.
+					'triple' will force a triple pl fit. If this is not possible, the function will check which is the next best option.
+					'best' will choose automatically the best fit type by comparing the redchis of the fits
+                    Defaults to 'best'
+        e_min (float, optional): The lower energy limit for the fit. Defaults to None.
+		e_max (float, optional): The upper energy limit for the fit. Defaults to None.
+        g1_guess (float, optional): The slope of the single pl fit or the first part of a broken/triple pl fit. Defaults to -1.9.
+		g2_guess (float, optional): The slope of the second part of a broken/triple pl fit. gamma2 < gamma1. Defaults to -2.5. 
+		g3_guess (int, optional): The slope of the third part of a broken/triple pl fit. gamma3 < gamma2 < gamma1. Defaults to -4.
+		c1_guess (int, optional): The intensity/flux value at 0.1 MeV. Defaults to 1000.
+		alpha_guess (int, optional): The smoothness of the transition between gamma1 and gamma2. Defaults to 10.
+		beta_guess (int, optional): The smoothness of the transition between gamma3 and gamma2. Defaults to 10.
+		break_guess_low (float, optional): Guess value for the energy correponding to the break in the broken pl and first break for the triple pl. Input in MeV. Defaults to 0.6.
+		break_guess_high (float, optional): Guess value for the energy correponding to the second break for the triple pl.Input in MeV.  Defaults to 1.2.
+		cut_guess (float, optional): Guess value for the energy corresponding to the exponential cutoff. Input in MeV.  Defaults to 1.2.
+		use_random (bool, optional): If True the fitting function will, in addition to the guess values, choose random values from a predifined list of values for each variable. 
+					These values are chosen close to the guess values. Defaults to True.
+		iterations (int, optional): The number of times the function will choose random values to use in the fit to the data. Defaults to 20.
+
     """
     
-    
-    # in make the fit we have two paths. one for pickle files (deleted from here) and path2 to save the fit variables.
-    title_from_path = path
-    # TO DO: CHANGE IN CASE THERE ARE BLANK SPACES IN THE TITLE THE NAME WILL NOT WORK. REPLACE ' ' WITH '-' DONE BUT TEST
-    name_string = plot_title.replace(" ", "_")
+    #file_name = os.path.basename(path) this gives you the filename with the extention e.g. .csv
+    file_name = Path(path).stem # this gives you the filename without extension
 
-    fit_var_path = title_from_path+'-'+name_string+'-fit-result-variables_'+which_fit+'.csv'
+    folder_path = os.path.dirname(path) # path to the folder without the last /
+    if use_filename_as_title:
+        plot_title = file_name.replace("_", " ")
+
+    # in make the fit we have two paths. one for pickle files (deleted from here) and path2 to save the fit variables. Needs to be updated in the future
+    
+    name_string = ''
+    if use_filename_as_title == False:
+        name_string = plot_title.replace(" ", "_")
+
+    fit_var_path = folder_path+'/'+file_name+'_'+name_string+'_fit-result-variables_'+which_fit+'.csv'
 
     all_data = data
 
@@ -58,7 +78,7 @@ def run_the_fit(path, data, save, channels_to_exclude = None, plot_title = '', x
     dataframe_to_exclude = pd.DataFrame()
 
     if channels_to_exclude != None:
-        args = sf.exclude_channels(data, channels_to_exclude)
+        args = sf.exclude_channels(data, channels_to_exclude) #returns two dataframes #1 has the good data (to fit) #2 has the excluded channels
         dataframe_to_fit = args[0]
         dataframe_to_exclude = args[1]
        
@@ -68,10 +88,10 @@ def run_the_fit(path, data, save, channels_to_exclude = None, plot_title = '', x
     y_data   = dataframe_to_fit['Intensity']
     y_err    = dataframe_to_fit['I_err']   
 
+    #checking if uncertainties for energy and intensity are NaNs
     if x_err.isnull().all():
         x_err = None
         
-
     if y_err.isnull().all():
         y_err = None
        
@@ -80,27 +100,12 @@ def run_the_fit(path, data, save, channels_to_exclude = None, plot_title = '', x
     f, ax = plt.subplots(1, figsize=(6, 5), dpi = 300)
     
     fitting.MAKE_THE_FIT(x_data, y_data, x_err, y_err, ax, direction='sun', e_min = e_min, e_max = e_max, which_fit=which_fit, g1_guess=g1_guess, g2_guess=g2_guess, g3_guess = g3_guess, alpha_guess=alpha_guess, beta_guess = beta_guess, break_low_guess=break_guess_low, break_high_guess = break_guess_high, cut_guess = cut_guess, c1_guess = c1_guess, exponent_guess = exponent_guess, use_random = use_random, iterations = iterations, path = None, path2 = fit_var_path, detailed_legend = legend_details)
-	                    
 
-    #colors = ['red', 'darkorange', 'marroon', 'blue']
-    #print(data)
-    #print(data[0])
-    #print(data[0]['x'])
-    #print(all_data)
-
-
-    #for i in range(len(data)):
-    #    x_data = data[i]['x'] # energy for spectra
-    #    x_data_err  = data[i]['x error']
-    #   y_data   = data[i]['y']
-    #   y_data_err    = data[i]['y error']
-        #print(x_data)    
     ax.errorbar(x_data, y_data, xerr = x_err, yerr=y_err, marker='o', markersize= 3 , linestyle='', color='red', alpha = 0.5, label=data_label_for_legend, zorder = -1)
     if channels_to_exclude != None:
         ax.errorbar(dataframe_to_exclude['Energy'], dataframe_to_exclude['Intensity'], xerr = dataframe_to_exclude['E_err'], yerr=dataframe_to_exclude['I_err'], marker='o', markersize= 3 , linestyle='', color='gray', alpha = 0.5, label='excluded channels', zorder = -1)
    
-
-
+ # REMEMBER: when choosing the ranges don't use uncertainties because they can be None
     x_range_min = min(all_data['Energy'])
     x_range_max = max(all_data['Energy'])
     
@@ -122,7 +127,7 @@ def run_the_fit(path, data, save, channels_to_exclude = None, plot_title = '', x
     plt.title(plot_title)
     
     if save:
-        plt.savefig(title_from_path+'-'+name_string+'-fit-plot_'+which_fit+'.png', dpi=300)
+        plt.savefig(folder_path+'/'+file_name+'_'+name_string+'_fit-plot_'+which_fit+'.png', dpi=300)
 
     plt.show()
 

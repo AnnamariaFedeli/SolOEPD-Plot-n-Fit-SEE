@@ -10,7 +10,7 @@ from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 # Import mymodule
 #from savecsv import *
 #from combining_files import *
-import make_the_fit_tripl as fitting
+import make_the_fit as fitting
 import savecsv as save
 import combining_files as comb
 from datetime import *

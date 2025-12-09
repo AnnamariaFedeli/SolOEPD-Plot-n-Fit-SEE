@@ -8,63 +8,17 @@ import pickle
 #from scipy.odr import *
 
 
-def make_step_electron_flux(stepdata, mask_conta=False):
-	'''
-	here we use the calibration factors from Paco (Alcala) to calculate the electron flux out of the (integral - magnet) fluxes
-	(we now use level2 data files to get these)
-	we also check if the integral counts are sufficiently higher than the magnet counts so that we can really assume it's electrons
-	(ohterwise we mask the output arrays)
-	As suggested by Alex Kollhoff & Berger use a 5 sigma threashold:
-	C_INT >> C_MAG:
-	C_INT - C_MAG > 5*sqrt(C_INT)
-	Alex: die count rates und fuer die uebrigen Zeiten gebe ich ein oberes Limit des Elektronenflusses an,
-	das sich nach 5*sqrt(C_INT) /(E_f - E_i) /G_e berechnet.
-	'''
-	# calculate electron flux from F_INT - F_MAG:
-	colnames = ["ch_num", "E_low", "E_hi", "factors"]
-	paco = pd.read_csv(r'C:\Users\Omistaja\Desktop\SRL\2021SRL\spectra_fitting\step_electrons_calibration.csv', names=colnames, skiprows=1)
-	F_INT = stepdata['Integral_Flux']
-	F_MAG = stepdata['Magnet_Flux']
-	step_flux =  (F_INT - F_MAG) * paco.factors.values
-	U_INT = stepdata['Integral_Uncertainty']
-	U_MAG = stepdata['Magnet_Uncertainty']
-	# from Paco:
-    # Ele_Uncertainty = k * sqrt(Integral_Uncertainty^2 + Magnet_Uncertainty^2)
-	step_unc =  np.sqrt(U_INT**2 + U_MAG**2) * paco.factors.values
-	
-	param_list = ['Electron_Flux', 'Electron_Uncertainty']
-	
-	if mask_conta:
-		C_INT = stepdata['Integral_Rate']
-		C_MAG = stepdata['Magnet_Rate']
-		clean = (C_INT - C_MAG) > 5*np.sqrt(C_INT)
-		step_flux = step_flux.mask(clean)
-		step_unc = step_unc.mask(clean)
-		step_data = pd.concat([step_flux, step_unc], axis=1, keys=param_list)
-		
-	return step_data, paco.E_low, paco.E_hi
-
-
-
-def average_flux_error(flux_err: pd.DataFrame) -> pd.Series:
-
-    return np.sqrt((flux_err ** 2).sum(axis=0)) / len(flux_err.values)
-
-
 def closest_values(array, value):
-	"""This function finds n closest values to the guess value
+	"""This function finds n closest values to the guess value and returns an array with the closest values.
+	the number of values in the closest_values_array depends on the length of the initial array.
+	When used in MAKE_THE_FIT the value is going to be g1_guess, g2_guess, alpha_guess, break_guess, c1_guess, cut_guess.
 
 	Args:
-		array (np.array): _description_
-		value (float): _description_
+		array (np.array): array of values from which to choose
+		value (float): value close to which the values need to be
 	"""
 
-	#this function finds n closest values to the guess value
-	#and returns an array with the closest values
-	#the number of values in the closest_values_array depends on the length of the initial array
-
-	# the value is going to be g1_guess, g2_guess, alpha_guess, break_guess, c1_guess, cut_guess
-	
+		
 	
 	if len(array)<=10:
 		array_size = len(array)
@@ -75,12 +29,10 @@ def closest_values(array, value):
 	if len(array) >20:
 		array_size = 10
 		
-	#array_size = len(array)-1
-
+	
 	array = np.delete(array, np.where(array ==value))
 	#if len(new_array)!=0:
 	#	array = new_array
-		
 		
 	closest_values_array = np.array(())
 	
@@ -97,30 +49,31 @@ def closest_values(array, value):
 
 	
 def check_redchi(spec_e, spec_flux, e_err, flux_err, gamma1 = -1, gamma2 = -2, gamma3 = -4, c1 = 1000, alpha = 10, beta = 10, E_break_low = 0.06, E_break_high = 0.1,  E_cut= None, exponent = 2, fit = 'best',  maxit=10000, e_min=None, e_max=None):
-	"""_summary_
+	"""This function compares the reduced chi sq from the different fits. The fit iteration results come from this function. 
+	the function also checks if the break point is outside of the energy array (also the cutoff point)
+	the min and max energies cannot be last and/or first points because it wouldn't be a physical result
+	
 
 	Args:
-		spec_e (_type_): _description_
-		spec_flux (_type_): _description_
-		e_err (_type_): _description_
-		flux_err (_type_): _description_
-		gamma1 (int, optional): _description_. Defaults to -1.
-		gamma2 (int, optional): _description_. Defaults to -2.
-		gamma3 (int, optional): _description_. Defaults to -4.
-		c1 (int, optional): _description_. Defaults to 1000.
-		alpha (int, optional): _description_. Defaults to 10.
-		beta (int, optional): _description_. Defaults to 10.
-		E_break_low (float, optional): _description_. Defaults to 0.06.
-		E_break_high (float, optional): _description_. Defaults to 0.1.
-		E_cut (_type_, optional): _description_. Defaults to None.
-		fit (str, optional): _description_. Defaults to 'best'.
-		maxit (int, optional): _description_. Defaults to 10000.
-		e_min (_type_, optional): _description_. Defaults to None.
-		e_max (_type_, optional): _description_. Defaults to None.
+		spec_e (list): list of values corresponding to the energy
+		spec_flux (list): list of values corresponding to the intensity/flux
+		e_err (list): uncertainty values for the energy
+		flux_err (list): uncertainty values for the intensity/flux
+		gamma1 (int, optional): value for spectral index 1. Defaults to -1.
+		gamma2 (int, optional): value for spetcral index 2. Defaults to -2.
+		gamma3 (int, optional): value for spectral index 3. Defaults to -4.
+		c1 (int, optional): Intensity at 100 keV. Defaults to 1000.
+		alpha (int, optional): sharpness of the transition from spectral index 1 to 2. Defaults to 10.
+		beta (int, optional): sharpness of the transition from spectral index 2 to 3. Defaults to 10.
+		E_break_low (float, optional): first spectral break in MeV. Defaults to 0.06.
+		E_break_high (float, optional): second spectral break in MeV. Defaults to 0.1.
+		E_cut (float, optional): exponential cutoff in MeV. Defaults to None.
+		fit (str, optional): thw type of fit preferred. The options are 'single', 'double', 'triple', 'cut', . Defaults to 'best'.
+		maxit (int, optional): number of maximum iteration for ODR. Defaults to 10000.
+		e_min (float, optional): minimum energy for the fit. Defaults to None.
+		e_max (float, optional): maximum energy for the fit. Defaults to None.
 	"""
-	#the function also checks if the break point is outside of the energy array (also the cutoff point)
-	#the min and max energies cannot be last and/or first points because it wouldn't be a physical result
-	#print(spec_e)
+	
 
 	emin = spec_e[2]
 	emax = spec_e[len(spec_e)-3]
@@ -505,11 +458,48 @@ def find_c1(spec_e, spec_flux, e_min, e_max):
 	
 
 def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_fit='best', e_min=None, e_max=None, g1_guess=-2., g2_guess=None, g3_guess=None, alpha_guess=5., beta_guess = 5,  break_low_guess=0.065, break_high_guess=0.12, cut_guess = 0.12, c1_guess=None, exponent_guess = 2, use_random = False, iterations = 10, path = None, path2 = None, detailed_legend = False):
-	'''This function fit the data to a single, double or break+cut power law. 
+	"""This function fit the data to a single, double or break+cut power law. 
 	The fit type can be chosen between: single,double, cut or best. 
 	The best option checks between all the options and chooses between the three by checking the reduced chisqr.
 	Also when the broken or cut options are chosen, the function checks if the break or cutoff points are outside of the energy range.
-	In such case, a sigle pl will be fit to the data and the function will output that the breakpoint is outside of the energy range.''' 
+	In such case, a sigle pl will be fit to the data and the function will output that the breakpoint is outside of the energy range.
+
+	Args:
+		spec_e (list): list of values corresponding to the energy
+		spec_flux (list): list of values corresponding to the intensity/flux
+		e_err (list): uncertainty values for the energy
+		flux_err (list): uncertainty values for the intensity/flux
+		ax (axis): _description_
+		direction (str, optional): _description_. Defaults to 'sun'.
+		which_fit (str, optional): which_fit options: 'single' will force a single pl fit to the data
+		  			'broken' will force a broken pl fit to the data but ONLY if the break point is within the energy range otherwise a sigle pl fit will be produced instead
+		  			'best_sb' will choose automatically the best fit type between single and broken by comparing the redchis of the fits
+		    		'cut' will produce a single pl fit with an exponential cutoff point. If the cutoff point is outside of the energy range a broken or single pl will be fit instead
+			  		'broken_cut' will produce a broken pl fit with an exponential cutoff point. If the cutoff point is outside of the energy range a broken or single pl will be fit instead
+				  	'best_cb'. Defaults to 'best'.
+					'triple' will force a triple pl fit. If this is not possible, the function will check which is the next best option.
+					'best' will choose automatically the best fit type by comparing the redchis of the fits.
+					Defaults to 'best'.
+		e_min (float, optional): The lower energy limit for the fit. Defaults to None.
+		e_max (float, optional): The upper energy limit for the fit. Defaults to None.
+		g1_guess (float, optional): The slope of the single pl fit or the first part of a broken/triple pl fit. Defaults to -1.9.
+		g2_guess (float, optional): The slope of the second part of a broken/triple pl fit. gamma2 < gamma1. Defaults to -2.5. 
+		g3_guess (int, optional): The slope of the third part of a broken/triple pl fit. gamma3 < gamma2 < gamma1. Defaults to -4.
+		c1_guess (int, optional): The intensity/flux value at 0.1 MeV. Defaults to 1000.
+		alpha_guess (int, optional): The smoothness of the transition between gamma1 and gamma2. Defaults to 10.
+		beta_guess (int, optional): The smoothness of the transition between gamma3 and gamma2. Defaults to 10.
+		break_guess_low (float, optional): Guess value for the energy correponding to the break in the broken pl and first break for the triple pl. Input in MeV.  Defaults to 0.6.
+		break_guess_high (float, optional): Guess value for the energy correponding to the second break for the triple pl.Input in MeV. Defaults to 1.2.
+		cut_guess (float, optional): Guess value for the energy corresponding to the exponential cutoff.Input in MeV.  Defaults to 1.2.
+		use_random (bool, optional): If True the fitting function will, in addition to the guess values, choose random values from a predifined list of values for each variable. 
+					These values are chosen close to the guess values. Defaults to False.
+		iterations (int, optional): The number of times the function will choose random values to use in the fit to the data. Defaults to 10.
+		path (_type_, optional): _description_. Defaults to None.
+		path2 (_type_, optional): _description_. Defaults to None.
+		detailed_legend (bool, optional): _description_. Defaults to False.
+
+			"""
+
 	#print(spec_e)
 	#print(spec_flux)
 	# CHANGE GUESS VALUES OF GAMMA1
@@ -1059,25 +1049,6 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 
 		ax.plot(xplot, pl_fit.simple_pl([c1, gamma1], xplot), '-', color=color[direction], label=r'$\mathregular{\gamma=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err))
 		ax.plot(xplot, pl_fit.simple_pl([c1, gamma1], xplot), '--k', zorder=10)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
