@@ -568,7 +568,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		alpha_array = np.hstack((a1_array,a2_array,a3_array,a4_array,a5_array))
 		alpha_array = closest_values(alpha_array, alpha_guess)
 		beta_array = np.hstack((a1_array,a2_array,a3_array,a4_array,a5_array))
-		beta_array = closest_values(alpha_array, alpha_guess)
+		beta_array = closest_values(beta_array, beta_guess)
 	# break array
 	# cut array = break_array *1.8
 		
@@ -602,9 +602,8 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 	color = {'sun':'crimson', 'asun':'orange','north':'darkslateblue','south':'c'}
 	spec_e = np.array(spec_e)
 	spec_flux = np.array(spec_flux)
-	e_err = np.array(e_err)
-	flux_err = np.array(flux_err)
-	
+
+		
 	xplot = np.logspace(np.log10(np.nanmin(spec_e)), np.log10(np.nanmax(spec_e)), num=500)
 	xplot = xplot[np.where((xplot >= e_min) & (xplot <= e_max))[0]]
 	
@@ -615,16 +614,20 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		fit_ind   = np.where((spec_e >= e_min) & (spec_e <= e_max) & (np.isfinite(spec_flux) == True))[0]
 		spec_e    = spec_e[fit_ind]
 		spec_flux = spec_flux[fit_ind]
-		if e_err != None:
+		if e_err is not None:
+			e_err = np.array(e_err)
 			e_err = e_err[fit_ind]
 		#flux_err  = flux_err[fit_ind]
 	
-	if flux_err != None:
+	elif flux_err is not None:
+		print('HERE')
 		fit_ind   = np.where((spec_e >= e_min) & (spec_e <= e_max) & (np.isfinite(spec_flux) == True) & (np.isfinite(flux_err) == True))[0]
 		spec_e    = spec_e[fit_ind]
 		spec_flux = spec_flux[fit_ind]
+		flux_err = np.array(flux_err)
 		flux_err  = flux_err[fit_ind]
-		if e_err != None:
+		if e_err is not None:
+			e_err = np.array(e_err)
 			e_err = e_err[fit_ind]
 
 

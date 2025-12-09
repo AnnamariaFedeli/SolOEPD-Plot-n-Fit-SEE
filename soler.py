@@ -67,7 +67,15 @@ def run_the_fit(path, data, save, channels_to_exclude = None, plot_title = '', x
     x_err  = dataframe_to_fit['E_err']
     y_data   = dataframe_to_fit['Intensity']
     y_err    = dataframe_to_fit['I_err']   
- 
+
+    if x_err.isnull().all():
+        x_err = None
+        print('not working')
+
+    if y_err.isnull().all():
+        y_err = None
+        print('working')
+    
 
     f, ax = plt.subplots(1, figsize=(6, 5), dpi = 300)
     
