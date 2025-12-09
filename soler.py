@@ -61,7 +61,7 @@ def run_the_fit(path, data, save, channels_to_exclude = None, plot_title = '', x
         args = sf.exclude_channels(data, channels_to_exclude)
         dataframe_to_fit = args[0]
         dataframe_to_exclude = args[1]
-
+       
 
     x_data = dataframe_to_fit['Energy'] # energy for spectra
     x_err  = dataframe_to_fit['E_err']
@@ -70,11 +70,11 @@ def run_the_fit(path, data, save, channels_to_exclude = None, plot_title = '', x
 
     if x_err.isnull().all():
         x_err = None
-        print('not working')
+        
 
     if y_err.isnull().all():
         y_err = None
-        print('working')
+       
     
 
     f, ax = plt.subplots(1, figsize=(6, 5), dpi = 300)
