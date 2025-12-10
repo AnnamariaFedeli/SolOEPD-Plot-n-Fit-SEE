@@ -1019,7 +1019,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 					result_final = result_single_pl_random
 					
 	
-	result_dataframe = pd.DataFrame({"FInal fit type":which_fit_final}, index = [0])
+	result_dataframe = pd.DataFrame({"Final fit type":which_fit_final}, index = [0])
 	result = result_final
 	#result.pprint()
 	#print(which_fit_final)

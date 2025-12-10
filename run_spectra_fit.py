@@ -10,7 +10,7 @@ from sunpy.coordinates import get_horizons_coord
 import make_the_fit as fitting
 #from make_the_fit_tripl import  MAKE_THE_FIT
 #from make_the_fit import closest_values
-#from make_the_fit import find_c1
+#from make_the_fit import find_c1 
 import combining_files as comb
 from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 import soler_functions as sf
@@ -18,7 +18,7 @@ import os
 from pathlib import Path
 
 
-def run_the_fit(path, data, save, use_filename_as_title = False, channels_to_exclude = None, plot_title = '', x_label = 'Intensity [/]', y_label = 'Energy [MeV]', legend_title = '', data_label_for_legend = 'data', which_fit = 'best', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20 , legend_details = False):
+def run_the_fit(path, data, save, use_filename_as_title = False, channels_to_exclude = None, plot_title = '', x_label = 'Intensity [/]', y_label = 'Energy [MeV]', legend_title = '', data_label_for_legend = 'data', which_fit = 'best', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4., c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20 , legend_details = False):
     """This function calls the make_the_fit functoin that creates the fit. It plots and saves the results of the fit.
 
     Args:
@@ -84,9 +84,16 @@ def run_the_fit(path, data, save, use_filename_as_title = False, channels_to_exc
        
 
     x_data = dataframe_to_fit['Energy'] # energy for spectra
-    x_err  = dataframe_to_fit['E_err']
     y_data   = dataframe_to_fit['Intensity']
-    y_err    = dataframe_to_fit['I_err']   
+      
+    x_err = None
+    y_err = None
+
+    if 'E_err' in dataframe_to_fit:
+        x_err  = dataframe_to_fit['E_err']
+    
+    if 'I_err' in dataframe_to_fit:
+        y_err    = dataframe_to_fit['I_err'] 
 
     #checking if uncertainties for energy and intensity are NaNs
     if x_err.isnull().all():
@@ -128,8 +135,17 @@ def run_the_fit(path, data, save, use_filename_as_title = False, channels_to_exc
     
     if save:
         plt.savefig(folder_path+'/'+file_name+'_'+name_string+'_fit-plot_'+which_fit+'.png', dpi=300)
+        
 
     plt.show()
+
+    results = pd.read_csv(fit_var_path, sep = ';', index_col = False)
+    print('The fit produced the following results:')
+    for column in results:
+        if results[str(column)].isnull().all():
+            continue
+        else: print(column, ': ', results[str(column)][0])
+        
 
 
 
