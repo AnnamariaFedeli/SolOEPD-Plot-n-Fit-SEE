@@ -13,7 +13,7 @@ import make_the_fit as fitting
 #from make_the_fit import find_c1 
 import combining_files as comb
 from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
-import soler_functions as sf
+import functions_for_spectra_fit as sf
 import os
 from pathlib import Path
 
@@ -32,23 +32,23 @@ def run_the_fit(path, data, save, use_filename_as_title = False, channels_to_exc
         y_label (str, optional): label for the y axis. Defaults to 'Energy [MeV]'.
         legend_title (str, optional): title for the legend. Defaults to ''.
         which_fit (str, optional): which_fit options: 'single' will force a single pl fit to the data
-		  			'broken' will force a broken pl fit to the data but ONLY if the break point is within the energy range otherwise a sigle pl fit will be produced instead
-		  			'best_sb' will choose automatically the best fit type between single and broken by comparing the redchis of the fits
-		    		'cut' will produce a single pl fit with an exponential cutoff point. If the cutoff point is outside of the energy range a broken or single pl will be fit instead
-			  		'broken_cut' will produce a broken pl fit with an exponential cutoff point. If the cutoff point is outside of the energy range a broken or single pl will be fit instead
+		  			'double' will force a double pl fit to the data but ONLY if the break point is within the energy range otherwise a sigle pl fit will be produced instead
+		  			'best_sb' will choose automatically the best fit type between single and double by comparing the redchis of the fits
+		    		'cut' will produce a single pl fit with an exponential cutoff point. If the cutoff point is outside of the energy range a double or single pl will be fit instead
+			  		'double_cut' will produce a double pl fit with an exponential cutoff point. If the cutoff point is outside of the energy range a double or single pl will be fit instead
 				  	'best_cb'. Defaults to 'best'.
 					'triple' will force a triple pl fit. If this is not possible, the function will check which is the next best option.
 					'best' will choose automatically the best fit type by comparing the redchis of the fits
                     Defaults to 'best'
         e_min (float, optional): The lower energy limit for the fit. Defaults to None.
 		e_max (float, optional): The upper energy limit for the fit. Defaults to None.
-        g1_guess (float, optional): The slope of the single pl fit or the first part of a broken/triple pl fit. Defaults to -1.9.
-		g2_guess (float, optional): The slope of the second part of a broken/triple pl fit. gamma2 < gamma1. Defaults to -2.5. 
-		g3_guess (int, optional): The slope of the third part of a broken/triple pl fit. gamma3 < gamma2 < gamma1. Defaults to -4.
+        g1_guess (float, optional): The slope of the single pl fit or the first part of a double/triple pl fit. Defaults to -1.9.
+		g2_guess (float, optional): The slope of the second part of a double/triple pl fit. gamma2 < gamma1. Defaults to -2.5. 
+		g3_guess (int, optional): The slope of the third part of a double/triple pl fit. gamma3 < gamma2 < gamma1. Defaults to -4.
 		c1_guess (int, optional): The intensity/flux value at 0.1 MeV. Defaults to 1000.
 		alpha_guess (int, optional): The smoothness of the transition between gamma1 and gamma2. Defaults to 10.
 		beta_guess (int, optional): The smoothness of the transition between gamma3 and gamma2. Defaults to 10.
-		break_guess_low (float, optional): Guess value for the energy correponding to the break in the broken pl and first break for the triple pl. Input in MeV. Defaults to 0.6.
+		break_guess_low (float, optional): Guess value for the energy correponding to the break in the double pl and first break for the triple pl. Input in MeV. Defaults to 0.6.
 		break_guess_high (float, optional): Guess value for the energy correponding to the second break for the triple pl.Input in MeV.  Defaults to 1.2.
 		cut_guess (float, optional): Guess value for the energy corresponding to the exponential cutoff. Input in MeV.  Defaults to 1.2.
 		use_random (bool, optional): If True the fitting function will, in addition to the guess values, choose random values from a predifined list of values for each variable. 
@@ -139,12 +139,15 @@ def run_the_fit(path, data, save, use_filename_as_title = False, channels_to_exc
 
     plt.show()
 
-    results = pd.read_csv(fit_var_path, sep = ';', index_col = False)
-    print('The fit produced the following results:')
-    for column in results:
-        if results[str(column)].isnull().all():
-            continue
-        else: print(column, ': ', results[str(column)][0])
+    results = pd.read_csv(fit_var_path, sep = ';')
+
+    #print(results.columns)
+    sf.print_results(results)
+    
+   
+
+
+    
         
 
 
