@@ -8,10 +8,6 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as pltt
 from sunpy.coordinates import get_horizons_coord
 import make_the_fit as fitting
-#from make_the_fit_tripl import  MAKE_THE_FIT
-#from make_the_fit import closest_values
-#from make_the_fit import find_c1 
-import combining_files as comb
 from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 import functions_for_spectra_fit as sf
 import os
