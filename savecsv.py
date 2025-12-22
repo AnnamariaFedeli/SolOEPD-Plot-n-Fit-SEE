@@ -53,7 +53,7 @@ traveltime_max, light_tt):
      
 
 def save_info_fit(path, date_string, averaging, direction, data_product, dist, step, ept, het,
-                  sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, shift_factor, fit_type, fit_to, which_fit, e_min, e_max, g1_guess, g2_guess, c1_guess, alpha_guess, break_guess,
+                  sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, shift_factor, fit_type, fit_to, which_fit, e_min, e_max, g1_guess, g2_guess, I0_guess, alpha_guess, break_guess,
                   cut_guess,use_random, iterations, quality_factor_step, quality_factor_ept, quality_factor_het,centre_pixels):
 
     df = pd.DataFrame({"Date": date_string, "Averaging [s]":timeparse(averaging), "Direction":direction,
@@ -62,7 +62,7 @@ def save_info_fit(path, date_string, averaging, direction, data_product, dist, s
     "Leave first HET channel out":leave_out_1st_het_chan, "Shift STEP data": shift_factor,
     "Type of fit":fit_type, "Fit to":fit_to, "Which fit":which_fit , 
     "Min energy": e_min, "Max energy": e_max, "Gamma1 guess":g1_guess, "Gamma2 guess":g2_guess,
-    "c1 guess": c1_guess, "Alpha guess": alpha_guess, "Break guess [MeV]":break_guess, 
+    "I0 guess": I0_guess, "Alpha guess": alpha_guess, "Break guess [MeV]":break_guess, 
     "Cutoff point guess [MeV]":cut_guess,
     "Use random":use_random, "Iterations":iterations, "Quality factor average STEP":quality_factor_step,  "Quality factor average EPT":quality_factor_ept,  "Quality factor average HET":quality_factor_het, "Centre pixels": centre_pixels}, index = [0])
 
