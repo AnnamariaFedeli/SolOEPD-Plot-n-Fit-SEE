@@ -14,6 +14,9 @@ import os
 from pathlib import Path
 
 
+
+
+
 def run_the_fit(path, data, save, use_filename_as_title = False, channels_to_exclude = None, plot_title = '', x_label = 'Intensity [/]', y_label = 'Energy [MeV]', legend_title = '', data_label_for_legend = 'data', which_fit = 'best', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4., c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20 , legend_details = False):
     """This function calls the make_the_fit functoin that creates the fit. It plots and saves the results of the fit.
 
