@@ -834,6 +834,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
             peak_timestamp = np.nan
             list_peak_timestamps.append(peak_timestamp)
         if len(p_t) != 0:
+            # FEB 2026 error here 
             peak_timestamp = df_electron_fluxes['Electron_Flux_{}'.format(channel)][searchstart[n]:searchend[n]].idxmax(skipna = True)
             list_peak_timestamps.append(peak_timestamp)
         
@@ -848,7 +849,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
             # Feb 2026 changes in pandas: .get_loc() does not have method anymore. Trying new .get_indexer() shold work as the old version of get_loc()
             #timestamp_loc = df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)].index.get_loc(peak_timestamp, method='nearest')
             timestamp_loc = df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)].index.get_indexer([peak_timestamp], method='nearest')[0]
-            print(timestamp_loc)
+            #print(timestamp_loc)
             
             peak_electron_uncertainty = df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)].iloc[timestamp_loc]
             list_peak_electron_uncertainties.append(peak_electron_uncertainty)
