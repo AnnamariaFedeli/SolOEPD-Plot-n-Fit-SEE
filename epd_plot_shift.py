@@ -361,7 +361,7 @@ def position_and_traveltime(date, species):
     if species.lower() in ['proton', 'protons', 'p']:
         which = 1
     
-    pos = get_horizons_coord('Solar Orbiter', date)#, 'id') Feb 2026 seppy has a new version and id is not working 
+    pos = get_horizons_coord('Solar Orbiter', date, 'id')
     dist = np.round(pos.radius.value, 2)
     spiral_len = len_of_spiral(400,dist)
     traveltime_min = traveltime_los(spiral_len, 0.004, which)
@@ -378,16 +378,16 @@ def position_and_traveltime(date, species):
     
     if species.lower() in ['electron', 'electrons', 'e']:
         table_data = [["Distance of SolO from the Sun", "[AU]", dist],
-                    ["Length of the Parker Spiral for 400 km/s sw ", "[AU]", round(spiral_len, 2)],
-                    ["Travel time of 4 KeV electrons ", "["+min_sec+"]", round(traveltime_min, 2)],
-                    ["Travel time of 10 MeV electrons ", "["+min_sec+"]", round(traveltime_max, 2)],
-                    ["Travel time of light ", "["+min_sec+"]", round(light_t, 2)]]
+                    ["Length of the Parker Spiral for 400 km/s sw ", "[AU]", spiral_len],
+                    ["Travel time of 4 KeV electrons ", "["+min_sec+"]", traveltime_min],
+                    ["Travel time of 10 MeV electrons ", "["+min_sec+"]", traveltime_max],
+                    ["Travel time of light ", "["+min_sec+"]", light_t]]
     if species.lower() in ['proton', 'protons', 'p']:
         table_data = [["Distance of SolO from the Sun", "[AU]", dist],
-                    ["Length of the Parker Spiral for 400 km/s sw ", "[AU]", round(spiral_len, 2)],
-                    ["Travel time of 4 keV protons ", "[min]", round(traveltime_min, 2)],
-                    ["Travel time of 100 MeV protons ", "[min]", round(traveltime_max, 2)],
-                    ["Travel time of light ", "[min]", round(light_t, 2)]]        
+                    ["Length of the Parker Spiral for 400 km/s sw ", "[AU]", spiral_len],
+                    ["Travel time of 4 keV protons ", "[min]", traveltime_min],
+                    ["Travel time of 100 MeV protons ", "[min]", traveltime_max],
+                    ["Travel time of light ", "[min]", light_t]]        
     print(tabulate(table_data))
     return(table_data)
 
@@ -607,7 +607,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
 
 
         # Cleans up negative flux values in STEP data.
-        df_electron_fluxes[df_electron_fluxes<0] = np.nan
+        df_electron_fluxes[df_electron_fluxes<0] = np.NaN
 
     if(averaging != None ):
         if(instrument=='ept'):
@@ -834,7 +834,6 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
             peak_timestamp = np.nan
             list_peak_timestamps.append(peak_timestamp)
         if len(p_t) != 0:
-            # FEB 2026 error here 
             peak_timestamp = df_electron_fluxes['Electron_Flux_{}'.format(channel)][searchstart[n]:searchend[n]].idxmax(skipna = True)
             list_peak_timestamps.append(peak_timestamp)
         
@@ -846,11 +845,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         if len(t_l) == 0:
             list_peak_electron_uncertainties.append(np.nan)
         if len(t_l)!= 0 and pd.isna(peak_timestamp)==False:
-            # Feb 2026 changes in pandas: .get_loc() does not have method anymore. Trying new .get_indexer() shold work as the old version of get_loc()
-            #timestamp_loc = df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)].index.get_loc(peak_timestamp, method='nearest')
-            timestamp_loc = df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)].index.get_indexer([peak_timestamp], method='nearest')[0]
-            #print(timestamp_loc)
-            
+            timestamp_loc = df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)].index.get_loc(peak_timestamp, method='nearest')
             peak_electron_uncertainty = df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)].iloc[timestamp_loc]
             list_peak_electron_uncertainties.append(peak_electron_uncertainty)
 
@@ -1095,11 +1090,11 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
 
 
     # If background subtraction is enabled, subtracts bg_flux from all observations. If flux value is negative, changes it to NaN.
-    if(bg_subtraction == False): 
+    if(bg_subtraction == False):
         pass
     elif(bg_subtraction == True):
         df_electron_fluxes = df_electron_fluxes.sub(df_info['Background_flux'].values, axis=1)
-        df_electron_fluxes[df_electron_fluxes<0] = np.nan
+        df_electron_fluxes[df_electron_fluxes<0] = np.NaN
 
     # Plotting part.
     # Initialized the main figure.
@@ -1605,7 +1600,7 @@ def plot_some_channels(args, bg_subtraction=False, savefig=False, sigma=3, path=
         pass
     elif(bg_subtraction == True):
         df_electron_fluxes = df_electron_fluxes.sub(df_info['Background_flux'].values, axis=1)
-        df_electron_fluxes[df_electron_fluxes<0] = np.nan
+        df_electron_fluxes[df_electron_fluxes<0] = np.NaN
 
     # Plotting part.
     # Initialized the main figure.
