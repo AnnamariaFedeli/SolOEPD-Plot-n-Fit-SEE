@@ -565,9 +565,9 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         # needs to be changed. Need to check if Electron_Sectors_Bins_Text is in df energies. If yes it's old data and if pix then energy channels is that 
         # so check pix first. if pix then check for Electron_Sectors_Bins_Text and loop throught that for energies. If not then use the same block as if statement 
         # below these comments.
-        old_new_data_string = ''
-        if 'Electron_Sectors_Bins_Text' in df_energies.keys() and centre_pix:
-            old_new_data_string = 'Electron_Sectors_'
+        old_new_data_string = 'Electron_'
+        #if 'Electron_Sectors_Bins_Text' in df_energies.keys() and centre_pix:
+            #old_new_data_string = 'Electron_Sectors_'
 
         if(data_type == 'l2'):
            # if 'Electron_Sectors_Bins_Text' in df_energies.columns:
