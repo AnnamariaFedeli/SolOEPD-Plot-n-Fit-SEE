@@ -627,7 +627,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
             
 
     # 12.07.2023 The rolling window option should be deleted because it is never used. 
-    # The rolling window might be broken, but it's not ever used.
+    # The rolling window might be double, but it's not ever used.
     #elif(averaging_mode == 'rolling_window'):
         # for STEP electrons, the resampling is done independently, but rolling_window is not supported!
      #   if(instrument!='step'):

@@ -537,7 +537,7 @@ def average_flux_error(flux_err: pd.DataFrame) -> pd.Series:
 
 
 
-def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_fit='broken', e_min=None, e_max=None, g1_guess=-2., g2_guess=None, alpha_guess=5., break_guess=0.120, c1_guess=1e3):
+def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_fit='double', e_min=None, e_max=None, g1_guess=-2., g2_guess=None, alpha_guess=5., break_guess=0.120, c1_guess=1e3):
     '''
     fits a spectrum with power law function (either single or double pl)
     '''
@@ -578,29 +578,29 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
         ax.plot(xplot, pl_fit.simple_pl([c1, gamma1], xplot), '-', color=color[direction], label=r'$\mathregular{\delta=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err))
         ax.plot(xplot, pl_fit.simple_pl([c1, gamma1], xplot), '--k')
 
-    if which_fit == 'broken':
-        result_broken = pl_fit.broken_pl_fit(spec_e, spec_flux, e_err, flux_err, alpha=alpha_guess, gamma1=g1_guess, gamma2=g2_guess, E_break=break_guess, maxit=10000)
-        result        = result_broken
-        breakp        = result_broken.beta[4]
-        alpha         = result_broken.beta[3]
-        dof           = len(spec_e) - len(result_broken.beta)
-        redchi_broken = result_broken.res_var
+    if which_fit == 'double':
+        result_double = pl_fit.double_pl_fit(spec_e, spec_flux, e_err, flux_err, alpha=alpha_guess, gamma1=g1_guess, gamma2=g2_guess, E_break=break_guess, maxit=10000)
+        result        = result_double
+        breakp        = result_double.beta[4]
+        alpha         = result_double.beta[3]
+        dof           = len(spec_e) - len(result_double.beta)
+        redchi_double = result_double.res_var
 
         t_val      = studentt.interval(0.95, dof)[1]
-        errors     = t_val * result_broken.sd_beta  #np.sqrt(np.diag(result_broken.cov_beta))
+        errors     = t_val * result_double.sd_beta  #np.sqrt(np.diag(result_double.cov_beta))
         breakp_err = errors[4]
         if alpha > 0 :
-            gamma1     = result_broken.beta[1]
+            gamma1     = result_double.beta[1]
             gamma1_err = errors[1]
-            gamma2     = result_broken.beta[2]
+            gamma2     = result_double.beta[2]
             gamma2_err = errors[2]
         if alpha < 0 :
-            gamma1     = result_broken.beta[2]
+            gamma1     = result_double.beta[2]
             gamma1_err = errors[2]
-            gamma2     = result_broken.beta[1]
+            gamma2     = result_double.beta[1]
             gamma2_err = errors[1]
 
-        fit_plot = pl_fit.broken_pl_func(result_broken.beta, xplot)
+        fit_plot = pl_fit.double_pl_func(result_double.beta, xplot)
         fit_plot[fit_plot == 0] = np.nan
         ax.plot(xplot, fit_plot, '-b', label=r'$\mathregular{\delta_1=}$%5.2f' %round(gamma1, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma1_err)+'\n'+r'$\mathregular{\delta_2=}$%5.2f' %round(gamma2, ndigits=2)+r"$\pm$"+'{0:.2f}'.format(gamma2_err)+'\n'+r'$\mathregular{\alpha=}$%5.2f' %round(alpha, ndigits=2))#, lw=lwd)
         ax.axvline(x=breakp, color='blue', linestyle='--', label=r'$\mathregular{E_b=}$ '+str(round(breakp*1e3, ndigits=1))+'\n'+r"$\pm$"+str(round(breakp_err*1e3, ndigits=0))+' keV')

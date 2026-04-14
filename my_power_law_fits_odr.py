@@ -1,6 +1,36 @@
 import numpy as np
 from scipy.odr import *
 
+def check_odr_output(result):
+	"""_summary_
+
+	Args:
+		result (odr output): _description_
+
+	Returns:
+		_type_: _description_
+	"""
+
+	#check for convergence
+	success_messages = [
+    "Sum of squares convergence",
+    "Parameter convergence",
+    "Sum of squares and parameter convergence"]
+
+	if not any(msg in result.stopreason[0] for msg in success_messages):
+		print(f"Fit failed or did not converge: {result.stopreason}")
+    	# Exclude or handle the result here (e.g., skip, use default, raise error)
+		#final_beta = None 
+		print("re-running the fit...")
+		convergence = False
+	else:
+		#final_beta = result.beta
+		print("Fit converged successfully.")
+		convergence = True
+
+	return convergence
+
+
 
 
 def power_law_fit(x,y,xerr,yerr, gamma1=-1.8, c1=None, print_report=False):
@@ -25,6 +55,12 @@ def power_law_fit(x,y,xerr,yerr, gamma1=-1.8, c1=None, print_report=False):
     # Run the regression.
 	result = odr.run()
 	
+	convergence = check_odr_output(result)
+	#while not convergence:
+	if not convergence:
+		result = odr.run()
+		convergence = check_odr_output(result)
+
 	if print_report:
 		
 		result.pprint()
@@ -34,7 +70,7 @@ def power_law_fit(x,y,xerr,yerr, gamma1=-1.8, c1=None, print_report=False):
 		
 	return result
 
-def broken_pl_func(p, x):#, c1, gamma1, gamma2, alpha, E_break):
+def double_pl_func(p, x):#, c1, gamma1, gamma2, alpha, E_break):
     '''
     Mar 2020: functin 25 of prinsloo 2019 paper but withoug exponential roll-over
     '''
@@ -46,14 +82,14 @@ def broken_pl_func(p, x):#, c1, gamma1, gamma2, alpha, E_break):
     return y
 
 
-def broken_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None, E_break=0.1, print_report=False, maxit=20):
+def double_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None, E_break=0.1, print_report=False, maxit=200):
 	#covMatrix = np.cov(xerr,bias=False)
 
 	c1 = y[3] if c1==None else c1
 	alpha = 0.1 if alpha==None else alpha
 
-	plmodel = Model(broken_pl_func)
-	#print(broken_pl_func)
+	plmodel = Model(double_pl_func)
+	#print(double_pl_func)
 	
 	# Create a RealData object using our initiated data from above.
 	data = RealData(x, y, sx=xerr, sy=yerr)
@@ -62,6 +98,12 @@ def broken_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None, 
 
 	# Run the regression.
 	result = odr.run()
+	convergence = check_odr_output(result)
+	#while not convergence:
+	if not convergence:
+		result = odr.run()
+		convergence = check_odr_output(result)
+
 	#iprint = odr.set_iprint(init=2,  iter=2, iter_step = 1, final=2)
 	if print_report:
 		result.pprint()
@@ -82,7 +124,7 @@ def triple_pl_func(p, x):#, c1, gamma1, gamma2, alpha, E_break):
     return y
 
 
-def triple_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, gamma3 = -3, c1=None, alpha=None, beta = None, E_break_low=0.06, E_break_high = 0.12, print_report=False, maxit=20):
+def triple_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, gamma3 = -3, c1=None, alpha=None, beta = None, E_break_low=0.06, E_break_high = 0.12, print_report=False, maxit=200):
 	#covMatrix = np.cov(xerr,bias=False)
 
 	c1 = y[3] if c1==None else c1
@@ -90,7 +132,7 @@ def triple_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, gamma3 = -3, c1=None,
 	beta = 0.1 if beta==None else beta
 
 	plmodel = Model(triple_pl_func)
-	#print(broken_pl_func)
+	#print(double_pl_func)
 	
 	# Create a RealData object using our initiated data from above.
 	data = RealData(x, y, sx=xerr, sy=yerr)
@@ -99,6 +141,12 @@ def triple_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, gamma3 = -3, c1=None,
 
 	# Run the regression.
 	result = odr.run()
+	convergence = check_odr_output(result)
+	#while not convergence:
+	if not convergence:
+		result = odr.run()
+		convergence = check_odr_output(result)
+
 	#iprint = odr.set_iprint(init=2,  iter=2, iter_step = 1, final=2)
 	if print_report:
 		result.pprint()
@@ -116,7 +164,7 @@ def cut_break_pl_func(p, x): #c1, gamma1, gamma2, alpha, E_break, E_cut
 	return y
 
 	
-def cut_break_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None, E_break=0.1, E_cut = 0.35, exponent = 2, print_report=False, maxit=20):
+def cut_break_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None, E_break=0.1, E_cut = 0.35, exponent = 2, print_report=False, maxit=200):
 	c1 = y[4] if c1==None else c1
 	#c2 = y[-1]*1e-2 if c2==None else c2
 	alpha = 0.1 if alpha==None else alpha
@@ -130,6 +178,12 @@ def cut_break_pl_fit(x,y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=Non
 
 	# Run the regression.
 	result = odr.run()
+	convergence = check_odr_output(result)
+	#while not convergence:
+	if not convergence:
+		result = odr.run()
+		convergence = check_odr_output(result)
+
 
 	if print_report:
 		result.pprint()
@@ -146,7 +200,7 @@ def cut_pl_func(p, x): #c1, gamma1, gamma2, alpha, E_break, E_cut
 	return y
 
 	
-def cut_pl_fit(x,y, xerr, yerr, gamma1=-1.8, c1=None, E_cut = 0.35, exponent = 2, print_report=False, maxit=20):
+def cut_pl_fit(x,y, xerr, yerr, gamma1=-1.8, c1=None, E_cut = 0.35, exponent = 2, print_report=False, maxit=200):
 	c1 = y[4] if c1==None else c1
 	#c2 = y[-1]*1e-2 if c2==None else c2
 	#alpha = 0.1 if alpha==None else alpha
@@ -158,10 +212,14 @@ def cut_pl_fit(x,y, xerr, yerr, gamma1=-1.8, c1=None, E_cut = 0.35, exponent = 2
 	# Set up ODR with the model and data.
 	
 	odr = ODR(data, plmodel, beta0=[c1, gamma1, E_cut, exponent], ifixb=[1,1,1,1], maxit = maxit)
-
 	# Run the regression.
 	result = odr.run()
-
+	convergence = check_odr_output(result)
+	#while not convergence:
+	if not convergence:
+		result = odr.run()
+		convergence = check_odr_output(result)
+	
 	if print_report:
 		result.pprint()
 		result.stopreason
