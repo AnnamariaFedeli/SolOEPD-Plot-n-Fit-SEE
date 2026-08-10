@@ -360,8 +360,8 @@ def position_and_traveltime(date, species):
         which = 2
     if species.lower() in ['proton', 'protons', 'p']:
         which = 1
-    
-    pos = get_horizons_coord('Solar Orbiter', date, 'id')
+    # aug26 updated get coord
+    pos = get_horizons_coord('Solar Orbiter', date) # can add id_type 
     dist = np.round(pos.radius.value, 2)
     spiral_len = len_of_spiral(400,dist)
     traveltime_min = traveltime_los(spiral_len, 0.004, which)
@@ -613,8 +613,8 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
 #
 
 
-        # Cleans up negative flux values in STEP data.
-        df_electron_fluxes[df_electron_fluxes<0] = np.NaN
+        # Cleans up negative flux values in STEP data. 
+        df_electron_fluxes[df_electron_fluxes<0] = np.nan
 
     if(averaging != None ):
         if(instrument=='ept'):
@@ -825,25 +825,27 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
             list_bg_fluxes.append(bg_flux)
         
         f_p = df_electron_fluxes['Electron_Flux_{}'.format(channel)][searchstart[n]:searchend[n]]
-        if len(f_p) == 0 :
+        if f_p.notna().any():
+            flux_peak = f_p.max()
+        else:
             flux_peak = np.nan
-        if len(f_p) != 0:
-            flux_peak = df_electron_fluxes['Electron_Flux_{}'.format(channel)][searchstart[n]:searchend[n]].max()
+
         list_flux_peaks.append(flux_peak)
-        
 
         # check if a large enough fraction of data points are not nan. If there are too many nan's in the search time interval, frac_nonan can be used to exclude the channel from the spectrum
-        frac_nonan = 1 - np.sum(np.isnan(f_p)) / len(f_p) # fraction of data in interval that is NOT nan
+        #improved this so it does not accidentally divide by zero
+        frac_nonan = 1 
+        if len(f_p) == 0:
+            frac_nonan = np.nan
+        else:
+            frac_nonan = f_p.notna().mean()
         list_frac_nonan.append(frac_nonan)
             
-        p_t = df_electron_fluxes['Electron_Flux_{}'.format(channel)][searchstart[n]:searchend[n]]
-        if len(p_t) == 0:
-            peak_timestamp = np.nan
-            list_peak_timestamps.append(peak_timestamp)
-        if len(p_t) != 0:
-            peak_timestamp = df_electron_fluxes['Electron_Flux_{}'.format(channel)][searchstart[n]:searchend[n]].idxmax(skipna = True)
-            list_peak_timestamps.append(peak_timestamp)
-        
+        p_t = df_electron_fluxes[f'Electron_Flux_{channel}'][searchstart[n]:searchend[n]]
+
+        peak_timestamp = p_t.idxmax() if p_t.notna().any() else np.nan
+        list_peak_timestamps.append(peak_timestamp)
+
         t_l = df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)]
         
         # First finding the index location of the peak timestamp in uncertainty dataframe and the getting value of that index location.
@@ -852,7 +854,7 @@ def extract_electron_data(df_electrons, df_energies, plotstart, plotend,  t_inj,
         if len(t_l) == 0:
             list_peak_electron_uncertainties.append(np.nan)
         if len(t_l)!= 0 and pd.isna(peak_timestamp)==False:
-            timestamp_loc = df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)].index.get_loc(peak_timestamp, method='nearest')
+            timestamp_loc = df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)].index.get_indexer([peak_timestamp], method='nearest')[0]
             peak_electron_uncertainty = df_electron_uncertainties['Electron_Uncertainty_{}'.format(channel)].iloc[timestamp_loc]
             list_peak_electron_uncertainties.append(peak_electron_uncertainty)
 
@@ -1101,7 +1103,7 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
         pass
     elif(bg_subtraction == True):
         df_electron_fluxes = df_electron_fluxes.sub(df_info['Background_flux'].values, axis=1)
-        df_electron_fluxes[df_electron_fluxes<0] = np.NaN
+        df_electron_fluxes[df_electron_fluxes<0] = np.nan
 
     # Plotting part.
     # Initialized the main figure.
@@ -1607,7 +1609,7 @@ def plot_some_channels(args, bg_subtraction=False, savefig=False, sigma=3, path=
         pass
     elif(bg_subtraction == True):
         df_electron_fluxes = df_electron_fluxes.sub(df_info['Background_flux'].values, axis=1)
-        df_electron_fluxes[df_electron_fluxes<0] = np.NaN
+        df_electron_fluxes[df_electron_fluxes<0] = np.nan
 
     # Plotting part.
     # Initialized the main figure.
