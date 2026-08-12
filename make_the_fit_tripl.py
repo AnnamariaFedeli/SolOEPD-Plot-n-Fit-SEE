@@ -582,7 +582,7 @@ def MAKE_THE_FIT(spec_e, spec_flux, e_err, flux_err, ax, direction='sun', which_
 		alpha_array = np.hstack((a1_array,a2_array,a3_array,a4_array,a5_array))
 		alpha_array = closest_values(alpha_array, alpha_guess)
 		beta_array = np.hstack((a1_array,a2_array,a3_array,a4_array,a5_array))
-		beta_array = closest_values(alpha_array, alpha_guess)
+		beta_array = closest_values(beta_array, beta_guess)
 	# break array
 	# cut array = break_array *1.8
 		

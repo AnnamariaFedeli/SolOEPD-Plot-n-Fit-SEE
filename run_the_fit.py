@@ -29,63 +29,95 @@ if __name__ == "__main__":
     HTML(f"<div style='column-count: 2;'>{code}</div>")
 
 # <--------------------------------------------------------------- ALL NECESSARY INPUTS HERE ----------------------------------------------------------------->
-def quality_factor_PA_coverage(data, coverage, direction='sun', angle=180):
-    """
-    Compute pitch-angle coverage quality factor over given time windows.
 
-    Parameters
-    ----------
-    data : list-like
-        Expected structure where data[2] contains time windows [start, end].
-    coverage : dict of pandas.DataFrame
-        Coverage data indexed by time with 'EPOCH' and 'center'.
-    direction : str
-        Key for selecting coverage direction.
-    angle : float
-        If 180, pitch angles are mirrored.
+def quality_factor_PA_coverage(data, coverage, direction = 'sun', angle = 180): 
+    qf = [] 
 
-    Returns
-    -------
-    list
-        [per-window quality factors, global quality factor]
-    """
+    for j in range(0, len(data[1])): 
+        df = coverage[direction] 
+        df = df.reset_index() 
+        df = df.drop(np.where(df['EPOCH'] < data[2][0][j])[0]) 
+        df.reset_index(drop = True, inplace = True) 
+        df = df.drop(np.where(df['EPOCH'] > data[2][1][j])[0]) 
+        df.reset_index(drop = True, inplace = True) 
+        factors = [] 
+        for i in range(0,len(df)): 
+            r = df.center[i] 
+            if angle == 180: 
+                r = 180-r 
+            if r <=15.: 
+                factors.append(100) 
+            elif r>15: 
+                f = np.exp(-np.square(r-12)/2*0.0007)*100 
+                factors.append(f) 
+            else: 
+                factors.append(0) 
 
-    qf = []
-
-    if direction not in coverage:
-        raise ValueError(f"Direction '{direction}' not found in coverage")
-
-    for j in range(len(data[1])):
-
-        # --- Recreate df each loop (IMPORTANT) ---
-        df_full = coverage[direction].reset_index(drop=True).copy()
-
-        start = data[2][0][j]
-        end = data[2][1][j]
-
-        df = df_full[(df_full['EPOCH'] >= start) & (df_full['EPOCH'] <= end)].reset_index(drop=True)
-
-        if df.empty:
-            qf.append(np.nan)
-            continue
-
-        factors = []
-
-        for r in df['center']:
-            if angle == 180:
-                r = 180 - r
-
-            if r <= 15.:
-                factors.append(100)
-            else:
-                f = np.exp(-((r - 12)**2) / (2 * 0.0007)) * 100
-                factors.append(f)
-
-        qf.append(np.mean(factors))
-
-    quality_factor = np.nanmean(qf) if len(qf) > 0 else np.nan
-
+        qf.append(sum(factors)/len(factors)) 
+                #qf = sum(factors)/len(factors) 
+                #print(factors) 
+        
+    quality_factor = sum(qf)/len(qf) 
     return [qf, quality_factor]
+
+
+def compute_quality_factors(
+    plot_pa,
+    step, ept, het,
+    pixels,
+    data_step, data_step_pix,
+    data_ept, data_het,
+    coverage_ept, coverage_het,
+    direction, angle
+):
+    if not plot_pa:
+        return None, None, None, None
+
+    results = {}
+    results_pix = {}
+
+    def process(name, data, coverage):
+        qf_vals, qf_avg = quality_factor_PA_coverage(
+            data, coverage, direction=direction, angle=angle
+        )
+
+        results[f"QF {name} average"] = qf_avg
+        results[f"QF {name} all channels"] = qf_vals
+
+        return qf_vals, qf_avg
+
+    # --- STEP ---
+    if step:
+        process("STEP", data_step, coverage_ept)
+
+        if pixels:
+            qf_vals, qf_avg = quality_factor_PA_coverage(
+                data_step_pix, coverage_ept, direction=direction, angle=angle
+            )
+            results_pix["QF STEP average"] = qf_avg
+            results_pix["QF STEP all channels"] = qf_vals
+
+    # --- EPT ---
+    if ept:
+        qf_vals, qf_avg = process("EPT", data_ept, coverage_ept)
+
+        if pixels:
+            results_pix["QF EPT average"] = qf_avg
+            results_pix["QF EPT all channels"] = qf_vals
+
+    # --- HET ---
+    if het:
+        qf_vals, qf_avg = process("HET", data_het, coverage_het)
+
+        if pixels:
+            results_pix["QF HET average"] = qf_avg
+            results_pix["QF HET all channels"] = qf_vals
+
+    # --- convert to pandas Series (exactly like your notebook) ---
+    d = {k: pd.Series(v) for k, v in results.items()}
+    d_pix = {k: pd.Series(v) for k, v in results_pix.items()} if pixels else None
+
+    return d, d_pix, results, results_pix
 
 def print_channel(step=None, ept=None, het=None):
     """
@@ -574,20 +606,20 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
 
 
     # Contaminated data
-    contaminated_data_sigma = comb.low_sigma_threshold(
+    contaminated_data_sigma = comb.extract_low_sigma_rows(
         data_list,
         sigma=sigma,
         leave_out_1st_het_chan=leave_out_1st_het_chan,
         fit_to=fit_to_comb
     )
 
-    contaminated_data_nan = comb.too_many_nans(
+    contaminated_data_nan = comb.extract_nan_heavy_rows(
         data_list,
         frac_nan_threshold=frac_nan_threshold,
         leave_out_1st_het_chan=leave_out_1st_het_chan
     )
 
-    contaminated_data_rel_err = comb.high_rel_err(
+    contaminated_data_rel_err = comb.extract_high_rel_err_rows(
         data_list,
         rel_err=rel_err,
         leave_out_1st_het_chan=leave_out_1st_het_chan
@@ -655,7 +687,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
         )
 
     if het:
-        first_het_data = comb.first_het_chan(het_data)
+        first_het_data = comb.extract_first_het_channel(het_data)
 
         het_data = comb.delete_bad_data(
             het_data,
@@ -845,20 +877,27 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
 
         qf_index = 0
 
-        def get_qf():
-            nonlocal qf_index
-            qf = quality_factor[qf_index]
-            qf_index += 1
-            return qf, qf[1]
+        def get_qf(name):
+            qf_vals = quality_factor[f"QF {name} all channels"]
+
+            qf_avg_raw = quality_factor[f"QF {name} average"]
+
+            # Handle both Series and scalar
+            if hasattr(qf_avg_raw, "iloc"):
+                qf_avg = qf_avg_raw.iloc[0]
+            else:
+                qf_avg = qf_avg_raw
+
+            return qf_vals, qf_avg
 
         if step:
-            qf_step, qf_step_av = get_qf()
+            qf_step, qf_step_av = get_qf("STEP")
 
         if ept:
-            qf_ept, qf_ept_av = get_qf()
+            qf_ept, qf_ept_av = get_qf("EPT")
 
         if het:
-            qf_het, qf_het_av = get_qf()
+            qf_het, qf_het_av = get_qf("HET")
 
 
     # ------- FILE PATHS -------

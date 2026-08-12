@@ -19,70 +19,74 @@ import pandas as pd
 
 
 def log_interp1d(xx, yy, kind='linear'):
-    """make a logarithmic interpolation by going to lin space and taking the logarithms of the data
-        check: https://stackoverflow.com/questions/29346292/logarithmic-interpolation-in-python
+    """
+    Create a logarithmic interpolation function by interpolating in log-log space.
+    Example
+    -------
+    x = [10, 100]
+    y = [4e3, 2e2]
+    func = log_interp1d(x, y)
+    func(50)
+    
     Parameters
     ----------
-    xx : array
-        x-data
-    yy : array
-        y-data
+    xx : array-like
+        x-data (must be positive)
+    yy : array-like
+        y-data (must be positive)
     kind : str, optional
-        kind of interpolation, by default 'linear' (see documentation of sp.interpolate.interp1d)
+        Interpolation type (passed to scipy.interpolate.interp1d)
 
     Returns
     -------
-    function 
-        that makes a logarithmic interpolation based on my input values
-    """    
+    function
+        A function that performs logarithmic interpolation.
+    """
+    if np.any(xx <= 0) or np.any(yy <= 0):
+        raise ValueError("Log interpolation requires positive values")
+
     logx = np.log10(xx)
     logy = np.log10(yy)
+
     lin_interp = sp.interpolate.interp1d(logx, logy, kind=kind)
-    log_interp = lambda zz: np.power(10.0, lin_interp(np.log10(zz)))
+
+    def log_interp(zz):
+        return np.power(10.0, lin_interp(np.log10(zz)))
+
     return log_interp
 
-    ## example how to run:
-    x = [10, 100]
-    y = [4e3, 2e2]
-    f, ax = plt.subplots(1, figsize=(12,7))
-    ax.loglog(x, y, 'ok')
-    x_value = 50
-    func = log_interp1d(x, y)
-    interpolated_value = func(x_value)
-    ax.plot(x_value, interpolated_value, 'om')
 
 
-
-#def compare_arrays(x,y):
-    #if len(x) > len(y):
-        #x1 = x
-        #x2 = y
-    #if len(x) < len(y):
-        #x1 = y
-        #x2 = x
-    ##if len(x) == len(y):
-        ##goto
-    #if len(x) != len(y):
-        #out = np.full(len(x1), False, dtype=bool)
-        #shift = 0
-        #for i in range(len(x1)):
-            #if x1[i] == x2[i+shift]:
-                #out[i] = True
-            #else:
-                #shift = shift+1
-
-    #else:
-        #return np.ones(len(x),dtype=bool)
 def resample_df(df, resample):
     """
-    Resample Pandas Dataframe
+    Resample a Pandas DataFrame and shift the index to the bin center.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Time-indexed DataFrame
+    resample : str
+        Resampling frequency (e.g., '1min', '5s', '1H')
+
+    Returns
+    -------
+    pandas.DataFrame
+        Resampled DataFrame with centered time index
     """
     try:
-        # _ = pd.Timedelta(resample)  # test if resample is proper Pandas frequency
         df = df.resample(resample).mean()
-        df.index = df.index + pd.tseries.frequencies.to_offset(pd.Timedelta(resample)/2)
+
+        offset = pd.tseries.frequencies.to_offset(
+            pd.Timedelta(resample) / 2
+        )
+        df.index = df.index + offset
+
     except ValueError:
-        raise Warning(f"Your 'resample' option of [{resample}] doesn't seem to be a proper Pandas frequency!")
+        raise Warning(
+            f"Your 'resample' option of [{resample}] "
+            "doesn't seem to be a proper Pandas frequency!"
+        )
+
     return df
 
 
@@ -105,14 +109,27 @@ def angle_between(v1, v2):
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
     
 def cdf_info(cdf):
+    """
+    Print the attributes of each variable in a CDF.
+
+    Args:
+        cdf (str or pycdf.CDF): CDF file path or open CDF object.
+
+    Returns:
+        pycdf.CDF: The original CDF object.
+    """
     from spacepy import pycdf
-    if type(cdf) == str:
+
+    if isinstance(cdf, str):
         cdf = pycdf.CDF(cdf)
-    ccdf=pycdf.CDFCopy(cdf)    #Python dictionary containing attributes copied from the CDF.
-    for i in ccdf.keys():
-        print('"'+i+'"')
-        print(cdf[i].attrs)
-        print('')
+
+    ccdf = pycdf.CDFCopy(cdf)
+
+    for name in ccdf.keys():
+        print(f'"{name}"')
+        print(cdf[name].attrs)
+        print()
+
     return cdf
 
 def steradiant(cone_angle):
