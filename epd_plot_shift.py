@@ -650,27 +650,10 @@ def position_and_traveltime(date, species):
     return table_data
 
 
-def extract_electron_data(
-        df_electrons,
-        df_energies,
-        plotstart,
-        plotend,
-        t_inj,
-        bgstart=None,
-        bgend=None,
-        bg_distance_from_window='2h',
-        bg_period='60min',
-        travel_distance=0,
-        travel_distance_second_slope=None,
-        fixed_window=None,
-        instrument='ept',
-        data_type='l2',
-        averaging=None,
-        masking=True,
-        ion_conta_corr=False,
-        df_protons=None,
-        centre_pix=False
-):
+def extract_electron_data(df_electrons, df_energies, plotstart, plotend, t_inj,
+        bgstart=None, bgend=None, bg_distance_from_window='2h', bg_period='60min', travel_distance=0,
+        travel_distance_second_slope=None, fixed_window=None, instrument='ept', data_type='l2',
+        averaging=None, masking=True, ion_conta_corr=False, df_protons=None, centre_pix=False ):
     """
     Extract electron fluxes and determine energy-dependent peak information.
 
@@ -805,7 +788,7 @@ def extract_electron_data(
     instrument_info : list of str
         Two-element list containing the instrument and data type.
     """
-    
+
     if bgstart is not None or bgend is not None:
         if bg_distance_from_window is not None or bg_period is not None:
             raise Exception(
@@ -829,6 +812,7 @@ def extract_electron_data(
         df_proton_fluxes = df_protons['Ion_Flux'][plotstart:plotend]
         df_proton_uncertainties = df_protons['Ion_Uncertainty'][plotstart:plotend]
 
+    
     if instrument in ['ept', 'het']:
         if data_type == 'll':
             channels = range(len(df_energies['Electron_Bins_Low_Energy']))
@@ -874,67 +858,46 @@ def extract_electron_data(
             print('E')
 
         else:
-            raise ValueError(
-                'This is before the data change of October 2021 and '
+            raise ValueError('This is before the data change of October 2021 and '
                 'you are not using center pixels. There is no Electron '
-                'keyword.'
-            )
+                'keyword.')
 
         if data_type == 'l2':
             e_low = df_energies[old_new_data_string + 'Bins_Low_Energy']
             e_high = []
 
-            channels = range(
-                len(df_energies[old_new_data_string + 'Bins_Low_Energy'])
-            )
+            channels = range(len(df_energies[old_new_data_string + 'Bins_Low_Energy']))
 
             df_electron_fluxes = pd.DataFrame()
             df_electron_uncertainties = pd.DataFrame()
 
             for i in channels:
-                e_high.append(
-                    e_low[i]
-                    + df_energies[old_new_data_string + 'Bins_Width'][i]
-                )
+                e_high.append(e_low[i]+ df_energies[old_new_data_string + 'Bins_Width'][i])
 
                 if centre_pix:
-                    df_electron_fluxes[f'Electron_Flux_{i}'] = (
-                        df_electrons[f'Electron_Comb_Flux_{i}'][plotstart:plotend]
-                    )
-                    df_electron_uncertainties[f'Electron_Uncertainty_{i}'] = (
-                        df_electrons[f'Electron_Comb_Uncertainty_{i}'][plotstart:plotend]
-                    )
+                    df_electron_fluxes[f'Electron_Flux_{i}'] = (df_electrons[f'Electron_Comb_Flux_{i}'][plotstart:plotend])
+                    df_electron_uncertainties[f'Electron_Uncertainty_{i}'] = (df_electrons[f'Electron_Comb_Uncertainty_{i}'][plotstart:plotend])
 
                 else:
-                    df_electron_fluxes[f'Electron_Flux_{i}'] = (
-                        df_electrons[f'Electron_Avg_Flux_{i}'][plotstart:plotend]
-                    )
-                    df_electron_uncertainties[f'Electron_Uncertainty_{i}'] = (
-                        df_electrons[f'Electron_Avg_Uncertainty_{i}'][plotstart:plotend]
-                    )
+                    df_electron_fluxes[f'Electron_Flux_{i}'] = (df_electrons[f'Electron_Avg_Flux_{i}'][plotstart:plotend])
+                    df_electron_uncertainties[f'Electron_Uncertainty_{i}'] = (df_electrons[f'Electron_Avg_Uncertainty_{i}'][plotstart:plotend])
 
         # Cleans up negative flux values in STEP data.
         df_electron_fluxes[df_electron_fluxes < 0] = np.nan
 
-        
+
+       
     if averaging is not None:
         if instrument == 'ept':
             df_proton_fluxes = df_proton_fluxes.resample(averaging).mean()
-            df_proton_uncertainties = (
-                df_proton_uncertainties
-                .resample(averaging)
-                .apply(average_flux_error)
-            )
+            df_proton_uncertainties = (df_proton_uncertainties.resample(averaging).apply(average_flux_error))
 
         # For STEP electrons, resampling is done independently,
         # e.g. solo_epd_loader.calc_electrons(df, resample='1min').
         if instrument != 'step':
             df_electron_fluxes = df_electron_fluxes.resample(averaging).mean()
-            df_electron_uncertainties = (
-                df_electron_uncertainties
-                .resample(averaging)
-                .apply(average_flux_error)
-            )
+            df_electron_uncertainties = (df_electron_uncertainties.resample(averaging).apply(average_flux_error))
+            
 
     if ion_conta_corr and instrument == 'ept':
         ion_cont_corr_matrix = np.loadtxt('EPT_ion_contamination_flux_paco.dat')
@@ -943,31 +906,17 @@ def extract_electron_data(
         Electron_Uncertainty_cont = np.zeros(np.shape(df_electron_uncertainties))
 
         for tt in range(len(df_electron_fluxes)):
-            Electron_Flux_cont[tt, :] = np.sum(
-                ion_cont_corr_matrix
-                * np.ma.masked_invalid(df_proton_fluxes.values[tt, :]),
-                axis=1
-            )
+            Electron_Flux_cont[tt, :] = np.sum(ion_cont_corr_matrix* np.ma.masked_invalid(df_proton_fluxes.values[tt, :]),axis=1)
 
             # Matrix multiplication does not work with NaN values because
             # np.matmul has no built-in option to ignore them. Using
             # masked_invalid() ignores both NaN and infinite values.
-            Electron_Uncertainty_cont[tt, :] = np.sqrt(
-                np.sum(
-                    ion_cont_corr_matrix**2
-                    * np.ma.masked_invalid(
-                        df_proton_uncertainties.values[tt, :]**2
-                    ),
-                    axis=1
-                )
-            )
+            Electron_Uncertainty_cont[tt, :] = np.sqrt(np.sum(ion_cont_corr_matrix**2* np.ma.masked_invalid(df_proton_uncertainties.values[tt, :]**2),axis=1))
 
         df_electron_fluxes = df_electron_fluxes - Electron_Flux_cont
-        df_electron_uncertainties = np.sqrt(
-            df_electron_uncertainties**2
-            + Electron_Uncertainty_cont**2
-        )
-
+        df_electron_uncertainties = np.sqrt(df_electron_uncertainties**2+ Electron_Uncertainty_cont**2)
+        
+       
     if instrument == 'ept':
         ion_string = 'Ion_contamination_correction'
     elif instrument == 'step':
@@ -976,20 +925,11 @@ def extract_electron_data(
         ion_string = ''
 
     # Main information dataframe containing most of the required data.
-    df_info = pd.DataFrame(
-        {
-            'Plot_period': [],
-            'Averaging': [],
-            ion_string: [],
-            'Energy_channel': [],
-            'Primary_energy': []
-        }
-    )
+    df_info = pd.DataFrame({'Plot_period': [], 'Averaging': [], '{}'.format(ion_string): [], 'Energy_channel': [],
+            'Primary_energy': []})
 
     # Add basic metadata to the main info DataFrame.
-    df_info['Plot_period'] = (
-        [plotstart] + [plotend] + [''] * (len(channels) - 2)
-    )
+    df_info['Plot_period'] = ([plotstart] + [plotend] + [''] * (len(channels) - 2))
 
     if instrument == 'ept':
         df_info['Ion_contamination_correction'] = (
@@ -1272,120 +1212,217 @@ def extract_electron_data(
 
     return (df_electron_fluxes, df_info, [searchstart, searchend], [e_low, e_high], [instrument, data_type] )
 
-
+# Aug 2026 I think this function is now redundant...
 def make_step_electron_flux(stepdata, mask_conta=True):
     """
-    We use the calibration factors from Paco (Alcala) to calculate the electron flux 
-    out of the (integral - magnet) fluxes (we now use level2 data files to get these)
-    we also check if the integral counts are sufficiently higher than the magnet counts 
-    so that we can really assume it's electrons (otherwise we mask the output arrays)
-    As suggested by Alex Kollhoff & Berger use a 5 sigma threshold:
-    C_INT >> C_MAG:
-    C_INT - C_MAG > 5*sqrt(C_INT)
-    
-    Args:
-        stepdata (pandas dataframe): STEP data
-        mask_conta (bool, optional): If true, time intervals with significant 
-                (5 sigma) ion contamination are masked. Defaults to True. 
+    Calculate STEP electron fluxes and uncertainties from integral and
+    magnet fluxes.
 
-    Returns:
-        df_electron_fluxes (pandas dataframe): electron flux data
-        df_electron_uncertainties
-        paco.E_low
-        paco.E_hi
+    The electron flux is calculated from the difference between the
+    integral and magnet fluxes using calibration factors from Paco
+    (Alcala). If `mask_conta` is True, intervals where the difference
+    between the integral and magnet flux is not sufficiently large are
+    masked as likely ion-contaminated data.
 
+    The current masking criterion is:
+
+        F_INT - F_MAG > 2 * U_INT
+
+    where `F_INT` and `F_MAG` are the integral and magnet fluxes,
+    respectively, and `U_INT` is the uncertainty of the integral flux.
+
+    Parameters
+    ----------
+    stepdata : pandas.DataFrame
+        STEP data containing the integral and magnet fluxes and their
+        corresponding uncertainties. The required columns are
+        ``'Integral_Flux'``, ``'Magnet_Flux'``,
+        ``'Integral_Uncertainty'``, and ``'Magnet_Uncertainty'``.
+
+    mask_conta : bool, optional
+        If True, intervals that do not satisfy the contamination
+        threshold are masked. Defaults to True.
+
+    Returns
+    -------
+    df_electron_fluxes : pandas.DataFrame
+        Calculated STEP electron fluxes for each energy channel. Columns
+        are named ``'Electron_Flux_0'``, ``'Electron_Flux_1'``, etc.
+
+    df_electron_uncertainties : pandas.DataFrame
+        Calculated uncertainties of the STEP electron fluxes. Columns
+        are named ``'Electron_Uncertainty_0'``,
+        ``'Electron_Uncertainty_1'``, etc.
+
+    paco.E_low : pandas.Series
+        Lower energy boundaries of the STEP energy channels in keV.
+
+    paco.E_hi : pandas.Series
+        Upper energy boundaries of the STEP energy channels in keV.
     """
 
-    # calculate electron flux from F_INT - F_MAG:
+    # Load calibration factors from Paco (Alcala).
     colnames = ["ch_num", "E_low", "E_hi", "factors"]
-    paco = pd.read_csv('step_electrons_calibration.csv', names=colnames, skiprows=1)
-    paco.E_low = round(paco.E_low/1000, 5)
-    paco.E_hi = round(paco.E_hi/1000, 5)
+    paco = pd.read_csv(
+        'step_electrons_calibration.csv',
+        names=colnames,
+        skiprows=1
+    )
 
-    F_INT = stepdata['Integral_Flux']
-    F_MAG = stepdata['Magnet_Flux']
-    step_flux =  (F_INT - F_MAG) * paco.factors.values
-    U_INT = stepdata['Integral_Uncertainty']
-    U_MAG = stepdata['Magnet_Uncertainty']
-    # from Paco:
-    # Ele_Uncertainty = k * sqrt(Integral_Uncertainty^2 + Magnet_Uncertainty^2)
-    step_unc = np.sqrt(U_INT**2 + U_MAG**2) * paco.factors.values
-    param_list = ['Electron_Flux', 'Electron_Uncertainty']
+    paco.E_low = round(paco.E_low / 1000, 5)
+    paco.E_hi = round(paco.E_hi / 1000, 5)
 
+    # Calculate electron flux from integral and magnet fluxes.
+    integral_flux = stepdata['Integral_Flux']
+    magnet_flux = stepdata['Magnet_Flux']
+
+    step_flux = (
+        (integral_flux - magnet_flux)
+        * paco.factors.values
+    )
+
+    # Calculate electron flux uncertainties.
+    integral_uncertainty = stepdata['Integral_Uncertainty']
+    magnet_uncertainty = stepdata['Magnet_Uncertainty']
+
+    step_uncertainty = (
+        np.sqrt(
+            integral_uncertainty**2
+            + magnet_uncertainty**2
+        )
+        * paco.factors.values
+    )
+
+    # Mask intervals where the electron signal is not sufficiently
+    # larger than the magnet signal.
     if mask_conta:
+        clean = (
+            (integral_flux - magnet_flux)
+            > 2 * integral_uncertainty
+        )
 
-        # C_INT = stepdata['Integral_Rate']
-        # C_MAG = stepdata['Magnet_Rate']
-        # clean = (C_INT - C_MAG) > 5*np.sqrt(C_INT)
-        # step_flux = step_flux.mask(clean)
-        # step_unc = step_unc.mask(clean)
-        clean = (F_INT-F_MAG)> 2 * U_INT # call 2 conta_threshold
         step_flux = step_flux.mask(~clean)
-        step_unc = step_unc.mask(~clean)    
-        
-    step_data = pd.concat([step_flux, step_unc], axis=1, keys=param_list)
+        step_uncertainty = step_uncertainty.mask(~clean)
+
+    # Combine fluxes and uncertainties into separate DataFrames.
+    step_data = pd.concat(
+        [step_flux, step_uncertainty],
+        axis=1,
+        keys=['Electron_Flux', 'Electron_Uncertainty']
+    )
 
     df_electron_fluxes = step_data['Electron_Flux']
     df_electron_uncertainties = step_data['Electron_Uncertainty']
 
-    for channel in df_electron_fluxes:
+    # Add the expected column names for each energy channel.
+    df_electron_fluxes.columns = [
+        f'Electron_Flux_{channel}'
+        for channel in df_electron_fluxes.columns
+    ]
 
-        df_electron_fluxes = df_electron_fluxes.rename(columns={channel:'Electron_Flux_{}'.format(channel)})
+    df_electron_uncertainties.columns = [
+        f'Electron_Uncertainty_{channel}'
+        for channel in df_electron_uncertainties.columns
+    ]
 
-    for channel in df_electron_uncertainties:
-
-        df_electron_uncertainties = df_electron_uncertainties.rename(columns={channel:'Electron_Uncertainty_{}'.format(channel)})
-
-    return df_electron_fluxes, df_electron_uncertainties, paco.E_low, paco.E_hi
+    return (
+        df_electron_fluxes,
+        df_electron_uncertainties,
+        paco.E_low,
+        paco.E_hi
+    )
 
 def average_flux_error(flux_err: pd.DataFrame) -> pd.Series:
+    """
+    Calculate the average flux uncertainty for each energy channel.
 
+    Parameters
+    ----------
+    flux_err : pandas.DataFrame
+        DataFrame containing flux uncertainties for each energy channel.
+
+    Returns
+    -------
+    pandas.Series
+        Average uncertainty for each energy channel.
+    """
     return np.sqrt((flux_err ** 2).sum(axis=0)) / len(flux_err.values)
 
-def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', frac_nan_threshold=0.4, rel_err_threshold=0.5, plot_pa=False, coverage=None, sensor = 'ept', viewing='sun', centre_pix = False, date = None, size = 20):
-    """Creates a timeseries plot showing the particle flux for each energy channel of
-        the instrument (STEP, EPT, HET). The timeseries plot shows also the peak window and
-        background window. The peak is marked with different color lines:
-        green: peak is ok
-        grey: too many nans in window
-        blue: low sigma
+def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', frac_nan_threshold=0.4, 
+    rel_err_threshold=0.5, plot_pa=False, coverage=None, viewing='sun', centre_pix=False, date=None, size=20 ):
+    """
+    Creates a timeseries plot showing the particle flux for each energy channel of
+    the instrument (STEP, EPT, HET). The timeseries plot also shows the peak window
+    and background window.
+
+    The peak is marked with different colored lines:
+        green: peak is acceptable
+        grey: too many NaNs in window
+        blue: low significance
         orange: high relative error
+        purple: no valid background subtraction/significance
 
     Args:
-        args : Output of the extract_data function. Incudes:
+        args : tuple
+            Output of the extract_electron_data function. Contains:
                 df_electron_fluxes: pandas DataFrame
-                df_info : pandas DataFrame. This data frame contains the spectrum data 
-                and all its metadata (which is saved to csv in the function write_to_csv())
-                [searchstart, searchend]: list of strings. The search window start and end times.
-                [e_low, e_high] : list of float. The lowest and highest energy corresponding to 
-                each energy channel.
-                [instrument, data_type] : list of strings.
-        bg_subtraction (bool, optional): Subtract bg from data. Defaults to False.
-        savefig (bool, optional): saving the timeseries plot. Defaults to False.
-        sigma (int, optional): sigma threshold value. Is used to check if the sigma value is 
-                high enough fro the data within the search-period interval. If not, the flux and 
-                uncertainty value of that energy channel are set to nan and therefore 
-                excluded from the spectrum. Defaults to 3.
-        path (str, optional): path to folder where the timeseries will be saved. Defaults to ''.
-        key (str, optional): _description_. Defaults to ''.
-        frac_nan_threshold (float, optional):  is used to to check if there is enough non-nan 
-                flux data points in the search-period interval. If not, the flux and 
-                uncertainty value of that energy channel are set to nan and therefore 
-                excluded from the spectrum. Defaults to 0.4.
-        rel_err_threshold (float, optional): is used to check that relative error is 
-                low enough in the search period interval. If not, the flux and 
-                uncertainty value of that energy channel are set to nan and therefore 
-                excluded from the spectrum. Defaults to 0.5.
-        plot_pa (bool, optional): include pitch angles in the plot. Defaults to False.
-        coverage (pandas dataframe or None, optional): dataframe to be used to plot the pitch angles. Defaults to None.
-        sensor (str, optional): sensor used for plotting the pitch angles. Defaults to 'ept'.
-        viewing (str, optional): viewing direction of EPT or HET, used for plotting the pitch angles of these telescopes. Defaults to 'sun'. Is ignored if sensor=='step'
+                df_info: pandas DataFrame containing the spectrum data and metadata
+                [searchstart, searchend]: search window start and end times
+                [e_low, e_high]: lowest and highest energy for each channel
+                [instrument, data_type]: instrument and data type
+
+        bg_subtraction (bool, optional):
+            Subtract the background flux from the data. Defaults to False.
+
+        savefig (bool, optional):
+            If True, save the timeseries plot. Defaults to False.
+
+        sigma (int, optional):
+            Significance threshold used to determine whether the peak is significant
+            enough. Defaults to 3.
+
+        path (str, optional):
+            Path to the folder where the timeseries plot will be saved.
+            Defaults to ''.
+
+        key (str, optional):
+            Additional string appended to the output filename. Defaults to ''.
+
+        frac_nan_threshold (float, optional):
+            Minimum fraction of non-NaN flux data points required in the search
+            interval. Channels below this threshold are considered unreliable.
+            Defaults to 0.4.
+
+        rel_err_threshold (float, optional):
+            Maximum allowed relative error. Channels above this threshold are
+            considered unreliable. Defaults to 0.5.
+
+        plot_pa (bool, optional):
+            If True, include pitch-angle coverage in the plot. Defaults to False.
+
+        coverage (pandas DataFrame or None, optional):
+            DataFrame containing the pitch-angle coverage used for plotting.
+            Defaults to None.
+
+        viewing (str, optional):
+            Viewing direction of EPT or HET, used for plotting pitch angles.
+            Ignored for STEP. Defaults to 'sun'.
+
+        centre_pix (bool, optional):
+            Refers to STEP data and indicates whether centre-pixel data are used.
+            Defaults to False.
+
+        date (str, optional):
+            Date used for the plot title and filename. If None, the date is taken
+            from the plot period in df_info. Defaults to None.
+
+        size (int, optional):
+            Base font size used in the plot. Defaults to 20.
     """
-    
+
     peak_sig = args[1]['Peak_significance']
     rel_err = args[1]['rel_backsub_peak_err']
-    
-    
+
     df_electron_fluxes = args[0]
     df_info = args[1]
     search_area = args[2]
@@ -1403,515 +1440,481 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
     else:
         date_string = str(date)[:-3]
         file_date = str(date)[:-3].replace(' ', '-').replace(':', '')
-    
 
-    if viewing is None or sensor in ['STEP', 'step']:
+    if viewing is None or instrument.lower() == 'step':
         viewing = 'sun'
 
     title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + date_string
-    filename = 'electron_channels-' + file_date + '-' + instrument.upper() + '-' +viewing+ '-' + data_type.upper() 
-    
-    if(df_info['Averaging'][0]=='Mean'):
 
-        title_string = title_string + ', ' + df_info['Averaging'][1].split()[2] + ' averaging'
-        filename = filename + '-' + df_info['Averaging'][1].split()[2] + '_averaging'
+    filename = (
+        'electron_channels-'
+        + file_date
+        + '-'
+        + instrument.upper()
+        + '-'
+        + viewing
+        + '-'
+        + data_type.upper()
+    )
 
-    elif(df_info['Averaging'][0]=='No averaging'):
+    if df_info['Averaging'][0] == 'Mean':
+
+        title_string = (
+            title_string
+            + ', '
+            + df_info['Averaging'][1].split()[2]
+            + ' averaging'
+        )
+
+        filename = (
+            filename
+            + '-'
+            + df_info['Averaging'][1].split()[2]
+            + '_averaging'
+        )
+
+    elif df_info['Averaging'][0] == 'No averaging':
 
         title_string = title_string + ', no averaging'
         filename = filename + '-no_averaging'
 
-    if(bg_subtraction):
-        
-       title_string = title_string + ', bg subtraction on'
-       filename = filename + '-bg_subtr'
+    if bg_subtraction:
+
+        title_string = title_string + ', bg subtraction on'
+        filename = filename + '-bg_subtr'
 
     else:
 
         title_string = title_string + ', bg subtraction off'
-    
-    if(instrument == 'ept'):
-        
-        if(df_info['Ion_contamination_correction'][0]):
+
+    if instrument.lower() == 'ept':
+
+        if df_info['Ion_contamination_correction'][0]:
 
             title_string = title_string + ', ion correction on'
             filename = filename + '-ion_corr'
 
-        elif(df_info['Ion_contamination_correction'][0]==False):
+        elif df_info['Ion_contamination_correction'][0] == False:
 
             title_string = title_string + ', ion correction off'
 
-    if instrument == 'step' and centre_pix:
+    if instrument.lower() == 'step' and centre_pix:
+
         filename = filename + '-centre_pix'
         title_string = title_string + ', centre pix'
 
-
-    # If background subtraction is enabled, subtracts bg_flux from all observations. If flux value is negative, changes it to NaN.
-    if(bg_subtraction == False):
+    # If background subtraction is enabled, subtract background flux from all
+    # observations. Negative flux values are set to NaN.
+    if bg_subtraction == False:
         pass
-    elif(bg_subtraction == True):
-        df_electron_fluxes = df_electron_fluxes.sub(df_info['Background_flux'].values, axis=1)
-        df_electron_fluxes[df_electron_fluxes<0] = np.nan
+
+    elif bg_subtraction == True:
+
+        df_electron_fluxes = df_electron_fluxes.sub(
+            df_info['Background_flux'].values,
+            axis=1
+        )
+        df_electron_fluxes[df_electron_fluxes < 0] = np.nan
 
     # Plotting part.
-    # Initialized the main figure.
-    # fig = plt.figure()
-    color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
+    color = {
+        'sun': 'crimson',
+        'asun': 'orange',
+        'north': 'darkslateblue',
+        'south': 'c'
+    }
+
     npanels = len(df_info['Energy_channel'])
-    if plot_pa: 
+
+    if plot_pa:
         npanels = npanels + 1
 
-    if sensor == 'step':
-        n_channels_step = len(args[1]['Energy_channel'])
-        if n_channels_step > 8:
-            fsize = (20,60)
-        else:
-            fsize = (20,24)
-    if sensor == 'ept':
-        fsize = (20,48)
-    if sensor == 'het':
-        fsize = (20,12)
-    fig, axes = plt.subplots(npanels, sharex=True, figsize=fsize)
-    # plt.xticks([])
-    # plt.yticks([])
-    # plt.ylabel("Flux \n [1/s cm$^2$ sr MeV]", labelpad=40)
-    fig.supylabel("Intensity [1/s cm$^2$ sr MeV]", size=size)
-    axes[0].set_title(title_string+"\n", size=size)
+    if instrument.lower() == 'step':
 
+        n_channels_step = len(args[1]['Energy_channel'])
+
+        if n_channels_step > 8:
+            fsize = (20, 60)
+
+        else:
+            fsize = (20, 24)
+
+    if instrument.lower() == 'ept':
+        fsize = (20, 48)
+
+    if instrument.lower() == 'het':
+        fsize = (20, 12)
+
+    fig, axes = plt.subplots(
+        npanels,
+        sharex=True,
+        figsize=fsize
+    )
+
+    fig.supylabel(
+        "Intensity [1/s cm$^2$ sr MeV]",
+        size=size
+    )
+
+    axes[0].set_title(
+        title_string + "\n",
+        size=size
+    )
 
     # Loop through selected energy channels and create a subplot for each.
-    n=0
-    for channel in df_info['Energy_channel']:
-        #ax = fig.add_subplot(npanels,1,n)
-        #ax = df_electron_fluxes['Electron_Flux_{}'.format(channel)].plot(logy=True, figsize=fsize, color=color[viewing], drawstyle='steps-mid')
-        ax = axes[n]
-        ax.plot(df_electron_fluxes.index, df_electron_fluxes['Electron_Flux_{}'.format(channel)], color=color[viewing], drawstyle='steps-mid')
-        ax.set_yscale('log')
-        plt.text(0.025,0.7, str(energy_bin[0][channel]) + " - " + str(energy_bin[1][channel]) + " MeV", transform=ax.transAxes, size=size-2) #was13
+    n = 0
 
-        ax.tick_params(axis = 'y', which = 'major', labelsize = size-2)
+    for channel in df_info['Energy_channel']:
+
+        ax = axes[n]
+
+        ax.plot(
+            df_electron_fluxes.index,
+            df_electron_fluxes['Electron_Flux_{}'.format(channel)],
+            color=color[viewing],
+            drawstyle='steps-mid'
+        )
+
+        ax.set_yscale('log')
+
+        plt.text(
+            0.025,
+            0.7,
+            str(energy_bin[0][channel])
+            + " - "
+            + str(energy_bin[1][channel])
+            + " MeV",
+            transform=ax.transAxes,
+            size=size - 2
+        )
+
+        ax.tick_params(
+            axis='y',
+            which='major',
+            labelsize=size - 2
+        )
 
         # Search area vertical lines.
-        ax.axvline(search_area[0][n], color='black')
-        ax.axvline(search_area[1][n], color='black')
-        ax.set_xlim(df_electron_fluxes.index[0], df_electron_fluxes.index[-1])
-        
+        ax.axvline(
+            search_area[0][n],
+            color='black'
+        )
+
+        ax.axvline(
+            search_area[1][n],
+            color='black'
+        )
+
+        ax.set_xlim(
+            df_electron_fluxes.index[0],
+            df_electron_fluxes.index[-1]
+        )
+
         # Peak vertical line.
         if df_info['Peak_timestamp'][n] is not pd.NaT:
-            if  (rel_err[n] > rel_err_threshold): # if the relative error too large, we exlcude the channel
-                ax.axvline(df_info['Peak_timestamp'][n], linestyle=':', linewidth=4, color='orange')
-            if df_info['frac_nonan'][n] < frac_nan_threshold:  # we only plot a line if the fraction of non-nan data points in the search interval is larger than frac_nan_threshold
-                ax.axvline(df_info['Peak_timestamp'][n], linestyle='--', linewidth=3, color='gray')
-            if (peak_sig[n] < sigma): # if the peak is not significant, we discard the energy channel
-                ax.axvline(df_info['Peak_timestamp'][n], linestyle='-.', linewidth=2, color='blue')
-            if (peak_sig[n] >= sigma) and (rel_err[n] <= rel_err_threshold) and (df_info['frac_nonan'][n] > frac_nan_threshold):
-                ax.axvline(df_info['Peak_timestamp'][n], color='green')
+
+            if rel_err[n] > rel_err_threshold:
+                ax.axvline(
+                    df_info['Peak_timestamp'][n],
+                    linestyle=':',
+                    linewidth=4,
+                    color='orange'
+                )
+
+            if df_info['frac_nonan'][n] < frac_nan_threshold:
+                ax.axvline(
+                    df_info['Peak_timestamp'][n],
+                    linestyle='--',
+                    linewidth=3,
+                    color='gray'
+                )
+
+            if peak_sig[n] < sigma:
+                ax.axvline(
+                    df_info['Peak_timestamp'][n],
+                    linestyle='-.',
+                    linewidth=2,
+                    color='blue'
+                )
+
+            if (
+                peak_sig[n] >= sigma
+                and rel_err[n] <= rel_err_threshold
+                and df_info['frac_nonan'][n] > frac_nan_threshold
+            ):
+                ax.axvline(
+                    df_info['Peak_timestamp'][n],
+                    color='green'
+                )
+
             if bg_subtraction == True:
-                if (np.isnan(peak_sig[n]))  and (~np.isnan(df_info['Bg_subtracted_peak'][n])): # no background
-                    ax.axvline(df_info['Peak_timestamp'][n], linestyle='-', linewidth=2, color='purple')
+
+                if (
+                    np.isnan(peak_sig[n])
+                    and ~np.isnan(df_info['Bg_subtracted_peak'][n])
+                ):
+                    ax.axvline(
+                        df_info['Peak_timestamp'][n],
+                        linestyle='-',
+                        linewidth=2,
+                        color='purple'
+                    )
+
             if bg_subtraction == False:
-                if (np.isnan(peak_sig[n]))  and df_info['Flux_average'][n]!=0.: # no background
-                    ax.axvline(df_info['Peak_timestamp'][n], linestyle='-', linewidth=2, color='purple')
-            
+
+                if (
+                    np.isnan(peak_sig[n])
+                    and df_info['Flux_average'][n] != 0.
+                ):
+                    ax.axvline(
+                        df_info['Peak_timestamp'][n],
+                        linestyle='-',
+                        linewidth=2,
+                        color='purple'
+                    )
 
         # Background measurement area.
-        ax.axvspan(df_info['Bg_start'][n], df_info['Bg_end'][n], color='gray', alpha=0.25)
+        ax.axvspan(
+            df_info['Bg_start'][n],
+            df_info['Bg_end'][n],
+            color='gray',
+            alpha=0.25
+        )
 
         ax.get_xaxis().set_visible(False)
 
-        if(n == len(df_info['Energy_channel'])-1 and plot_pa==False):
+        if (
+            n == len(df_info['Energy_channel']) - 1
+            and plot_pa == False
+        ):
 
             ax.get_xaxis().set_visible(True)
-            ax.set_xlabel("Time", labelpad=45)
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
-            #ax.xaxis.set_minor_locator(hours)
 
-        n+=1
-    if plot_pa:  # add a panel that shows the pitch angle of the telescope
-        # ax = fig.add_subplot(npanels,1,n)
+            ax.set_xlabel(
+                "Time",
+                labelpad=45
+            )
+
+            ax.xaxis.set_major_formatter(
+                mdates.DateFormatter("%d-%m-%y\n%H:%M")
+            )
+
+        n += 1
+
+    if plot_pa:
+
+        # Add a panel that shows the pitch angle of the telescope.
         ax = axes[n]
-        if sensor in ['HET', 'het', 'EPT', 'ept']: 
-            #for direction in ['sun', 'asun', 'north', 'south']: 
+
+        if instrument.lower() in ['het', 'ept']:
+
             col = color[viewing]
-            # fill the minimum-maximum range of the pitch angle coverage
-            ax.fill_between(coverage.index, coverage[viewing]['min'], coverage[viewing]['max'], alpha=0.5, color=col, edgecolor=col, linewidth=0.0, step='mid')
-            # plot the central pitch angle as a thin line
-            ax.plot(coverage.index, coverage[viewing]['center'], linewidth=0.7, label=viewing, color=col, drawstyle='steps-mid')
 
-        if sensor in ['STEP', 'step']:
-            col_list = plt.cm.viridis(np.linspace(0.,0.95,16))
-            for p in range(1, 16):  # loop over 15 sectors/pixels
-                # plot the central pitch angle as a thin line
-                ax.plot(coverage.index, coverage[f'Pixel_{p}']['center'], color = col_list[p-1], linewidth=1, label=f'Pixel_{p}', drawstyle='steps-mid')
+            # Fill the minimum-maximum range of the pitch-angle coverage.
+            ax.fill_between(
+                coverage.index,
+                coverage[viewing]['min'],
+                coverage[viewing]['max'],
+                alpha=0.5,
+                color=col,
+                edgecolor=col,
+                linewidth=0.0,
+                step='mid'
+            )
 
-        ax.axhline(y=90, color='gray', linewidth=0.8, linestyle='--')
-        ax.axhline(y=45, color='gray', linewidth=0.8, linestyle='--')
-        ax.axhline(y=135, color='gray', linewidth=0.8, linestyle='--')
+            # Plot the central pitch angle as a thin line.
+            ax.plot(
+                coverage.index,
+                coverage[viewing]['center'],
+                linewidth=0.7,
+                label=viewing,
+                color=col,
+                drawstyle='steps-mid'
+            )
 
-       
-        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), title=instrument)
+        if instrument.lower() == 'step':
+
+            col_list = plt.cm.viridis(
+                np.linspace(0., 0.95, 16)
+            )
+
+            for p in range(1, 16):
+
+                # Plot the central pitch angle as a thin line.
+                ax.plot(
+                    coverage.index,
+                    coverage[f'Pixel_{p}']['center'],
+                    color=col_list[p - 1],
+                    linewidth=1,
+                    label=f'Pixel_{p}',
+                    drawstyle='steps-mid'
+                )
+
+        ax.axhline(
+            y=90,
+            color='gray',
+            linewidth=0.8,
+            linestyle='--'
+        )
+
+        ax.axhline(
+            y=45,
+            color='gray',
+            linewidth=0.8,
+            linestyle='--'
+        )
+
+        ax.axhline(
+            y=135,
+            color='gray',
+            linewidth=0.8,
+            linestyle='--'
+        )
+
+        ax.legend(
+            loc='center left',
+            bbox_to_anchor=(1, 0.5),
+            title=instrument
+        )
+
         ax.set_ylim([0, 180])
-        ax.yaxis.set_ticks(np.arange(0, 180+45, 45))
-        ax.set_ylabel('PA [°]', size=size-2)#was13
-        #ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
-        plt.tick_params(axis='x', which='major', labelsize=size-2) #was 16
-        plt.tick_params(axis='y', which='major', labelsize=size-2)#was13
-        ax.set_xlabel("Time", labelpad=45, size=size) #was 16
-    
+
+        ax.yaxis.set_ticks(
+            np.arange(0, 180 + 45, 45)
+        )
+
+        ax.set_ylabel(
+            'PA [°]',
+            size=size - 2
+        )
+
+        ax.xaxis.set_major_formatter(
+            mdates.DateFormatter("%d-%m-%y\n%H:%M")
+        )
+
+        plt.tick_params(
+            axis='x',
+            which='major',
+            labelsize=size - 2
+        )
+
+        plt.tick_params(
+            axis='y',
+            which='major',
+            labelsize=size - 2
+        )
+
+        ax.set_xlabel(
+            "Time",
+            labelpad=45,
+            size=size
+        )
+
     # Saves figure, if enabled.
-    if(path[len(path)-1] != '/'):
-
+    if path[len(path) - 1] != '/':
         path = path + '/'
 
-    if(savefig):
+    if savefig:
 
-        plt.savefig(path + filename + str(key) +'.jpg', bbox_inches='tight', dpi = 300)
-
-    plt.show()
-
-# This plot_check function is not finished, but it does produce cool rainbow coloured plots.
-def plot_check(args, bg_subtraction=False, savefig=False, key=''):
-    """_summary_
-
-    Args:
-        args (_type_): _description_
-        bg_subtraction (bool, optional): _description_. Defaults to False.
-        savefig (bool, optional): _description_. Defaults to False.
-        key (str, optional): _description_. Defaults to ''.
-    """
-
-    hours = mdates.HourLocator(interval = 1)
-    df_electron_fluxes = args[0]
-    df_info = args[1]
-    search_area = args[2]
-    energy_bin = args[3]
-    instrument = args[4][0]
-    data_type = args[4][1]
-
-    fig = plt.figure()
-    colors = iter(plt.cm.jet(np.linspace(0, 1, len(df_info['Energy_channel']))))
-
-    #for channel in df_info['Energy_channel']:
-    #    ax = df_electron_fluxes['Electron_Flux_{}'.format(channel)].plot(logy=True, figsize=(20,25), color='red', drawstyle='steps-mid')
-
-    for channel in df_info['Energy_channel']:
-
-        col = next(colors)
-        ax = df_electron_fluxes['Electron_Flux_{}'.format(channel)].plot(logy=True, figsize=(13,10), color=col, drawstyle='steps-mid')
+        plt.savefig(
+            path + filename + str(key) + '.jpg',
+            bbox_inches='tight',
+            dpi=300
+        )
 
     plt.show()
 
-def plot_spectrum_peak(args, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None, centre_pix = False, date = None):
-    """_summary_
 
-    Args:
-        args (_type_): _description_
-        bg_subtraction (bool, optional): _description_. Defaults to True.
-        savefig (bool, optional): _description_. Defaults to False.
-        path (str, optional): _description_. Defaults to ''.
-        key (str, optional): _description_. Defaults to ''.
-        sigma (int, optional): _description_. Defaults to 3.
-        frac_nan_threshold (float, optional): _description_. Defaults to 0.4.
-        rel_err_threshold (float, optional): _description_. Defaults to 0.5.
-        direction (_type_, optional): _description_. Defaults to None.
-    """
-    color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
-    df_info = args[1]
-    instrument = args[4][0]
-    data_type = args[4][1]
-    if direction is None or instrument in ['STEP', 'step']:
-        viewing = 'sun'
-        direction = 'sun'
-    else:
-        viewing = f'-{direction}' 
+def plot_some_channels(
+    args,
+    bg_subtraction=False,
+    savefig=False,
+    sigma=3,
+    path='',
+    key='',
+    plot_pa=False,
+    coverage=None,
+    viewing='sun',
+    frac_nan_threshold=0.9,
+    rel_err_threshold=0.5,
+    channels=None,
+    figsize_x=15,
+    figsize_y=8,
+    f_scale=1,
+    f_size=12
+):
+    """Creates a timeseries plot for selected energy channels of the
+    instrument (STEP, EPT, HET).
 
-    date_string = ''
-    file_date = ''
+    The timeseries plots show the peak search window and background
+    window. The peak is marked with different color lines:
 
-    if date is None:
-        date_string = str(df_info['Plot_period'][0][:-5])
-        file_date = str(df_info['Plot_period'][0][:-5])
-
-    else:
-        date_string = str(date)[:-3]
-        file_date = str(date)[:-3].replace(' ', '-').replace(':', '')
-    
-    title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + date_string
-    filename = 'electron_spectrum-' + file_date + '-' + instrument.upper() + viewing+ '-' + data_type.upper() 
-    
-    if(df_info['Averaging'][0]=='Mean'):
-
-        title_string = title_string + ', ' + df_info['Averaging'][1].split()[2] + ' averaging'
-        filename = filename + '-' + df_info['Averaging'][1].split()[2] + '_averaging'
-
-    elif(df_info['Averaging'][0]=='No averaging'):
-
-        title_string = title_string + ', no averaging'
-        filename = filename + '-no_averaging'
-
-    if(bg_subtraction):
-        
-       title_string = title_string + ', bg subtraction on'
-       filename = filename + '-bg_subtr'
-
-    else:
-
-        title_string = title_string + ', bg subtraction off'
-    
-    if(instrument == 'ept'):
-
-        if(df_info['Ion_contamination_correction'][0] and instrument=='ept'):
-
-            title_string = title_string + ', ion correction on'
-            filename = filename + '-ion_corr'
-
-        elif(df_info['Ion_contamination_correction'][0]==False):
-
-            title_string = title_string + ', ion correction off'
-
-    if instrument == 'step' and centre_pix:
-        filename = filename + '-centre_pix'
-        title_string = title_string + ', centre pix'
-
-    # this is to plot the points that are excluded due to different reasons 
-    df_nan = df_info.where((df_info['frac_nonan'] < frac_nan_threshold), np.nan)
-    df_no_sig = df_info.where((df_info['Peak_significance'] < sigma), np.nan)
-    df_rel_err = df_info.where((df_info['rel_backsub_peak_err'] > rel_err_threshold), np.nan)
-
-    # Plots either the background subtracted or raw flux peaks depending on choice.
-   
-    if(bg_subtraction):
-        f, ax = plt.subplots(figsize=(13,10)) 
-        if direction == '':
-            direction = 'sun'
-        ax.errorbar(x=df_info['Primary_energy'], y=df_info['Bg_subtracted_peak'], yerr=df_info['Backsub_peak_uncertainty'],
-                    xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], color=color[direction], fmt='o', ecolor=color[direction], zorder=0, label='Flux peaks')
-        ax.plot(df_nan.Primary_energy, df_nan.Bg_subtracted_peak, 'o', markersize=15, c='gray', label='excluded (NaNs)')
-        ax.plot(df_no_sig.Primary_energy, df_no_sig.Bg_subtracted_peak, 'o', c='blue', markersize=11, label='excluded (sigma)')
-        ax.plot(df_rel_err.Primary_energy, df_rel_err.Bg_subtracted_peak, 'o', c='orange', markersize=6, label='excluded (rel error)')
-    elif(bg_subtraction == False):
-        f, ax = plt.subplots(figsize=(13,10))
-        ax.errorbar(x=df_info['Primary_energy'], y=df_info['Flux_peak'], yerr=df_info['Peak_electron_uncertainty'],
-                    xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], fmt='o', color=color[direction],ecolor=color[direction], zorder=0, label='Intensity peaks')
-        ax.plot(df_nan.Primary_energy, df_nan.Flux_peak, 'o', markersize=15, c='gray', label='excluded (NaNs)')
-        ax.plot(df_no_sig.Primary_energy, df_no_sig.Flux_peak, 'o', markersize=11, c='blue', label='excluded (sigma)')
-        ax.plot(df_rel_err.Primary_energy, df_rel_err.Flux_peak, 'o', markersize=6, c='orange', label='excluded (rel error)')
-
-    # Plots background flux and background errorbars in same scatterplot.
-    ax.errorbar(x=df_info['Primary_energy'], y=df_info['Background_flux'], yerr=df_info['Bg_electron_uncertainty'], xerr=[df_info['Energy_error_low'],df_info['Energy_error_high']],
-                fmt='o', color=color[direction], ecolor=color[direction], alpha=0.15, label='Background intensity')
-
-    ax.set_yscale('log')
-    ax.set_xscale('log')
-    ax.set_xlabel('Energy [MeV]', size=20)
-    ax.set_ylabel('Intensity \n [1/s cm$^2$ sr MeV]', size=20)
-    plt.tick_params(axis='x', which='minor', labelsize=16)
-    ax.xaxis.set_minor_formatter(FormatStrFormatter("%.2f"))
-    #plt.tick_params(axis='y', which='minor')
-    #ax.yaxis.set_minor_formatter(FormatStrFormatter("%.0f"))
-    plt.legend(prop={'size': 18})
-    plt.xticks(size=16)
-    plt.yticks(size=16)
-    plt.grid()
-    plt.title(title_string)
-
-    for label in ax.xaxis.get_ticklabels(which='minor')[1::2]:
-
-        label.set_visible(False)
-    
-    if(path[len(path)-1] != '/'):
-
-        path = path + '/'
-
-    if(savefig):
-
-        plt.savefig(path + filename + str(key) +'.jpg', dpi=300, bbox_inches='tight')
-
-    plt.show()
-
-def plot_spectrum_average(args, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None, centre_pix = False, date = None):
-    """_summary_
-
-    Args:
-        args (_type_): _description_
-        bg_subtraction (bool, optional): _description_. Defaults to True.
-        savefig (bool, optional): _description_. Defaults to False.
-        path (str, optional): _description_. Defaults to ''.
-        key (str, optional): _description_. Defaults to ''.
-        sigma (int, optional): _description_. Defaults to 3.
-        frac_nan_threshold (float, optional): _description_. Defaults to 0.4.
-        rel_err_threshold (float, optional): _description_. Defaults to 0.5.
-        direction (_type_, optional): _description_. Defaults to None.
-    """
-    color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
-    df_info = args[1]
-    instrument = args[4][0]
-    data_type = args[4][1]
-    if direction is None or instrument in ['STEP', 'step']:
-        viewing = 'sun'
-    else:
-        viewing = f'-{direction}' 
-
-
-
-    date_string = ''
-    file_date = ''
-
-    if date is None:
-        date_string = str(df_info['Plot_period'][0][:-5])
-        file_date = str(df_info['Plot_period'][0][:-5])
-
-    else:
-        date_string = str(date)[:-3]
-        file_date = str(date)[:-3].replace(' ', '-').replace(':', '')
-    
-
-    title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + date_string
-    filename = 'electron_spectrum-' + file_date + '-' + instrument.upper()  +viewing+ '-' + data_type.upper() 
-    
-    if(df_info['Averaging'][0]=='Mean'):
-
-        title_string = title_string + ', ' + df_info['Averaging'][1].split()[2] + ' averaging'
-        filename = filename + '-' + df_info['Averaging'][1].split()[2] + '_averaging'
-
-    elif(df_info['Averaging'][0]=='No averaging'):
-
-        title_string = title_string + ', no averaging'
-        filename = filename + '-no_averaging'
-
-    if(bg_subtraction):
-        
-       title_string = title_string + ', bg subtraction on'
-       filename = filename + '-bg_subtr'
-
-    else:
-
-        title_string = title_string + ', bg subtraction off'
-    
-    if(instrument == 'ept'):
-
-        if(df_info['Ion_contamination_correction'][0] and instrument=='ept'):
-
-            title_string = title_string + ', ion correction on'
-            filename = filename + '-ion_corr'
-
-        elif(df_info['Ion_contamination_correction'][0]==False):
-
-            title_string = title_string + ', ion correction off'
-
-    if instrument == 'step' and centre_pix:
-        filename = filename + '-centre_pix'
-        title_string = title_string + ', centre pix'
-
-
-    # this is to plot the points that are excluded due to different reasons 
-    df_nan = df_info.where((df_info['frac_nonan'] < frac_nan_threshold), np.nan)
-    df_no_sig = df_info.where((df_info['Average_significance'] < sigma), np.nan)
-    df_rel_err = df_info.where((df_info['rel_backsub_peak_err'] > rel_err_threshold), np.nan)
-
-    # Plots either the background subtracted or raw flux peaks average depending on choice.
-    if(bg_subtraction):
-        f, ax = plt.subplots(figsize=(13,10)) 
-        if direction == '':
-            direction = 'sun'
-        ax.errorbar(x=df_info['Primary_energy'], y=df_info['Bg_subtracted_average'], yerr=df_info['Backsub_peak_uncertainty'],
-                    xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], color=color[direction], fmt='o', ecolor=color[direction], zorder=0, label='Intensity average')
-        ax.plot(df_nan.Primary_energy, df_nan.Bg_subtracted_average, 'o', markersize=15, c='gray', label='excluded (NaNs)')
-        ax.plot(df_no_sig.Primary_energy, df_no_sig.Bg_subtracted_average, 'o', c='blue', markersize=11, label='excluded (sigma)')
-        ax.plot(df_rel_err.Primary_energy, df_rel_err.Bg_subtracted_average, 'o', c='orange', markersize=6, label='excluded (rel error)')
-    
-        # ax = df_info.plot.scatter(x='Primary_energy', y='Bg_subtracted_average', c='red', label='Flux average', figsize=(13,10))
-        # ax.errorbar(x=df_info['Primary_energy'], y=df_info['Bg_subtracted_average'], yerr=df_info['Backsub_peak_uncertainty'],
-        #             xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], fmt='.', ecolor='red', alpha=0.5)
-    elif(bg_subtraction == False):
-        f, ax = plt.subplots(figsize=(13,10))
-        ax.errorbar(x=df_info['Primary_energy'], y=df_info['Flux_average'], yerr=df_info['Peak_electron_uncertainty'],
-                    xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], fmt='o', color=color[direction],ecolor=color[direction], zorder=0, label='Intensity average')
-        ax.plot(df_nan.Primary_energy, df_nan.Flux_average, 'o', markersize=15, c='gray', label='excluded (NaNs)')
-        ax.plot(df_no_sig.Primary_energy, df_no_sig.Flux_average, 'o', markersize=11, c='blue', label='excluded (sigma)')
-        ax.plot(df_rel_err.Primary_energy, df_rel_err.Flux_average, 'o', markersize=6, c='orange', label='excluded (rel error)')
-
-        # ax = df_info.plot.scatter(x='Primary_energy', y='Flux_average', c='red', label='Flux average', figsize=(13,10))
-        # ax.errorbar(x=df_info['Primary_energy'], y=df_info['Flux_average'], yerr=df_info['Peak_electron_uncertainty'],
-        #             xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], fmt='.', ecolor='red', alpha=0.5)
-    
-    # Plots background flux and background errorbars in same scatterplot.
-    ax.errorbar(x=df_info['Primary_energy'], y=df_info['Background_flux'], yerr=df_info['Bg_electron_uncertainty'], xerr=[df_info['Energy_error_low'],df_info['Energy_error_high']],
-                fmt='o', color=color[direction], ecolor=color[direction], alpha=0.15, label='Background intensity')
-    # df_info.plot(kind='scatter', x='Primary_energy', y='Background_flux', c='red', alpha=0.25, ax=ax, label='Background flux')
-    # ax.errorbar(x=df_info['Primary_energy'], y=df_info['Background_flux'], yerr=df_info['Bg_electron_uncertainty'], xerr=[df_info['Energy_error_low'],df_info['Energy_error_high']],
-    #             fmt='.', ecolor='red', alpha=0.15)
-
-    ax.set_yscale('log')
-    ax.set_xscale('log')
-    ax.set_xlabel('Energy [MeV]', size=20)
-    ax.set_ylabel('Intensity \n [1/s cm$^2$ sr MeV]', size=20)
-    plt.tick_params(axis='x', which='minor', labelsize=16)
-    ax.xaxis.set_minor_formatter(FormatStrFormatter("%.2f"))
-    #plt.tick_params(axis='y', which='minor')
-    #ax.yaxis.set_minor_formatter(FormatStrFormatter("%.0f"))
-    plt.legend(prop={'size': 18})
-    plt.xticks(size=16)
-    plt.yticks(size=16)
-    plt.grid()
-    plt.title(title_string)
-
-    for label in ax.xaxis.get_ticklabels(which='minor')[1::2]:
-
-        label.set_visible(False)
-    
-    if(path[len(path)-1] != '/'):
-
-        path = path + '/'
-
-    if(savefig):
-
-        plt.savefig(path + filename + str(key) +'.jpg', dpi=300, bbox_inches='tight')
-
-    plt.show()
-
-
-def plot_some_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', key='', plot_pa=False, coverage=None, sensor = 'ept', viewing='sun', frac_nan_threshold=0.9, rel_err_threshold=0.5, channels = [0,1,2,3,4], figsize_x = 15, figsize_y = 8, f_scale = 1, f_size = 12):
-    """Creates a timeseries plot showing the particle flux for each energy channel of
-        the instrument (STEP, EPT, HET). The timeseries plot shows also the peak window and
-        background window. The peak is marked with different color lines:
         green: peak is ok
-        grey: too many nans in window
-        blue: low sigma
+        grey: too many NaNs in window
+        blue: low significance
         orange: high relative error
 
+    If ``channels`` is None, all available energy channels are plotted.
+    Otherwise, ``channels`` must be a list containing valid energy channel
+    numbers for the supplied data.
+
     Args:
-        args : Output of the extract_data function. Incudes:
-                df_electron_fluxes: pandas DataFrame
-                df_info : pandas DataFrame. This data frame contains the spectrum data 
-                and all its metadata (which is saved to csv in the function write_to_csv())
-                [searchstart, searchend]: list of strings. The search window start and end times.
-                [e_low, e_high] : list of float. The lowest and highest energy corresponding to 
-                each energy channel.
-                [instrument, data_type] : list of strings.
-        bg_subtraction (bool, optional): Subtract bg from data. Defaults to False.
-        savefig (bool, optional): saving the timeseries plot. Defaults to False.
-        sigma (int, optional): sigma threshold value. Is used to check if the sigma value is 
-                high enough fro the data within the search-period interval. If not, the flux and 
-                uncertainty value of that energy channel are set to nan and therefore 
-                excluded from the spectrum. Defaults to 3.
-        path (str, optional): path to folder where the timeseries will be saved. Defaults to ''.
-        key (str, optional): _description_. Defaults to ''.
-        frac_nan_threshold (float, optional):  is used to to check if there is enough non-nan 
-                flux data points in the search-period interval. If not, the flux and 
-                uncertainty value of that energy channel are set to nan and therefore 
-                excluded from the spectrum. Defaults to 0.4.
-        rel_err_threshold (float, optional): is used to check that relative error is 
-                low enough in the search period interval. If not, the flux and 
-                uncertainty value of that energy channel are set to nan and therefore 
-                excluded from the spectrum. Defaults to 0.5.
+        args: Output of the extract_electron_data function. Contains:
+            df_electron_fluxes: pandas DataFrame containing electron fluxes.
+            df_info: pandas DataFrame containing spectrum data and metadata.
+            [searchstart, searchend]: search window start and end times.
+            [e_low, e_high]: lowest and highest energy for each channel.
+            [instrument, data_type]: instrument and data type.
+
+        bg_subtraction (bool, optional): Subtract background from the data.
+            Defaults to False.
+
+        savefig (bool, optional): Save the timeseries plot.
+            Defaults to False.
+
+        sigma (int, optional): Significance threshold used to check whether
+            the peak is significant. Defaults to 3.
+
+        path (str, optional): Path to the folder where the timeseries plot
+            is saved. Defaults to ''.
+
+        key (str, optional): Additional string added to the filename.
+            Defaults to ''.
+
+        plot_pa (bool, optional): Include a pitch-angle panel.
+            Defaults to False.
+
+        coverage (pandas DataFrame or None, optional): DataFrame used to
+            plot the pitch-angle coverage. Defaults to None.
+
+        viewing (str, optional): Viewing direction of EPT or HET used for
+            plotting pitch angles. Defaults to 'sun'.
+
+        frac_nan_threshold (float, optional): Threshold for the fraction
+            of non-NaN data points in the search interval. Defaults to 0.9.
+
+        rel_err_threshold (float, optional): Maximum allowed relative
+            error. Defaults to 0.5.
+
+        channels (list or None, optional): Energy channels to plot.
+            If None, all available channels are plotted. Defaults to None.
+
+        figsize_x (float, optional): Figure width. Defaults to 15.
+
+        figsize_y (float, optional): Figure height. Defaults to 8.
+
+        f_scale (float, optional): Font scaling factor. Defaults to 1.
+
+        f_size (int, optional): Base font size. Defaults to 12.
+
+    Raises:
+        ValueError: If one or more requested channels are not available
+            in the supplied data.
     """
-    
+
     peak_sig = args[1]['Peak_significance']
     rel_err = args[1]['rel_backsub_peak_err']
-    
-    #hours = mdates.HourLocator(interval = 1)
+
     df_electron_fluxes = args[0]
     df_info = args[1]
     search_area = args[2]
@@ -1919,206 +1922,1383 @@ def plot_some_channels(args, bg_subtraction=False, savefig=False, sigma=3, path=
     instrument = args[4][0]
     data_type = args[4][1]
 
-    title_string = instrument.upper() + ', ' + data_type.upper() + ', ' + str(df_info['Plot_period'][0][:-5])
-    filename = 'channels-' + str(df_info['Plot_period'][0][:-5]) + '-' + instrument.upper() + '-' + data_type.upper() 
-    
-    if(df_info['Averaging'][0]=='Mean'):
+    # Available channels are taken directly from the supplied data.
+    available_channels = list(df_info['Energy_channel'])
 
-        title_string = title_string + ', ' + df_info['Averaging'][1].split()[2] + ' averaging'
-        filename = filename + '-' + df_info['Averaging'][1].split()[2] + '_averaging'
+    # If no channels are specified, plot all available channels.
+    if channels is None:
+        channels = available_channels.copy()
+    else:
+        invalid_channels = [
+            channel for channel in channels
+            if channel not in available_channels
+        ]
 
-    elif(df_info['Averaging'][0]=='No averaging'):
+        if invalid_channels:
+            raise ValueError(
+                f"Invalid channel(s): {invalid_channels}. "
+                f"Available channels are: {available_channels}."
+            )
+
+    # Make sure viewing is defined for STEP, where it is not used.
+    if viewing is None or instrument.lower() == 'step':
+        viewing = 'sun'
+
+    title_string = (
+        instrument.upper()
+        + ', '
+        + data_type.upper()
+        + ', '
+        + str(df_info['Plot_period'][0][:-5])
+    )
+
+    filename = (
+        'channels-'
+        + str(df_info['Plot_period'][0][:-5])
+        + '-'
+        + instrument.upper()
+        + '-'
+        + data_type.upper()
+    )
+
+    if df_info['Averaging'][0] == 'Mean':
+
+        title_string = (
+            title_string
+            + ', '
+            + df_info['Averaging'][1].split()[2]
+            + ' averaging'
+        )
+
+        filename = (
+            filename
+            + '-'
+            + df_info['Averaging'][1].split()[2]
+            + '_averaging'
+        )
+
+    elif df_info['Averaging'][0] == 'No averaging':
 
         title_string = title_string + ', no averaging'
         filename = filename + '-no_averaging'
 
-    if(bg_subtraction):
-        
-       title_string = title_string + ', bg subtraction on'
-       filename = filename + '-bg_subtr'
+    if bg_subtraction:
+
+        title_string = title_string + ', bg subtraction on'
+        filename = filename + '-bg_subtr'
 
     else:
 
         title_string = title_string + ', bg subtraction off'
-    
-    if(instrument == 'ept'):
-        
-        if(df_info['Ion_contamination_correction'][0]):
+
+    if instrument.lower() == 'ept':
+
+        if df_info['Ion_contamination_correction'][0]:
 
             title_string = title_string + ', ion correction on'
             filename = filename + '-ion_corr'
 
-        elif(df_info['Ion_contamination_correction'][0]==False):
+        elif df_info['Ion_contamination_correction'][0] is False:
 
             title_string = title_string + ', ion correction off'
 
-    # If background subtraction is enabled, subtracts bg_flux from all observations. If flux value is negative, changes it to NaN.
-    if(bg_subtraction == False):
-        pass
-    elif(bg_subtraction == True):
-        df_electron_fluxes = df_electron_fluxes.sub(df_info['Background_flux'].values, axis=1)
-        df_electron_fluxes[df_electron_fluxes<0] = np.nan
+    # If background subtraction is enabled, subtract background flux from
+    # all observations. Negative flux values are set to NaN.
+    if bg_subtraction:
+        df_electron_fluxes = df_electron_fluxes.sub(
+            df_info['Background_flux'].values,
+            axis=1
+        )
+        df_electron_fluxes[df_electron_fluxes < 0] = np.nan
 
     # Plotting part.
-    # Initialized the main figure.
+    sns.set_theme(style="white", font_scale=f_scale)
 
+    # One panel for each selected channel, plus one optional pitch-angle panel.
+    npanels = len(channels)
 
+    if plot_pa:
+        npanels += 1
 
-    fig = plt.figure()
-    plt.xticks([],fontsize=12)
-    plt.yticks([],fontsize=12)
-    plt.ylabel("Intensity \n [1/s cm$^2$ sr MeV] \n \n", size=f_size)
+    fig = plt.figure(figsize=(figsize_x, figsize_y))
+
+    plt.xticks([], fontsize=f_size)
+    plt.yticks([], fontsize=f_size)
+    plt.ylabel(
+        "Intensity \n [1/s cm$^2$ sr MeV] \n \n",
+        size=f_size
+    )
     plt.xlabel("\n \n Time", size=f_size)
-    plt.title(title_string, size = f_size)
- 
+    plt.title(title_string, size=f_size)
 
+    # Loop through selected energy channels.
+    for n, channel in enumerate(channels, start=1):
 
-    # Loop through selected energy channels and create a subplot for each.
-    n=1
-
-    for channel in channels:
-        sns.set_theme(style="white",font_scale = f_scale)
-        m = len(channels)
-        if plot_pa is False:
-            ax = fig.add_subplot(len(channels),1,n)
         if plot_pa:
-            ax = fig.add_subplot(len(channels)+1,1,n)
-        ax = df_electron_fluxes['Electron_Flux_{}'.format(df_info['Energy_channel'][channel])].plot(logy=True, figsize=(figsize_x,figsize_y), color='red', drawstyle='steps-mid')
+            ax = fig.add_subplot(npanels, 1, n)
+        else:
+            ax = fig.add_subplot(len(channels), 1, n)
 
-        plt.text(0.025,0.7, str(energy_bin[0][channel]) + " - " + str(energy_bin[1][channel]) + " MeV", transform=ax.transAxes, size=f_size)
+        ax = df_electron_fluxes[
+            'Electron_Flux_{}'.format(channel)
+        ].plot(
+            logy=True,
+            figsize=(figsize_x, figsize_y),
+            color='red',
+            drawstyle='steps-mid'
+        )
+
+        plt.text(
+            0.025,
+            0.7,
+            str(energy_bin[0][channel])
+            + " - "
+            + str(energy_bin[1][channel])
+            + " MeV",
+            transform=ax.transAxes,
+            size=f_size
+        )
 
         # Search area vertical lines.
-        ax.axvline(search_area[0][channel], color='black')
-        ax.axvline(search_area[1][channel], color='black')
-        
-        
+        channel_index = available_channels.index(channel)
+
+        ax.axvline(
+            search_area[0][channel_index],
+            color='black'
+        )
+        ax.axvline(
+            search_area[1][channel_index],
+            color='black'
+        )
+
         # Peak vertical line.
-        if df_info['Peak_timestamp'][channel] is not pd.NaT:
-            if  (rel_err[channel] > rel_err_threshold): # if the relative error too large, we exlcude the channel
-                ax.axvline(df_info['Peak_timestamp'][channel], linestyle=':', linewidth=4, color='orange')
-            if df_info['frac_nonan'][channel] < frac_nan_threshold:  # we only plot a line if the fraction of non-nan data points in the search interval is larger than frac_nan_threshold
-                ax.axvline(df_info['Peak_timestamp'][channel], linestyle='--', linewidth=3, color='gray')
-            if (peak_sig[channel] < sigma): # if the peak is not significant, we discard the energy channel
-                ax.axvline(df_info['Peak_timestamp'][channel], linestyle='-.', linewidth=2, color='blue')
-            if (peak_sig[channel] >= sigma) and (rel_err[channel] <= rel_err_threshold) and (df_info['frac_nonan'][channel] > frac_nan_threshold):
-                ax.axvline(df_info['Peak_timestamp'][channel], color='green')
-            
+        if df_info['Peak_timestamp'][channel_index] is not pd.NaT:
+
+            if rel_err[channel_index] > rel_err_threshold:
+                ax.axvline(
+                    df_info['Peak_timestamp'][channel_index],
+                    linestyle=':',
+                    linewidth=4,
+                    color='orange'
+                )
+
+            if df_info['frac_nonan'][channel_index] < frac_nan_threshold:
+                ax.axvline(
+                    df_info['Peak_timestamp'][channel_index],
+                    linestyle='--',
+                    linewidth=3,
+                    color='gray'
+                )
+
+            if peak_sig[channel_index] < sigma:
+                ax.axvline(
+                    df_info['Peak_timestamp'][channel_index],
+                    linestyle='-.',
+                    linewidth=2,
+                    color='blue'
+                )
+
+            if (
+                peak_sig[channel_index] >= sigma
+                and rel_err[channel_index] <= rel_err_threshold
+                and df_info['frac_nonan'][channel_index] > frac_nan_threshold
+            ):
+                ax.axvline(
+                    df_info['Peak_timestamp'][channel_index],
+                    color='green'
+                )
+
         # Background measurement area.
-        ax.axvspan(df_info['Bg_start'][channel], df_info['Bg_end'][channel], color='gray', alpha=0.25)
+        ax.axvspan(
+            df_info['Bg_start'][channel_index],
+            df_info['Bg_end'][channel_index],
+            color='gray',
+            alpha=0.25
+        )
 
         ax.get_xaxis().set_visible(False)
 
-        if plot_pa is False:
-            if(n == len(channels)):
-                ax.get_xaxis().set_visible(True)
-
+        # Show the time axis only on the last timeseries panel if there
+        # is no pitch-angle panel.
+        if n == len(channels) and not plot_pa:
+            ax.get_xaxis().set_visible(True)
             plt.xlabel("")
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
-        #ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
-        #ax.xaxis.set_minor_locator(hours)
+            ax.xaxis.set_major_formatter(
+                mdates.DateFormatter("%d-%m-%y\n%H:%M")
+            )
 
+    # Optional pitch-angle panel.
+    if plot_pa:
 
+        ax = fig.add_subplot(npanels, 1, npanels)
 
-       
+        color = {
+            'sun': 'crimson',
+            'asun': 'orange',
+            'north': 'darkslateblue',
+            'south': 'c'
+        }
 
-        if plot_pa:  # add a panel that shows the pitch angle of the telescope
-            if(n == len(channels)+1):
-                color = {'sun':'crimson','asun':'orange', 'north':'darkslateblue', 'south':'c'}
-                ax.get_xaxis().set_visible(True)
-                plt.xlabel("")
-                #ax = fig.add_subplot(len(channels)+1,1,len(channels)+2)
-                #ax = axes[n]
-                if sensor in ['HET', 'het', 'EPT', 'ept']: 
-                    #for direction in ['sun', 'asun', 'north', 'south']: 
-                    col = color[viewing]
-                    # fill the minimum-maximum range of the pitch angle coverage
-                    ax.fill_between(coverage.index, coverage[viewing]['min'], coverage[viewing]['max'], alpha=0.5, color=col, edgecolor=col, linewidth=0.0, step='mid')
-                    # plot the central pitch angle as a thin line
-                    ax.plot(coverage.index, coverage[viewing]['center'], linewidth=0.7, label=viewing, color=col, drawstyle='steps-mid')
+        if instrument.lower() in ['het', 'ept']:
 
-                if sensor in ['STEP', 'step']:
-                    col_list = plt.cm.viridis(np.linspace(0.,0.95,16))
-                    for p in range(1, 16):  # loop over 15 sectors/pixels
-                        # plot the central pitch angle as a thin line
-                        ax.plot(coverage.index, coverage[f'Pixel_{p}']['center'], color = col_list[p-1], linewidth=1, label=f'Pixel_{p}', drawstyle='steps-mid')
+            col = color[viewing]
 
-                ax.axhline(y=90, color='gray', linewidth=0.8, linestyle='--')
-                ax.axhline(y=45, color='gray', linewidth=0.8, linestyle='--')
-                ax.axhline(y=135, color='gray', linewidth=0.8, linestyle='--')
+            ax.fill_between(
+                coverage.index,
+                coverage[viewing]['min'],
+                coverage[viewing]['max'],
+                alpha=0.5,
+                color=col,
+                edgecolor=col,
+                linewidth=0.0,
+                step='mid'
+            )
 
-            
-                ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), title=instrument)
-                ax.set_ylim([0, 180])
-                ax.yaxis.set_ticks(np.arange(0, 180+45, 45))
-                ax.set_ylabel('PA / °', size=f_size)
-                #ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d\n%H:%M"))
-                ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
-                plt.tick_params(axis='x', which='major', labelsize=f_size)
-                plt.tick_params(axis='y', which='major', labelsize=f_size)
-                ax.set_xlabel("Time", labelpad=45, size=f_size)
+            ax.plot(
+                coverage.index,
+                coverage[viewing]['center'],
+                linewidth=0.7,
+                label=viewing,
+                color=col,
+                drawstyle='steps-mid'
+            )
 
-        n+=1
-        
+        if instrument.lower() == 'step':
+
+            col_list = plt.cm.viridis(
+                np.linspace(0., 0.95, 16)
+            )
+
+            for p in range(1, 16):
+
+                ax.plot(
+                    coverage.index,
+                    coverage[f'Pixel_{p}']['center'],
+                    color=col_list[p - 1],
+                    linewidth=1,
+                    label=f'Pixel_{p}',
+                    drawstyle='steps-mid'
+                )
+
+        ax.axhline(
+            y=90,
+            color='gray',
+            linewidth=0.8,
+            linestyle='--'
+        )
+        ax.axhline(
+            y=45,
+            color='gray',
+            linewidth=0.8,
+            linestyle='--'
+        )
+        ax.axhline(
+            y=135,
+            color='gray',
+            linewidth=0.8,
+            linestyle='--'
+        )
+
+        ax.legend(
+            loc='center left',
+            bbox_to_anchor=(1, 0.5),
+            title=instrument
+        )
+
+        ax.set_ylim([0, 180])
+        ax.yaxis.set_ticks(np.arange(0, 180 + 45, 45))
+        ax.set_ylabel('PA / °', size=f_size)
+
+        ax.xaxis.set_major_formatter(
+            mdates.DateFormatter("%d-%m-%y\n%H:%M")
+        )
+
+        plt.tick_params(
+            axis='x',
+            which='major',
+            labelsize=f_size
+        )
+        plt.tick_params(
+            axis='y',
+            which='major',
+            labelsize=f_size
+        )
+
+        ax.set_xlabel(
+            "Time",
+            labelpad=45,
+            size=f_size
+        )
 
     # Saves figure, if enabled.
-    if(path[len(path)-1] != '/'):
-
+    if path and path[-1] != '/':
         path = path + '/'
 
-    if(savefig):
-
-        plt.savefig(path + filename + str(key) +'.jpg', bbox_inches='tight', dpi = 300)
+    if savefig:
+        plt.savefig(
+            path + filename + str(key) + '.jpg',
+            bbox_inches='tight',
+            dpi=300
+        )
 
     plt.show()
 
-def write_to_csv(args, date, path='', key='', direction=None,  centre_pix = False):
-    """_summary_
+def plot_spectrum_peak(
+    args,
+    bg_subtraction=True,
+    savefig=False,
+    path='',
+    key='',
+    sigma=3,
+    frac_nan_threshold=0.4,
+    rel_err_threshold=0.5,
+    direction=None,
+    centre_pix=False,
+    date=None
+):
+    """
+    Creates an energy spectrum plot using the peak flux values from each
+    energy channel.
+
+    The plot can show either background-subtracted or raw peak intensities.
+    Error bars include the corresponding flux uncertainty and the lower and
+    upper energy-bin uncertainties. The background intensity is also shown
+    for comparison.
+
+    Energy channels that do not satisfy the specified data-quality criteria
+    are marked separately according to the reason for exclusion:
+        - grey: too many NaN values in the search interval
+        - blue: peak significance below the sigma threshold
+        - orange: relative error above the specified threshold
 
     Args:
-        args (_type_): _description_
-        path (str, optional): _description_. Defaults to ''.
-        key (str, optional): _description_. Defaults to ''.
-        direction (_type_, optional): _description_. Defaults to None.
+        args (tuple):
+            Output of the extract_data function. Contains:
+                df_electron_fluxes: pandas DataFrame containing electron fluxes.
+                df_info: pandas DataFrame containing spectrum data and metadata.
+                [searchstart, searchend]: search-window start and end times.
+                [e_low, e_high]: lower and upper energies for each energy channel.
+                [instrument, data_type]: instrument and data-product type.
+
+        bg_subtraction (bool, optional):
+            If True, plot background-subtracted peak intensities.
+            If False, plot the raw peak intensities. Defaults to True.
+
+        savefig (bool, optional):
+            If True, save the generated figure. Defaults to False.
+
+        path (str, optional):
+            Path to the directory where the figure should be saved.
+            Defaults to ''.
+
+        key (str, optional):
+            Optional string appended to the output filename. Defaults to ''.
+
+        sigma (int, optional):
+            Minimum peak-significance threshold used to identify significant
+            peaks. Defaults to 3.
+
+        frac_nan_threshold (float, optional):
+            Minimum fraction of non-NaN data points required in the search
+            interval. Channels below this threshold are marked as excluded.
+            Defaults to 0.4.
+
+        rel_err_threshold (float, optional):
+            Maximum allowed relative uncertainty of the background-subtracted
+            peak. Channels above this threshold are marked as excluded.
+            Defaults to 0.5.
+
+        direction (str or None, optional):
+            Telescope viewing direction ('sun', 'asun', 'north', or 'south').
+            For STEP, the direction is always set to 'sun'. If None is
+            provided for EPT or HET, 'sun' is used. Defaults to None.
+
+        centre_pix (bool, optional):
+            Indicates whether centre-pixel STEP data are being used. This
+            information is included in the plot title and filename.
+            Defaults to False.
+
+        date (str or pandas.Timestamp or None, optional):
+            Date used in the plot title and filename. If None, the date is
+            taken from the Plot_period entry in df_info. Defaults to None.
+
+    Returns:
+        None
+            Displays the spectrum plot and optionally saves it to disk.
+    """
+
+    color = {
+        'sun': 'crimson',
+        'asun': 'orange',
+        'north': 'darkslateblue',
+        'south': 'c'
+    }
+
+    df_info = args[1]
+    instrument = args[4][0]
+    data_type = args[4][1]
+
+    instrument_lower = instrument.lower()
+
+    # Determine viewing direction.
+    if direction is None or instrument_lower == 'step':
+        direction = 'sun'
+
+    viewing = '' if instrument_lower == 'step' else f'-{direction}'
+
+    # Determine date strings for title and filename.
+    if date is None:
+        date_string = str(df_info['Plot_period'][0][:-5])
+        file_date = date_string
+    else:
+        date_string = str(date)[:-3]
+        file_date = date_string.replace(' ', '-').replace(':', '')
+
+    title_string = (
+        f"{instrument.upper()}, {data_type.upper()}, {date_string}"
+    )
+
+    filename = (
+        f"electron_spectrum-{file_date}-{instrument.upper()}"
+        f"{viewing}-{data_type.upper()}"
+    )
+
+    # Add averaging information.
+    if df_info['Averaging'][0] == 'Mean':
+        averaging = df_info['Averaging'][1].split()[2]
+        title_string += f", {averaging} averaging"
+        filename += f"-{averaging}_averaging"
+
+    elif df_info['Averaging'][0] == 'No averaging':
+        title_string += ", no averaging"
+        filename += "-no_averaging"
+
+    # Add background-subtraction information.
+    if bg_subtraction:
+        title_string += ", bg subtraction on"
+        filename += "-bg_subtr"
+    else:
+        title_string += ", bg subtraction off"
+
+    # Add ion-contamination correction information for EPT.
+    if instrument_lower == 'ept':
+        if df_info['Ion_contamination_correction'][0]:
+            title_string += ", ion correction on"
+            filename += "-ion_corr"
+        else:
+            title_string += ", ion correction off"
+
+    # Add centre-pixel information for STEP.
+    if instrument_lower == 'step' and centre_pix:
+        filename += "-centre_pix"
+        title_string += ", centre pix"
+
+    # Identify channels excluded for different reasons.
+    df_nan = df_info.where(
+        df_info['frac_nonan'] < frac_nan_threshold,
+        np.nan
+    )
+
+    df_no_sig = df_info.where(
+        df_info['Peak_significance'] < sigma,
+        np.nan
+    )
+
+    df_rel_err = df_info.where(
+        df_info['rel_backsub_peak_err'] > rel_err_threshold,
+        np.nan
+    )
+
+    # Plot either background-subtracted or raw peak fluxes.
+    fig, ax = plt.subplots(figsize=(13, 10))
+
+    if bg_subtraction:
+        ax.errorbar(
+            x=df_info['Primary_energy'],
+            y=df_info['Bg_subtracted_peak'],
+            yerr=df_info['Backsub_peak_uncertainty'],
+            xerr=[
+                df_info['Energy_error_low'],
+                df_info['Energy_error_high']
+            ],
+            color=color[direction],
+            fmt='o',
+            ecolor=color[direction],
+            zorder=0,
+            label='Flux peaks'
+        )
+
+        ax.plot(
+            df_nan.Primary_energy,
+            df_nan.Bg_subtracted_peak,
+            'o',
+            markersize=15,
+            c='gray',
+            label='excluded (NaNs)'
+        )
+
+        ax.plot(
+            df_no_sig.Primary_energy,
+            df_no_sig.Bg_subtracted_peak,
+            'o',
+            markersize=11,
+            c='blue',
+            label='excluded (sigma)'
+        )
+
+        ax.plot(
+            df_rel_err.Primary_energy,
+            df_rel_err.Bg_subtracted_peak,
+            'o',
+            markersize=6,
+            c='orange',
+            label='excluded (rel error)'
+        )
+
+    else:
+        ax.errorbar(
+            x=df_info['Primary_energy'],
+            y=df_info['Flux_peak'],
+            yerr=df_info['Peak_electron_uncertainty'],
+            xerr=[
+                df_info['Energy_error_low'],
+                df_info['Energy_error_high']
+            ],
+            fmt='o',
+            color=color[direction],
+            ecolor=color[direction],
+            zorder=0,
+            label='Intensity peaks'
+        )
+
+        ax.plot(
+            df_nan.Primary_energy,
+            df_nan.Flux_peak,
+            'o',
+            markersize=15,
+            c='gray',
+            label='excluded (NaNs)'
+        )
+
+        ax.plot(
+            df_no_sig.Primary_energy,
+            df_no_sig.Flux_peak,
+            'o',
+            markersize=11,
+            c='blue',
+            label='excluded (sigma)'
+        )
+
+        ax.plot(
+            df_rel_err.Primary_energy,
+            df_rel_err.Flux_peak,
+            'o',
+            markersize=6,
+            c='orange',
+            label='excluded (rel error)'
+        )
+
+    # Plot background intensity and its uncertainty.
+    ax.errorbar(
+        x=df_info['Primary_energy'],
+        y=df_info['Background_flux'],
+        yerr=df_info['Bg_electron_uncertainty'],
+        xerr=[
+            df_info['Energy_error_low'],
+            df_info['Energy_error_high']
+        ],
+        fmt='o',
+        color=color[direction],
+        ecolor=color[direction],
+        alpha=0.15,
+        label='Background intensity'
+    )
+
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+
+    ax.set_xlabel('Energy [MeV]', size=20)
+    ax.set_ylabel('Intensity \n [1/s cm$^2$ sr MeV]', size=20)
+
+    plt.tick_params(axis='x', which='minor', labelsize=16)
+
+    ax.xaxis.set_minor_formatter(
+        FormatStrFormatter("%.2f")
+    )
+
+    plt.legend(prop={'size': 18})
+    plt.xticks(size=16)
+    plt.yticks(size=16)
+    plt.grid()
+    plt.title(title_string)
+
+    # Prevent every minor x-axis label from being displayed.
+    for label in ax.xaxis.get_ticklabels(which='minor')[1::2]:
+        label.set_visible(False)
+
+    # Save figure if requested.
+    if savefig:
+        if path and not path.endswith('/'):
+            path += '/'
+
+        plt.savefig(
+            path + filename + str(key) + '.jpg',
+            dpi=300,
+            bbox_inches='tight'
+        )
+
+    plt.show()
+
+def plot_spectrum_average(
+    args,
+    bg_subtraction=True,
+    savefig=False,
+    path='',
+    key='',
+    sigma=3,
+    frac_nan_threshold=0.4,
+    rel_err_threshold=0.5,
+    direction=None,
+    centre_pix=False,
+    date=None
+):
+    """
+    Creates an energy spectrum plot using the average flux values from each
+    energy channel.
+
+    The plot can show either background-subtracted or raw average intensities.
+    Error bars include the corresponding flux uncertainty and the lower and
+    upper energy-bin uncertainties. The background intensity is also shown
+    for comparison.
+
+    Energy channels that do not satisfy the specified data-quality criteria
+    are marked separately according to the reason for exclusion:
+        - grey: too many NaN values in the search interval
+        - blue: average significance below the sigma threshold
+        - orange: relative error above the specified threshold
+
+    Args:
+        args (tuple):
+            Output of the extract_data function. Contains:
+                df_electron_fluxes: pandas DataFrame containing electron fluxes.
+                df_info: pandas DataFrame containing spectrum data and metadata.
+                [searchstart, searchend]: search-window start and end times.
+                [e_low, e_high]: lower and upper energies for each energy channel.
+                [instrument, data_type]: instrument and data-product type.
+
+        bg_subtraction (bool, optional):
+            If True, plot background-subtracted average intensities.
+            If False, plot the raw average intensities. Defaults to True.
+
+        savefig (bool, optional):
+            If True, save the generated figure. Defaults to False.
+
+        path (str, optional):
+            Path to the directory where the figure should be saved.
+            Defaults to ''.
+
+        key (str, optional):
+            Optional string appended to the output filename. Defaults to ''.
+
+        sigma (int, optional):
+            Minimum average-significance threshold used to identify
+            significant channels. Defaults to 3.
+
+        frac_nan_threshold (float, optional):
+            Minimum fraction of non-NaN data points required in the search
+            interval. Channels below this threshold are marked as excluded.
+            Defaults to 0.4.
+
+        rel_err_threshold (float, optional):
+            Maximum allowed relative uncertainty of the background-subtracted
+            peak. Channels above this threshold are marked as excluded.
+            Defaults to 0.5.
+
+        direction (str or None, optional):
+            Telescope viewing direction ('sun', 'asun', 'north', or 'south').
+            For STEP, the direction is always set to 'sun'. If None is
+            provided for EPT or HET, 'sun' is used. Defaults to None.
+
+        centre_pix (bool, optional):
+            Indicates whether centre-pixel STEP data are being used. This
+            information is included in the plot title and filename.
+            Defaults to False.
+
+        date (str or pandas.Timestamp or None, optional):
+            Date used in the plot title and filename. If None, the date is
+            taken from the Plot_period entry in df_info. Defaults to None.
+
+    Returns:
+        None
+            Displays the spectrum plot and optionally saves it to disk.
+    """
+
+    color = {
+        'sun': 'crimson',
+        'asun': 'orange',
+        'north': 'darkslateblue',
+        'south': 'c'
+    }
+
+    df_info = args[1]
+    instrument = args[4][0]
+    data_type = args[4][1]
+
+    instrument_lower = instrument.lower()
+
+    # Determine viewing direction.
+    if direction is None or instrument_lower == 'step':
+        direction = 'sun'
+
+    viewing = '' if instrument_lower == 'step' else f'-{direction}'
+
+    # Determine date strings for title and filename.
+    if date is None:
+        date_string = str(df_info['Plot_period'][0][:-5])
+        file_date = date_string
+    else:
+        date_string = str(date)[:-3]
+        file_date = date_string.replace(' ', '-').replace(':', '')
+
+    title_string = (
+        f"{instrument.upper()}, {data_type.upper()}, {date_string}"
+    )
+
+    filename = (
+        f"electron_spectrum-{file_date}-{instrument.upper()}"
+        f"{viewing}-{data_type.upper()}"
+    )
+
+    # Add averaging information.
+    if df_info['Averaging'][0] == 'Mean':
+        averaging = df_info['Averaging'][1].split()[2]
+        title_string += f", {averaging} averaging"
+        filename += f"-{averaging}_averaging"
+
+    elif df_info['Averaging'][0] == 'No averaging':
+        title_string += ", no averaging"
+        filename += "-no_averaging"
+
+    # Add background-subtraction information.
+    if bg_subtraction:
+        title_string += ", bg subtraction on"
+        filename += "-bg_subtr"
+    else:
+        title_string += ", bg subtraction off"
+
+    # Add ion-contamination correction information for EPT.
+    if instrument_lower == 'ept':
+        if df_info['Ion_contamination_correction'][0]:
+            title_string += ", ion correction on"
+            filename += "-ion_corr"
+        else:
+            title_string += ", ion correction off"
+
+    # Add centre-pixel information for STEP.
+    if instrument_lower == 'step' and centre_pix:
+        filename += "-centre_pix"
+        title_string += ", centre pix"
+
+    # Identify channels excluded for different reasons.
+    df_nan = df_info.where(
+        df_info['frac_nonan'] < frac_nan_threshold,
+        np.nan
+    )
+
+    df_no_sig = df_info.where(
+        df_info['Average_significance'] < sigma,
+        np.nan
+    )
+
+    df_rel_err = df_info.where(
+        df_info['rel_backsub_peak_err'] > rel_err_threshold,
+        np.nan
+    )
+
+    # Plot either background-subtracted or raw average fluxes.
+    fig, ax = plt.subplots(figsize=(13, 10))
+
+    if bg_subtraction:
+        ax.errorbar(
+            x=df_info['Primary_energy'],
+            y=df_info['Bg_subtracted_average'],
+            yerr=df_info['Backsub_peak_uncertainty'],
+            xerr=[
+                df_info['Energy_error_low'],
+                df_info['Energy_error_high']
+            ],
+            color=color[direction],
+            fmt='o',
+            ecolor=color[direction],
+            zorder=0,
+            label='Intensity average'
+        )
+
+        ax.plot(
+            df_nan.Primary_energy,
+            df_nan.Bg_subtracted_average,
+            'o',
+            markersize=15,
+            c='gray',
+            label='excluded (NaNs)'
+        )
+
+        ax.plot(
+            df_no_sig.Primary_energy,
+            df_no_sig.Bg_subtracted_average,
+            'o',
+            markersize=11,
+            c='blue',
+            label='excluded (sigma)'
+        )
+
+        ax.plot(
+            df_rel_err.Primary_energy,
+            df_rel_err.Bg_subtracted_average,
+            'o',
+            markersize=6,
+            c='orange',
+            label='excluded (rel error)'
+        )
+
+    else:
+        ax.errorbar(
+            x=df_info['Primary_energy'],
+            y=df_info['Flux_average'],
+            yerr=df_info['Peak_electron_uncertainty'],
+            xerr=[
+                df_info['Energy_error_low'],
+                df_info['Energy_error_high']
+            ],
+            fmt='o',
+            color=color[direction],
+            ecolor=color[direction],
+            zorder=0,
+            label='Intensity average'
+        )
+
+        ax.plot(
+            df_nan.Primary_energy,
+            df_nan.Flux_average,
+            'o',
+            markersize=15,
+            c='gray',
+            label='excluded (NaNs)'
+        )
+
+        ax.plot(
+            df_no_sig.Primary_energy,
+            df_no_sig.Flux_average,
+            'o',
+            markersize=11,
+            c='blue',
+            label='excluded (sigma)'
+        )
+
+        ax.plot(
+            df_rel_err.Primary_energy,
+            df_rel_err.Flux_average,
+            'o',
+            markersize=6,
+            c='orange',
+            label='excluded (rel error)'
+        )
+
+    # Plot background intensity and its uncertainty.
+    ax.errorbar(
+        x=df_info['Primary_energy'],
+        y=df_info['Background_flux'],
+        yerr=df_info['Bg_electron_uncertainty'],
+        xerr=[
+            df_info['Energy_error_low'],
+            df_info['Energy_error_high']
+        ],
+        fmt='o',
+        color=color[direction],
+        ecolor=color[direction],
+        alpha=0.15,
+        label='Background intensity'
+    )
+
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+
+    ax.set_xlabel('Energy [MeV]', size=20)
+    ax.set_ylabel('Intensity \n [1/s cm$^2$ sr MeV]', size=20)
+
+    plt.tick_params(axis='x', which='minor', labelsize=16)
+
+    ax.xaxis.set_minor_formatter(
+        FormatStrFormatter("%.2f")
+    )
+
+    plt.legend(prop={'size': 18})
+    plt.xticks(size=16)
+    plt.yticks(size=16)
+    plt.grid()
+    plt.title(title_string)
+
+    # Prevent every minor x-axis label from being displayed.
+    for label in ax.xaxis.get_ticklabels(which='minor')[1::2]:
+        label.set_visible(False)
+
+    # Save figure if requested.
+    if savefig:
+        if path and not path.endswith('/'):
+            path += '/'
+
+        plt.savefig(
+            path + filename + str(key) + '.jpg',
+            dpi=300,
+            bbox_inches='tight'
+        )
+
+    plt.show()
+    
+def write_to_csv(
+    args,
+    date,
+    path='',
+    key='',
+    direction=None,
+    centre_pix=False
+):
+    """
+    Saves the spectrum information dataframe to a CSV file.
+
+    The output filename contains the date, instrument, viewing direction,
+    data-product type, averaging information, and relevant instrument-specific
+    processing information.
+
+    Args:
+        args (tuple):
+            Output of the extract_data function. Contains:
+                df_electron_fluxes: pandas DataFrame containing electron fluxes.
+                df_info: pandas DataFrame containing spectrum data and metadata.
+                [searchstart, searchend]: search-window start and end times.
+                [e_low, e_high]: lower and upper energies for each energy channel.
+                [instrument, data_type]: instrument and data-product type.
+
+        date (str):
+            Date used in the output filename.
+
+        path (str, optional):
+            Path to the directory where the CSV file should be saved.
+            Defaults to ''.
+
+        key (str, optional):
+            Optional string appended to the output filename. Defaults to ''.
+
+        direction (str or None, optional):
+            Telescope viewing direction. If None, 'sun' is used.
+            Defaults to None.
+
+        centre_pix (bool, optional):
+            Indicates whether centre-pixel STEP data are being used.
+            Defaults to False.
+
+    Returns:
+        None
+            Saves the df_info dataframe as a semicolon-separated CSV file.
     """
 
     df_info = args[1]
     instrument = args[4][0]
     data_type = args[4][1]
 
-    #date = str(df_info['Plot_period'][0][:-5])
-    #hour = int(df_info['Plot_period'][0][-4:-2])
-    #if hour >20 or hour<4:
-    #    date = str(df_info['Plot_period'][1][:-5])
+    instrument_lower = instrument.lower()
 
-    
+    # Use sun as the default viewing direction.
+    viewing = 'sun' if direction is None else direction
 
-    if direction is None:
-        viewing = 'sun'
+    filename = (
+        f'electron_data-{date}-{instrument.upper()}-'
+        f'{viewing}-{data_type.upper()}'
+    )
+
+    # Add averaging information.
+    if df_info['Averaging'][0] == 'Mean':
+        averaging = df_info['Averaging'][1].split()[2]
+        filename += f'-{averaging}_averaging'
+
+    elif df_info['Averaging'][0] == 'No averaging':
+        filename += '-no_averaging'
+
+    # Add ion-contamination correction information for EPT.
+    if instrument_lower == 'ept':
+        if df_info['Ion_contamination_correction'][0]:
+            filename += '-ion_corr'
+
+    # Add centre-pixel information for STEP.
+    if instrument_lower == 'step' and centre_pix:
+        filename += '-centre_pix'
+
+    # Save dataframe.
+    if path and not path.endswith('/'):
+        path += '/'
+
+    df_info.to_csv(
+        path + filename + str(key) + '.csv',
+        sep=';',
+        index=False
+    )
+
+
+def centre_pix_average_comparison_spec(
+        args,
+        args_pix,
+        bg_subtraction=True,
+        savefig=False,
+        path='',
+        key='',
+        sigma=3,
+        frac_nan_threshold=0.4,
+        rel_err_threshold=0.5,
+        date=None):
+    """
+    Plot and compare the STEP electron spectrum obtained from all-pixel
+    averaged data with the spectrum obtained from the centre pixel.
+
+    The plot shows either the background-subtracted or raw flux peaks for
+    both datasets, including their energy uncertainties and flux
+    uncertainties. Background fluxes are also shown for both datasets.
+
+    Data points that do not meet the quality criteria are marked according
+    to the reason for exclusion:
+        - grey: too many NaNs in the search interval
+        - blue: significance below the sigma threshold
+        - orange: relative error above the threshold
+
+    This function is specific to STEP, for which the viewing direction is
+    always the sun direction.
+
+    Args:
+        args (tuple): Output of the data extraction function for the
+            all-pixel averaged STEP data. Contains electron fluxes,
+            spectrum information, search windows, energy bins, instrument
+            information, and data type.
+        args_pix (tuple): Output of the data extraction function for the
+            centre-pixel STEP data.
+        bg_subtraction (bool, optional): If True, plot background-subtracted
+            fluxes. If False, plot raw fluxes. Defaults to True.
+        savefig (bool, optional): If True, save the generated figure.
+            Defaults to False.
+        path (str, optional): Path to the folder where the figure is saved.
+            Defaults to ''.
+        key (str, optional): Additional string appended to the output
+            filename. Defaults to ''.
+        sigma (int, optional): Significance threshold used to identify
+            channels with insufficiently significant flux peaks.
+            Defaults to 3.
+        frac_nan_threshold (float, optional): Minimum fraction of
+            non-NaN data points required in the search interval.
+            Defaults to 0.4.
+        rel_err_threshold (float, optional): Maximum allowed relative
+            uncertainty of the background-subtracted peak.
+            Defaults to 0.5.
+        date (optional): Date used for the plot title and filename. If None,
+            the date is taken from ``df_info['Plot_period']``.
+            Defaults to None.
+
+    Returns:
+        None
+    """
+
+    color = {'sun': 'crimson', 'sun_pix': 'purple'}
+
+    df_info = args[1]
+    df_info_pix = args_pix[1]
+
+    instrument = 'STEP'
+    data_type = args[4][1]
+    direction = 'sun'
+
+    date_string = ''
+    file_date = ''
+
+    if date is None:
+        date_string = str(df_info['Plot_period'][0][:-5])
+        file_date = str(df_info['Plot_period'][0][:-5])
     else:
-        viewing = f'{direction}' 
-    filename = 'electron_data-' + date + '-' + instrument.upper() +'-'+ viewing+ '-' + data_type.upper()
+        date_string = str(date)[:-3]
+        file_date = str(date)[:-3].replace(' ', '-').replace(':', '')
 
-    if(df_info['Averaging'][0] == 'Mean'):
-        
-        filename = filename + '-' + df_info['Averaging'][1].split()[2] + '_averaging'
+    title_string = instrument + ', ' + data_type.upper() + ', ' + date_string
+    filename = (
+        'spectrum-pix-comparison-' + file_date + '-' +
+        instrument + '-' + direction + '-' + data_type.upper()
+    )
 
-    elif(df_info['Averaging'][0] == 'No averaging'):
+    if df_info['Averaging'][0] == 'Mean':
 
+        title_string = (
+            title_string + ', ' +
+            df_info['Averaging'][1].split()[2] + ' averaging'
+        )
+        filename = (
+            filename + '-' +
+            df_info['Averaging'][1].split()[2] + '_averaging'
+        )
+
+    elif df_info['Averaging'][0] == 'No averaging':
+
+        title_string = title_string + ', no averaging'
         filename = filename + '-no_averaging'
 
-    if(instrument == 'ept'):
+    if bg_subtraction:
 
-        if(df_info['Ion_contamination_correction'][0]):
+        title_string = title_string + ', bg subtraction on'
+        filename = filename + '-bg_subtr'
 
-            filename = filename + '-ion_corr'
+    else:
 
-    if  instrument == 'step' and centre_pix:
-        
-        filename =  filename + '-centre_pix'
+        title_string = title_string + ', bg subtraction off'
 
+    # Identify points excluded due to the different quality criteria.
+    df_nan = df_info.where(
+        df_info['frac_nonan'] < frac_nan_threshold, np.nan
+    )
+    df_no_sig = df_info.where(
+        df_info['Peak_significance'] < sigma, np.nan
+    )
+    df_rel_err = df_info.where(
+        df_info['rel_backsub_peak_err'] > rel_err_threshold, np.nan
+    )
 
-    df_info.to_csv(path + filename + str(key) + '.csv',  sep = ';', index=False)
+    df_nan_pix = df_info_pix.where(
+        df_info_pix['frac_nonan'] < frac_nan_threshold, np.nan
+    )
+    df_no_sig_pix = df_info_pix.where(
+        df_info_pix['Peak_significance'] < sigma, np.nan
+    )
+    df_rel_err_pix = df_info_pix.where(
+        df_info_pix['rel_backsub_peak_err'] > rel_err_threshold, np.nan
+    )
 
+    # Plot either the background-subtracted or raw flux peaks.
+    if bg_subtraction:
+
+        f, ax = plt.subplots(figsize=(13, 10))
+
+        ax.errorbar(
+            x=df_info['Primary_energy'],
+            y=df_info['Bg_subtracted_peak'],
+            yerr=df_info['Backsub_peak_uncertainty'],
+            xerr=[
+                df_info['Energy_error_low'],
+                df_info['Energy_error_high']
+            ],
+            color=color['sun'],
+            fmt='o',
+            ecolor=color['sun'],
+            zorder=0,
+            label='Intensity peaks all pix avg'
+        )
+
+        ax.plot(
+            df_nan.Primary_energy,
+            df_nan.Bg_subtracted_peak,
+            'o',
+            markersize=15,
+            c='gray',
+            label='excluded (NaNs)'
+        )
+        ax.plot(
+            df_no_sig.Primary_energy,
+            df_no_sig.Bg_subtracted_peak,
+            'o',
+            markersize=11,
+            c='blue',
+            label='excluded (sigma)'
+        )
+        ax.plot(
+            df_rel_err.Primary_energy,
+            df_rel_err.Bg_subtracted_peak,
+            'o',
+            markersize=6,
+            c='orange',
+            label='excluded (rel error)'
+        )
+
+        ax.errorbar(
+            x=df_info_pix['Primary_energy'],
+            y=df_info_pix['Bg_subtracted_peak'],
+            yerr=df_info_pix['Backsub_peak_uncertainty'],
+            xerr=[
+                df_info_pix['Energy_error_low'],
+                df_info_pix['Energy_error_high']
+            ],
+            color=color['sun_pix'],
+            fmt='o',
+            ecolor=color['sun_pix'],
+            zorder=0,
+            label='Intensity peaks centre pix'
+        )
+
+        ax.plot(
+            df_nan_pix.Primary_energy,
+            df_nan_pix.Bg_subtracted_peak,
+            'o',
+            markersize=15,
+            c='gray'
+        )
+        ax.plot(
+            df_no_sig_pix.Primary_energy,
+            df_no_sig_pix.Bg_subtracted_peak,
+            'o',
+            markersize=11,
+            c='blue'
+        )
+        ax.plot(
+            df_rel_err_pix.Primary_energy,
+            df_rel_err_pix.Bg_subtracted_peak,
+            'o',
+            markersize=6,
+            c='orange'
+        )
+
+    else:
+
+        f, ax = plt.subplots(figsize=(13, 10))
+
+        ax.errorbar(
+            x=df_info['Primary_energy'],
+            y=df_info['Flux_peak'],
+            yerr=df_info['Peak_electron_uncertainty'],
+            xerr=[
+                df_info['Energy_error_low'],
+                df_info['Energy_error_high']
+            ],
+            fmt='o',
+            color=color['sun'],
+            ecolor=color['sun'],
+            zorder=0,
+            label='Intensity peaks all pix avg'
+        )
+
+        ax.plot(
+            df_nan.Primary_energy,
+            df_nan.Flux_peak,
+            'o',
+            markersize=15,
+            c='gray',
+            label='excluded (NaNs)'
+        )
+        ax.plot(
+            df_no_sig.Primary_energy,
+            df_no_sig.Flux_peak,
+            'o',
+            markersize=11,
+            c='blue',
+            label='excluded (sigma)'
+        )
+        ax.plot(
+            df_rel_err.Primary_energy,
+            df_rel_err.Flux_peak,
+            'o',
+            markersize=6,
+            c='orange',
+            label='excluded (rel error)'
+        )
+
+        ax.errorbar(
+            x=df_info_pix['Primary_energy'],
+            y=df_info_pix['Flux_peak'],
+            yerr=df_info_pix['Peak_electron_uncertainty'],
+            xerr=[
+                df_info_pix['Energy_error_low'],
+                df_info_pix['Energy_error_high']
+            ],
+            fmt='o',
+            color=color['sun_pix'],
+            ecolor=color['sun_pix'],
+            zorder=0,
+            label='Intensity peaks centre pix'
+        )
+
+        ax.plot(
+            df_nan_pix.Primary_energy,
+            df_nan_pix.Flux_peak,
+            'o',
+            markersize=15,
+            c='gray'
+        )
+        ax.plot(
+            df_no_sig_pix.Primary_energy,
+            df_no_sig_pix.Flux_peak,
+            'o',
+            markersize=11,
+            c='blue'
+        )
+        ax.plot(
+            df_rel_err_pix.Primary_energy,
+            df_rel_err_pix.Flux_peak,
+            'o',
+            markersize=6,
+            c='orange'
+        )
+
+    # Plot background flux and background uncertainties for both datasets.
+    ax.errorbar(
+        x=df_info['Primary_energy'],
+        y=df_info['Background_flux'],
+        yerr=df_info['Bg_electron_uncertainty'],
+        xerr=[
+            df_info['Energy_error_low'],
+            df_info['Energy_error_high']
+        ],
+        fmt='o',
+        color=color['sun'],
+        ecolor=color['sun'],
+        alpha=0.15,
+        label='Background intensity all pix avg'
+    )
+
+    ax.errorbar(
+        x=df_info_pix['Primary_energy'],
+        y=df_info_pix['Background_flux'],
+        yerr=df_info_pix['Bg_electron_uncertainty'],
+        xerr=[
+            df_info_pix['Energy_error_low'],
+            df_info_pix['Energy_error_high']
+        ],
+        fmt='o',
+        color=color['sun_pix'],
+        ecolor=color['sun_pix'],
+        alpha=0.15,
+        label='Background intensity centre pix'
+    )
+
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    ax.set_xlabel('Energy [MeV]', size=20)
+    ax.set_ylabel('Intensity \n [1/s cm$^2$ sr MeV]', size=20)
+
+    plt.tick_params(axis='x', which='minor', labelsize=16)
+    ax.xaxis.set_minor_formatter(FormatStrFormatter("%.2f"))
+
+    plt.legend(prop={'size': 18})
+    plt.xticks(size=16)
+    plt.yticks(size=16)
+    plt.grid()
+    plt.title(title_string)
+
+    for label in ax.xaxis.get_ticklabels(which='minor')[1::2]:
+        label.set_visible(False)
+
+    if path[len(path) - 1] != '/':
+        path = path + '/'
+
+    if savefig:
+        plt.savefig(
+            path + filename + str(key) + '.jpg',
+            dpi=300,
+            bbox_inches='tight'
+        )
+
+    plt.show()
+
+# aug2026 no idea...    
 # This acc_flux function is not really finished, just something I put together quickly.
 def acc_flux(args, time=[]):
     """_summary_
@@ -2151,145 +3331,36 @@ def acc_flux(args, time=[]):
 
 
 
-def centre_pix_average_comparison_spec(args, args_pix, bg_subtraction=True, savefig=False, path='', key='', sigma=3, frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None, date = None):
+# This plot_check function is not finished, but it does produce cool rainbow coloured plots.
+# aug26 do not remember what this was supposed to do...
+def plot_check(args, bg_subtraction=False, savefig=False, key=''):
     """_summary_
 
     Args:
         args (_type_): _description_
-        bg_subtraction (bool, optional): _description_. Defaults to True.
+        bg_subtraction (bool, optional): _description_. Defaults to False.
         savefig (bool, optional): _description_. Defaults to False.
-        path (str, optional): _description_. Defaults to ''.
         key (str, optional): _description_. Defaults to ''.
-        sigma (int, optional): _description_. Defaults to 3.
-        frac_nan_threshold (float, optional): _description_. Defaults to 0.4.
-        rel_err_threshold (float, optional): _description_. Defaults to 0.5.
-        direction (_type_, optional): _description_. Defaults to None.
     """
-    color = {'sun':'crimson','sun_pix':'purple'}
+
+    hours = mdates.HourLocator(interval = 1)
+    df_electron_fluxes = args[0]
     df_info = args[1]
-    df_info_pix = args_pix[1]
-
-    instrument = 'STEP'
+    search_area = args[2]
+    energy_bin = args[3]
+    instrument = args[4][0]
     data_type = args[4][1]
-    
-    viewing = 'sun'
-    direction = 'sun'
 
-    date_string = ''
-    file_date = ''
+    fig = plt.figure()
+    colors = iter(plt.cm.jet(np.linspace(0, 1, len(df_info['Energy_channel']))))
 
-    if date is None:
-        date_string = str(df_info['Plot_period'][0][:-5])
-        file_date = str(df_info['Plot_period'][0][:-5])
+    #for channel in df_info['Energy_channel']:
+    #    ax = df_electron_fluxes['Electron_Flux_{}'.format(channel)].plot(logy=True, figsize=(20,25), color='red', drawstyle='steps-mid')
 
-    else:
-        date_string = str(date)[:-3]
-        file_date = str(date)[:-3].replace(' ', '-').replace(':', '')
-    
-    title_string = instrument + ', ' + data_type.upper() + ', ' + date_string
-    filename = 'spectrum-pix-comparison' + file_date + '-' + instrument + viewing+ '-' + data_type.upper() 
-    
-    
-    if(df_info['Averaging'][0]=='Mean'):
+    for channel in df_info['Energy_channel']:
 
-        title_string = title_string + ', ' + df_info['Averaging'][1].split()[2] + ' averaging'
-        filename = filename + '-' + df_info['Averaging'][1].split()[2] + '_averaging'
-        
-
-    elif(df_info['Averaging'][0]=='No averaging'):
-
-        title_string = title_string + ', no averaging'
-        filename = filename + '-no_averaging'
-        
-
-    if(bg_subtraction):
-        
-       title_string = title_string + ', bg subtraction on'
-       filename = filename + '-bg_subtr'
-       
-
-    else:
-
-        title_string = title_string + ', bg subtraction off'
-    
-
-    # this is to plot the points that are excluded due to different reasons 
-    df_nan = df_info.where((df_info['frac_nonan'] < frac_nan_threshold), np.nan)
-    df_no_sig = df_info.where((df_info['Peak_significance'] < sigma), np.nan)
-    df_rel_err = df_info.where((df_info['rel_backsub_peak_err'] > rel_err_threshold), np.nan)
-
-    df_nan_pix = df_info_pix.where((df_info_pix['frac_nonan'] < frac_nan_threshold), np.nan)
-    df_no_sig_pix = df_info_pix.where((df_info_pix['Peak_significance'] < sigma), np.nan)
-    df_rel_err_pix = df_info_pix.where((df_info_pix['rel_backsub_peak_err'] > rel_err_threshold), np.nan)
-
-    
-
-    # Plots either the background subtracted or raw flux peaks depending on choice.
-   
-    if(bg_subtraction):
-        f, ax = plt.subplots(figsize=(13,10)) 
-        if direction == '':
-            direction = 'sun'
-        ax.errorbar(x=df_info['Primary_energy'], y=df_info['Bg_subtracted_peak'], yerr=df_info['Backsub_peak_uncertainty'],
-                    xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], color=color[direction], fmt='o', ecolor=color[direction], zorder=0, label='Intensity peaks all pix avg')
-        ax.plot(df_nan.Primary_energy, df_nan.Bg_subtracted_peak, 'o', markersize=15, c='gray', label='excluded (NaNs)')
-        ax.plot(df_no_sig.Primary_energy, df_no_sig.Bg_subtracted_peak, 'o', c='blue', markersize=11, label='excluded (sigma)')
-        ax.plot(df_rel_err.Primary_energy, df_rel_err.Bg_subtracted_peak, 'o', c='orange', markersize=6, label='excluded (rel error)')
-
-        ax.errorbar(x=df_info_pix['Primary_energy'], y=df_info_pix['Bg_subtracted_peak'], yerr=df_info_pix['Backsub_peak_uncertainty'],
-                    xerr=[df_info_pix['Energy_error_low'], df_info_pix['Energy_error_high']], color=color['sun_pix'], fmt='o', ecolor=color['sun_pix'], zorder=0, label='Intensity peaks centre pix')
-        ax.plot(df_nan_pix.Primary_energy, df_nan_pix.Bg_subtracted_peak, 'o', markersize=15, c='gray')#, label='excluded (NaNs)')
-        ax.plot(df_no_sig_pix.Primary_energy, df_no_sig_pix.Bg_subtracted_peak, 'o', c='blue', markersize=11)#, label='excluded (sigma)')
-        ax.plot(df_rel_err_pix.Primary_energy, df_rel_err_pix.Bg_subtracted_peak, 'o', c='orange', markersize=6)#, label='excluded (rel error)')
-
-
-
-    elif(bg_subtraction == False):
-        f, ax = plt.subplots(figsize=(13,10))
-        ax.errorbar(x=df_info['Primary_energy'], y=df_info['Flux_peak'], yerr=df_info['Peak_electron_uncertainty'],
-                    xerr=[df_info['Energy_error_low'], df_info['Energy_error_high']], fmt='o', color=color[direction],ecolor=color[direction], zorder=0, label='Intensity peaks all pix avg')
-        ax.plot(df_nan.Primary_energy, df_nan.Flux_peak, 'o', markersize=15, c='gray', label='excluded (NaNs)')
-        ax.plot(df_no_sig.Primary_energy, df_no_sig.Flux_peak, 'o', markersize=11, c='blue', label='excluded (sigma)')
-        ax.plot(df_rel_err.Primary_energy, df_rel_err.Flux_peak, 'o', markersize=6, c='orange', label='excluded (rel error)')
-
-        ax.errorbar(x=df_info_pix['Primary_energy'], y=df_info_pix['Flux_peak'], yerr=df_info_pix['Peak_electron_uncertainty'],
-                    xerr=[df_info_pix['Energy_error_low'], df_info_pix['Energy_error_high']], fmt='o', color=color['sun_pix'],ecolor=color['sun_pix'], zorder=0, label='Intensity peaks centre pix')
-        ax.plot(df_nan_pix.Primary_energy, df_nan_pix.Flux_peak, 'o', markersize=15, c='gray')#, label='excluded (NaNs)')
-        ax.plot(df_no_sig_pix.Primary_energy, df_no_sig_pix.Flux_peak, 'o', markersize=11, c='blue')#, label='excluded (sigma)')
-        ax.plot(df_rel_err_pix.Primary_energy, df_rel_err_pix.Flux_peak, 'o', markersize=6, c='orange')#, label='excluded (rel error)')
-
-
-    # Plots background flux and background errorbars in same scatterplot.
-    ax.errorbar(x=df_info['Primary_energy'], y=df_info['Background_flux'], yerr=df_info['Bg_electron_uncertainty'], xerr=[df_info['Energy_error_low'],df_info['Energy_error_high']],
-                fmt='o', color=color[direction], ecolor=color[direction], alpha=0.15, label='Background intensity all pix avg')
-
-    ax.errorbar(x=df_info_pix['Primary_energy'], y=df_info_pix['Background_flux'], yerr=df_info_pix['Bg_electron_uncertainty'], xerr=[df_info_pix['Energy_error_low'],df_info_pix['Energy_error_high']],
-                fmt='o', color=color['sun_pix'], ecolor=color['sun_pix'], alpha=0.15, label='Background intensity centre pix')
-
-    ax.set_yscale('log')
-    ax.set_xscale('log')
-    ax.set_xlabel('Energy [MeV]', size=20)
-    ax.set_ylabel('Intensity \n [1/s cm$^2$ sr MeV]', size=20)
-    plt.tick_params(axis='x', which='minor', labelsize=16)
-    ax.xaxis.set_minor_formatter(FormatStrFormatter("%.2f"))
-    #plt.tick_params(axis='y', which='minor')
-    #ax.yaxis.set_minor_formatter(FormatStrFormatter("%.0f"))
-    plt.legend(prop={'size': 18})
-    plt.xticks(size=16)
-    plt.yticks(size=16)
-    plt.grid()
-    plt.title(title_string)
-
-    for label in ax.xaxis.get_ticklabels(which='minor')[1::2]:
-
-        label.set_visible(False)
-    
-    if(path[len(path)-1] != '/'):
-
-        path = path + '/'
-
-    if(savefig):
-
-        plt.savefig(path + filename + str(key) +'.jpg', dpi=300, bbox_inches='tight')
+        col = next(colors)
+        ax = df_electron_fluxes['Electron_Flux_{}'.format(channel)].plot(logy=True, figsize=(13,10), color=col, drawstyle='steps-mid')
 
     plt.show()
+
