@@ -77,9 +77,7 @@ def compute_quality_factors(
     results_pix = {}
 
     def process(name, data, coverage):
-        qf_vals, qf_avg = quality_factor_PA_coverage(
-            data, coverage, direction=direction, angle=angle
-        )
+        qf_vals, qf_avg = quality_factor_PA_coverage(data, coverage, direction=direction, angle=angle)
 
         results[f"QF {name} average"] = qf_avg
         results[f"QF {name} all channels"] = qf_vals
@@ -91,9 +89,7 @@ def compute_quality_factors(
         process("STEP", data_step, coverage_ept)
 
         if pixels:
-            qf_vals, qf_avg = quality_factor_PA_coverage(
-                data_step_pix, coverage_ept, direction=direction, angle=angle
-            )
+            qf_vals, qf_avg = quality_factor_PA_coverage(data_step_pix, coverage_ept, direction=direction, angle=angle)
             results_pix["QF STEP average"] = qf_avg
             results_pix["QF STEP all channels"] = qf_vals
 
@@ -135,11 +131,7 @@ def print_channel(step=None, ept=None, het=None):
     - This function is intended for visualization/debugging only.
     """
 
-    instruments = [
-        ('STEP', step),
-        ('EPT', ept),
-        ('HET', het)
-    ]
+    instruments = [('STEP', step), ('EPT', ept), ('HET', het)]
 
     start_idx = 0
 
@@ -147,10 +139,7 @@ def print_channel(step=None, ept=None, het=None):
         if df is None:
             continue
 
-        out = pd.DataFrame({
-            'Channel': range(start_idx, start_idx + len(df)),
-            'Primary Energy [MeV]': df['Primary_energy']
-        })
+        out = pd.DataFrame({'Channel': range(start_idx, start_idx + len(df)), 'Primary Energy [MeV]': df['Primary_energy']})
 
         print(f'\n{name} CHANNELS')
         print(out.to_string(index=False))
@@ -185,20 +174,9 @@ def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_thresho
     E_MAX = 0.057
 
     # filter STEP data
-    data_step = step_data[
-        (step_data['Primary_energy'] >= E_MIN) &
-        (step_data['Primary_energy'] <= E_MAX)
-    ].reset_index(drop=True)
+    data_step = step_data[(step_data['Primary_energy'] >= E_MIN) & (step_data['Primary_energy'] <= E_MAX)].reset_index(drop=True)
 
-    data_step = comb.combine_data(
-        [data_step],
-        path=None,
-        sigma=sigma,
-        rel_err=rel_err,
-        frac_nan_threshold=frac_nan_threshold,
-        leave_out_1st_het_chan=False,
-        fit_to=fit
-    )
+    data_step = comb.combine_data([data_step], path=None, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=False, fit_to=fit)
 
     # determine number of STEP channels 
     if len(step_data['Primary_energy']) > 8:
@@ -207,27 +185,12 @@ def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_thresho
         n_step_chans = 1
 
     # filter EPT data
-    data_ept = ept_data[
-        (ept_data['Primary_energy'] >= E_MIN) &
-        (ept_data['Primary_energy'] <= E_MAX)
-    ].reset_index(drop=True)
+    data_ept = ept_data[(ept_data['Primary_energy'] >= E_MIN) & (ept_data['Primary_energy'] <= E_MAX)].reset_index(drop=True)
 
-    data_ept = comb.combine_data(
-        [data_ept],
-        path=None,
-        sigma=sigma,
-        rel_err=rel_err,
-        frac_nan_threshold=frac_nan_threshold,
-        leave_out_1st_het_chan=False,
-        fit_to=fit
-    )
+    data_ept = comb.combine_data([data_ept], path=None, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=False, fit_to=fit)
 
     # sanity check
-    if (
-        len(data_step) < n_step_chans or
-        len(data_ept) < 4 or
-        data_step['Primary_energy'].iloc[-1] < data_ept['Primary_energy'].iloc[0]
-    ):
+    if (len(data_step) < n_step_chans or len(data_ept) < 4 or data_step['Primary_energy'].iloc[-1] < data_ept['Primary_energy'].iloc[0]):
         print('There are too few energy channels to do a comparison and find a shift factor. '
               'If you still want to shift STEP data, please set automatic_shift to False '
               'and provide a shift_factor.')
@@ -238,11 +201,7 @@ def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_thresho
     ept_intensity_average = data_ept['Flux_' + fit_to].mean()
 
     # robust division
-    if (
-        pd.isna(step_intensity_average) or
-        pd.isna(ept_intensity_average) or
-        ept_intensity_average == 0
-    ):
+    if (pd.isna(step_intensity_average) or pd.isna(ept_intensity_average) or ept_intensity_average == 0):
         print('Invalid intensity averages → cannot compute shift factor.')
         return 1
 
@@ -455,26 +414,14 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
 
 
     #  ------ FILE NAMES ------
-    step_file_name = (
-        f"electron_data-{date_string}-STEP-{direction}-L2-"
-        f"{averaging_str}_averaging{pix}.csv"
-    )
+    step_file_name = (f"electron_data-{date_string}-STEP-{direction}-L2-{averaging_str}_averaging{pix}.csv")
 
     if ion_correction:
-        ept_file_name = (
-            f"electron_data-{date_string}-EPT-{direction}-L2-"
-            f"{averaging_str}_averaging-ion_corr.csv"
-        )
+        ept_file_name = (f"electron_data-{date_string}-EPT-{direction}-L2-{averaging_str}_averaging-ion_corr.csv")
     else:
-        ept_file_name = (
-            f"electron_data-{date_string}-EPT-{direction}-L2-"
-            f"{averaging_str}_averaging.csv"
-        )
+        ept_file_name = (f"electron_data-{date_string}-EPT-{direction}-L2-{averaging_str}_averaging.csv")
 
-    het_file_name = (
-        f"electron_data-{date_string}-HET-{direction}-L2-"
-        f"{averaging_str}_averaging.csv"
-    )
+    het_file_name = (f"electron_data-{date_string}-HET-{direction}-L2-{averaging_str}_averaging.csv")
 
     # <--------------------------------------------END OF NECESSARY INPUTS ----------------------------------------------->
 
@@ -530,25 +477,13 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     if step and ept and shift_step_data:
 
         if auto_shift:
-            step_shift_factor = calculate_shift_factor(
-                step_data, ept_data,
-                sigma, rel_err,
-                frac_nan_threshold,
-                fit_to
-            )
+            step_shift_factor = calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_threshold, fit_to)
         else:
             step_shift_factor = shift_factor
 
         print(f"SHIFT FACTOR: {step_shift_factor}")
 
-        columns_to_scale = [
-            f'Bg_subtracted_{fit_to}',
-            f'Flux_{fit_to}',
-            'Background_flux',
-            f'{fit_to_comb}_electron_uncertainty',
-            'Bg_electron_uncertainty',
-            'Backsub_peak_uncertainty'
-        ]
+        columns_to_scale = [f'Bg_subtracted_{fit_to}', f'Flux_{fit_to}', 'Background_flux', f'{fit_to_comb}_electron_uncertainty', 'Bg_electron_uncertainty', 'Backsub_peak_uncertainty']
 
         for col in columns_to_scale:
             if col in step_data.columns:  # safer
@@ -561,17 +496,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
             data_list.append(dataset)
 
     # Combine all data
-    data = comb.combine_data(
-        data_list,
-        all_file,
-        sigma=sigma,
-        rel_err=rel_err,
-        frac_nan_threshold=frac_nan_threshold,
-        leave_out_1st_het_chan=leave_out_1st_het_chan,
-        fit_to=fit_to_comb,
-        channels_to_exclude=channels_to_exclude
-    )
-
+    data = comb.combine_data(data_list, all_file, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb,channels_to_exclude=channels_to_exclude)
     data = pd.read_csv(all_file, sep=separator)
 
 
@@ -579,51 +504,20 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     if step and ept:
         step_ept_file = f"{base_name}-step_ept-l2-{averaging}.csv"
 
-        step_ept_data = comb.combine_data(
-            [step_data, ept_data],
-            step_ept_file,
-            sigma=sigma,
-            rel_err=rel_err,
-            frac_nan_threshold=frac_nan_threshold,
-            leave_out_1st_het_chan=leave_out_1st_het_chan,
-            fit_to=fit_to_comb,
-            channels_to_exclude=channels_to_exclude
-        )
+        step_ept_data = comb.combine_data([step_data, ept_data], step_ept_file, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb,channels_to_exclude=channels_to_exclude)
 
     if ept and het:
         ept_het_file = f"{base_name}-ept_het-{direction}-l2-{averaging}.csv"
 
-        ept_het_data = comb.combine_data(
-            [ept_data, het_data],
-            ept_het_file,
-            sigma=sigma,
-            rel_err=rel_err,
-            frac_nan_threshold=frac_nan_threshold,
-            leave_out_1st_het_chan=leave_out_1st_het_chan,
-            fit_to=fit_to_comb,
-            channels_to_exclude=channels_to_exclude
-        )
+        ept_het_data = comb.combine_data([ept_data, het_data], ept_het_file, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb, channels_to_exclude=channels_to_exclude)
 
 
     # Contaminated data
-    contaminated_data_sigma = comb.extract_low_sigma_rows(
-        data_list,
-        sigma=sigma,
-        leave_out_1st_het_chan=leave_out_1st_het_chan,
-        fit_to=fit_to_comb
-    )
+    contaminated_data_sigma = comb.extract_low_sigma_rows(data_list, sigma=sigma, leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb)
 
-    contaminated_data_nan = comb.extract_nan_heavy_rows(
-        data_list,
-        frac_nan_threshold=frac_nan_threshold,
-        leave_out_1st_het_chan=leave_out_1st_het_chan
-    )
+    contaminated_data_nan = comb.extract_nan_heavy_rows(data_list, frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan)
 
-    contaminated_data_rel_err = comb.extract_high_rel_err_rows(
-        data_list,
-        rel_err=rel_err,
-        leave_out_1st_het_chan=leave_out_1st_het_chan
-    )
+    contaminated_data_rel_err = comb.extract_high_rel_err_rows(data_list, rel_err=rel_err, leave_out_1st_het_chan=leave_out_1st_het_chan)
 
 
     # ----- CHANNEL EXCLUSION ------
@@ -633,16 +527,9 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
 
     if channels_to_exclude is not None:
 
-        excluded_channels = comb.excluded_channels_from_fit(
-            data_list, channels_to_exclude
-        )
+        excluded_channels = comb.excluded_channels_from_fit(data_list, channels_to_exclude)
 
-        contaminated_data = pd.concat([
-            contaminated_data_sigma,
-            contaminated_data_nan,
-            contaminated_data_rel_err,
-            excluded_channels
-        ])
+        contaminated_data = pd.concat([contaminated_data_sigma, contaminated_data_nan, contaminated_data_rel_err, excluded_channels])
 
         for i in list(channels_to_exclude):
 
@@ -653,51 +540,23 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
                 ept_channels_to_exclude.append(i - len(step_data))
 
             elif het:
-                het_channels_to_exclude.append(
-                    i - (len(step_data) + len(ept_data))
-                )
+                het_channels_to_exclude.append(i - (len(step_data) + len(ept_data)))
 
     else:
-        contaminated_data = pd.concat([
-            contaminated_data_sigma,
-            contaminated_data_nan,
-            contaminated_data_rel_err
-        ]).reset_index(drop=True)
+        contaminated_data = pd.concat([contaminated_data_sigma, contaminated_data_nan, contaminated_data_rel_err]).reset_index(drop=True)
 
 
     # Clean data
     if step:
-        step_data = comb.delete_bad_data(
-            step_data,
-            sigma=sigma,
-            rel_err=rel_err,
-            frac_nan_threshold=frac_nan_threshold,
-            fit_to=fit_to_comb,
-            channels_to_exclude=step_channels_to_exclude
-        )
+        step_data = comb.delete_bad_data(step_data, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, fit_to=fit_to_comb, channels_to_exclude=step_channels_to_exclude)
 
     if ept:
-        ept_data = comb.delete_bad_data(
-            ept_data,
-            sigma=sigma,
-            rel_err=rel_err,
-            frac_nan_threshold=frac_nan_threshold,
-            fit_to=fit_to_comb,
-            channels_to_exclude=ept_channels_to_exclude
-        )
+        ept_data = comb.delete_bad_data(ept_data, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, fit_to=fit_to_comb, channels_to_exclude=ept_channels_to_exclude)
 
     if het:
         first_het_data = comb.extract_first_het_channel(het_data)
 
-        het_data = comb.delete_bad_data(
-            het_data,
-            sigma=sigma,
-            rel_err=rel_err,
-            frac_nan_threshold=frac_nan_threshold,
-            leave_out_1st_het_chan=leave_out_1st_het_chan,
-            fit_to=fit_to_comb,
-            channels_to_exclude=het_channels_to_exclude
-        )
+        het_data = comb.delete_bad_data(het_data, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb, channels_to_exclude=het_channels_to_exclude)
         
     # -------------------------------------------------------------------------------------------
     # -------------------------------------------------------------------------
@@ -732,10 +591,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     # ---- HELPERS -----
     def extract_energy(df):
         """Return energy and asymmetric errors."""
-        return (
-            df['Primary_energy'],
-            [df['Energy_error_low'], df['Energy_error_high']]
-        )
+        return (df['Primary_energy'], [df['Energy_error_low'], df['Energy_error_high']])
 
 
     def extract_flux(df, flux_col, err_col):
@@ -840,8 +696,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
         'het': spec_energy_het if het else None,
         'step_ept': spec_energy_step_ept if (step and ept) else None,
         'ept_het': spec_energy_ept_het if (ept and het) else None,
-        'step_ept_het': spec_energy
-    }
+        'step_ept_het': spec_energy}
 
     selected_energy = energy_map.get(fit_type)
 
@@ -853,12 +708,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
 
 #----------------------------------------------------------------------------------------------------------------------
     # Plotting colours
-    color = {
-        'sun': 'crimson',
-        'asun': 'orange',
-        'north': 'darkslateblue',
-        'south': 'c'
-    }
+    color = {'sun': 'crimson', 'asun': 'orange',  'north': 'darkslateblue', 'south': 'c'}
 
     # quick change for sec resolution, change later
     # if av < 1.:
@@ -903,11 +753,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     # ------- FILE PATHS -------
     def build_path(suffix):
         """Helper to standardize file naming."""
-        return (
-            f"{path}{folder_time}-"
-            f"{suffix}_{fit_type}-{fit_to}-{which_fit}-"
-            f"l2-{averaging}-{direction}{pix}"
-        )
+        return (f"{path}{folder_time}-{suffix}_{fit_type}-{fit_to}-{which_fit}-l2-{averaging}-{direction}{pix}")
 
 
     pickle_path = build_path("pickle") + ".p" if save_pickle else None
@@ -918,8 +764,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     if save_fitrun:
         fitrun_path = build_path("all-fit-variables") + ".csv"
 
-        save.save_info_fit(
-            fitrun_path,
+        save.save_info_fit(fitrun_path,
             date_string, averaging, direction, data_product, dist,
             step, ept, het,
             sigma, rel_err, frac_nan_threshold,
@@ -930,22 +775,18 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
             alpha_guess, break_guess_low, cut_guess,
             use_random, iterations,
             qf_step_av, qf_ept_av, qf_het_av,
-            centre_pix
-        )
+            centre_pix)
 
         # save quality factors separately
         qf_path = build_path("quality-factor") + ".csv"
 
-        save.save_quality_factor(
-            qf_path,
-            qf_step, qf_ept, qf_het
-        )
+        save.save_quality_factor(qf_path, qf_step, qf_ept, qf_het)
     
     # <------------------------------------------------------FIT AND PLOT---------------------------------------------------------->
 
     f, ax = plt.subplots(1, figsize=(8, 6), dpi=300)
     # plt.rcParams["font.family"] = "Times New Roman"
-    matplotlib.rc('font', family='Times New Roman')
+    #matplotlib.rc('font', family='Times New Roman')
 
     # distance  = ''
     distance = f' (R={dist} au)'
@@ -967,8 +808,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
             'het': (spec_energy_het, spec_flux_het, energy_err_het, flux_err_het, 'HET'),
             'step_ept': (spec_energy_step_ept, spec_flux_step_ept, energy_err_step_ept, flux_err_step_ept, 'STEP and EPT'),
             'ept_het': (spec_energy_ept_het, spec_flux_ept_het, energy_err_ept_het, flux_err_ept_het, 'EPT and HET'),
-            'step_ept_het': (spec_energy, spec_flux, energy_err, flux_err, 'STEP, EPT and HET'),
-        }
+            'step_ept_het': (spec_energy, spec_flux, energy_err, flux_err, 'STEP, EPT and HET'),}
 
         if fit_type not in fit_map:
             raise ValueError(f"Unknown fit_type: {fit_type}")
@@ -976,32 +816,11 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
         energy, flux, energy_err_local, flux_err_local, label = fit_map[fit_type]
         plot_title = f'Solar Orbiter {distance} {label}'
 
-        fitting.MAKE_THE_FIT(
-            energy,
-            flux,
-            energy_err_local[1],
-            flux_err_local,
-            ax,
-            direction=direction,
-            e_min=e_min,
-            e_max=e_max,
-            which_fit='single' if fit_type == 'het' else which_fit,
-            g1_guess=g1_guess,
-            g2_guess=g2_guess,
-            g3_guess=g3_guess,
-            alpha_guess=alpha_guess,
-            beta_guess=beta_guess,
-            break_low_guess=break_guess_low,
-            break_high_guess=break_guess_high,
-            cut_guess=cut_guess,
-            c1_guess=c1_guess,
-            exponent_guess=exponent_guess,
-            use_random=use_random,
-            iterations=iterations,
-            path=pickle_path,
-            path2=fit_var_path,
-            detailed_legend=legend_details
-        )
+        fitting.MAKE_THE_FIT(energy, flux,energy_err_local[1],flux_err_local,ax, direction=direction, e_min=e_min, e_max=e_max,
+        which_fit='single' if fit_type == 'het' else which_fit, g1_guess=g1_guess, g2_guess=g2_guess, g3_guess=g3_guess,
+        alpha_guess=alpha_guess, beta_guess=beta_guess, break_low_guess=break_guess_low, break_high_guess=break_guess_high,
+        cut_guess=cut_guess, c1_guess=c1_guess, exponent_guess=exponent_guess, use_random=use_random, iterations=iterations,
+        path=pickle_path, path2=fit_var_path, detailed_legend=legend_details)
 
     # ------- PLOTTING DATA ------
     def plot_errorbar(x, y, yerr, xerr, **kwargs):
@@ -1056,85 +875,28 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     # for a more detailed version
     # Contaminated / excluded data  
         if plot_sigma_version:
-            ax.errorbar(
-                spec_energy_c_sigma,
-                spec_flux_c_sigma,
-                yerr=flux_err_c_sigma,
-                xerr=energy_err_c_sigma,
-                marker='o',
-                linestyle='',
-                markersize=3,
-                color='blue',
-                label='Sigma below ' + str(sigma),
-                zorder=-1
-            )
+            ax.errorbar(spec_energy_c_sigma, spec_flux_c_sigma, yerr=flux_err_c_sigma, xerr=energy_err_c_sigma,
+                        marker='o', linestyle='', markersize=3, color='blue', label='Sigma below ' + str(sigma),zorder=-1)
 
-            ax.errorbar(
-                spec_energy_c_sigma,
-                contaminated_data_sigma['Background_flux'],
-                yerr=contaminated_data_sigma['Bg_electron_uncertainty'],
-                xerr=energy_err_c_sigma,
-                marker='o',
-                linestyle='',
-                markersize=3,
-                color='blue',
-                alpha=0.3,
-                zorder=-2
-            )
+            ax.errorbar(spec_energy_c_sigma, contaminated_data_sigma['Background_flux'],
+                        yerr=contaminated_data_sigma['Bg_electron_uncertainty'], xerr=energy_err_c_sigma,
+                        marker='o', linestyle='', markersize=3, color='blue', alpha=0.3,zorder=-2)
 
         if plot_nan_version:
-            ax.errorbar(
-                spec_energy_c_nan,
-                spec_flux_c_nan,
-                yerr=flux_err_c_nan,
-                xerr=energy_err_c_nan,
-                marker='o',
-                linestyle='',
-                markersize=3,
-                color='gray',
-                label='excluded (NaNs)',
-                zorder=-1
-            )
+            ax.errorbar(spec_energy_c_nan, spec_flux_c_nan, yerr=flux_err_c_nan, xerr=energy_err_c_nan, 
+                        marker='o', linestyle='', markersize=3, color='gray', label='excluded (NaNs)', zorder=-1)
 
-            ax.errorbar(
-                spec_energy_c_nan,
-                contaminated_data_nan['Background_flux'],
-                yerr=contaminated_data_nan['Bg_electron_uncertainty'],
-                xerr=energy_err_c_nan,
-                marker='o',
-                linestyle='',
-                markersize=3,
-                color='gray',
-                alpha=0.3,
-                zorder=-2
-            )
+            ax.errorbar(spec_energy_c_nan, contaminated_data_nan['Background_flux'], 
+                        yerr=contaminated_data_nan['Bg_electron_uncertainty'], xerr=energy_err_c_nan,
+                        marker='o', linestyle='', markersize=3, color='gray', alpha=0.3, zorder=-2)
 
         if plot_rel_err_version:
-            ax.errorbar(
-                spec_energy_c_rel_err,
-                spec_flux_c_rel_err,
-                yerr=flux_err_c_rel_err,
-                xerr=energy_err_c_rel_err,
-                marker='o',
-                linestyle='',
-                markersize=3,
-                color='purple',
-                label='excluded (rel err)',
-                zorder=-1
-            )
+            ax.errorbar(spec_energy_c_rel_err, spec_flux_c_rel_err, yerr=flux_err_c_rel_err, xerr=energy_err_c_rel_err,
+                        marker='o', linestyle='', markersize=3, color='purple', label='excluded (rel err)', zorder=-1)
 
-            ax.errorbar(
-                spec_energy_c_rel_err,
-                contaminated_data_rel_err['Background_flux'],
-                yerr=contaminated_data_rel_err['Bg_electron_uncertainty'],
-                xerr=energy_err_c_rel_err,
-                marker='o',
-                linestyle='',
-                markersize=3,
-                color='purple',
-                alpha=0.3,
-                zorder=-2
-            )
+            ax.errorbar(spec_energy_c_rel_err, contaminated_data_rel_err['Background_flux'],
+                        yerr=contaminated_data_rel_err['Bg_electron_uncertainty'], xerr=energy_err_c_rel_err,
+                        marker='o', linestyle='', markersize=3, color='purple', alpha=0.3, zorder=-2)
 
     # ------- AXIS -------
     step_energy_range = [0.004323343613, 0.07803193193]
@@ -1154,7 +916,9 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     ax.yaxis.set_minor_locator(locmin)
     ax.yaxis.set_minor_formatter(pltt.NullFormatter())
 
-    ax.tick_params(which='both', width=1, length=4, color='black')
+    ax.tick_params(which='major', width=1, length=4, color='black')
+    ax.tick_params(which='minor', width=1, length=4, color='black')
+        
     ax.tick_params(labelsize=fsize + 2)
 
     for axis in ['top', 'bottom', 'left', 'right']:
