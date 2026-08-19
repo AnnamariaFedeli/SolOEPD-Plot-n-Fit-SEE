@@ -1788,7 +1788,7 @@ species='electron', centre_pix=False ):
     plt.xticks([], fontsize=f_size)
     plt.yticks([], fontsize=f_size)
 
-    plt.ylabel("Intensity \n [1/s cm$^2$ sr MeV] \n \n", size=f_size)
+    plt.ylabel("Intensity \n [1/(s cm$^2$ sr MeV)] \n \n", size=f_size)
     plt.xlabel("\n \n Time", size=f_size)
 
     plt.title(title_string, size=f_size)
@@ -2057,7 +2057,7 @@ def plot_spectrum_peak(args,species, bg_subtraction=True, savefig=False, path=''
     ax.set_xscale('log')
 
     ax.set_xlabel('Energy [MeV]', size=20)
-    ax.set_ylabel('Intensity \n [1/s cm$^2$ sr MeV]', size=20)
+    ax.set_ylabel('Intensity \n [1/(s cm$^2$ sr MeV)]', size=20)
 
     plt.tick_params(axis='x', which='minor', labelsize=16)
 
@@ -2252,7 +2252,7 @@ frac_nan_threshold=0.4, rel_err_threshold=0.5, direction=None, centre_pix=False,
     ax.set_xscale('log')
 
     ax.set_xlabel('Energy [MeV]', size=20)
-    ax.set_ylabel('Intensity \n [1/s cm$^2$ sr MeV]', size=20)
+    ax.set_ylabel('Intensity \n [1/(s cm$^2$ sr MeV)]', size=20)
 
     plt.tick_params(axis='x', which='minor', labelsize=16)
 

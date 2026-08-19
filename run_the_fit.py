@@ -61,15 +61,7 @@ def quality_factor_PA_coverage(data, coverage, direction = 'sun', angle = 180):
     return [qf, quality_factor]
 
 
-def compute_quality_factors(
-    plot_pa,
-    step, ept, het,
-    pixels,
-    data_step, data_step_pix,
-    data_ept, data_het,
-    coverage_ept, coverage_het,
-    direction, angle
-):
+def compute_quality_factors(plot_pa, step, ept, het, pixels, data_step, data_step_pix, data_ept, data_het, coverage_ept, coverage_het, direction, angle):
     if not plot_pa:
         return None, None, None, None
 
@@ -166,10 +158,9 @@ def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_thresho
         float: Shift factor (STEP / EPT), or 1 if calculation is not possible.
     """
 
-    # safer string handling
     fit = fit_to.capitalize()
 
-    # --- energy range (kept identical, just clearer) ---
+    # energy range 
     E_MIN = 0.037
     E_MAX = 0.057
 
@@ -200,7 +191,7 @@ def calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_thresho
     step_intensity_average = data_step['Flux_' + fit_to].mean()
     ept_intensity_average = data_ept['Flux_' + fit_to].mean()
 
-    # robust division
+    
     if (pd.isna(step_intensity_average) or pd.isna(ept_intensity_average) or ept_intensity_average == 0):
         print('Invalid intensity averages → cannot compute shift factor.')
         return 1
@@ -228,18 +219,18 @@ def save_fit_and_run_variables_to_separate_folders(path, date, fit_var_file, run
     runvariables = os.path.join(path, 'run_variables')
     newpath = os.path.join(path, date)
 
-    # --- ensure directories exist (cleaner & safer) ---
+    # ensure directories exist 
     os.makedirs(fitvariables, exist_ok=True)
     os.makedirs(runvariables, exist_ok=True)
 
-    # --- build full source and destination paths ---
+    # build full source and destination paths
     src_fit = os.path.join(newpath, fit_var_file)
     dst_fit = os.path.join(fitvariables, fit_var_file)
 
     src_run = os.path.join(newpath, run_var_file)
     dst_run = os.path.join(runvariables, run_var_file)
 
-    # --- copy files ---
+    # copy files
     shutil.copy(src_fit, dst_fit)
     shutil.copy(src_run, dst_run)
     

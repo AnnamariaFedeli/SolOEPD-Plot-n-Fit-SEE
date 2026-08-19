@@ -36,16 +36,7 @@ def excluded_channels_from_fit(data_name_list, channel_list):
     return combined_csv
 
 
-def combine_data(
-    data_name_list,
-    path=None,
-    sigma=3,
-    rel_err=0.5,
-    frac_nan_threshold=0.9,
-    leave_out_1st_het_chan=False,
-    fit_to='Peak',
-    channels_to_exclude=None
-):
+def combine_data(data_name_list, path=None, sigma=3, rel_err=0.5, frac_nan_threshold=0.9, leave_out_1st_het_chan=False, fit_to='Peak', channels_to_exclude=None):
     """
     Combine and filter multiple DataFrames according to significance,
     relative error, and NaN thresholds, with optional channel exclusions.
@@ -66,7 +57,7 @@ def combine_data(
 
     combined_csv = None
 
-    # Case 1: Explicit channel exclusion
+    # Explicit channel exclusion
     if channels_to_exclude is not None:
         combined_csv = pd.concat(data_name_list)
         combined_csv.reset_index(drop=True, inplace=True)
@@ -76,7 +67,7 @@ def combine_data(
         combined_csv = combined_csv.sort_values('Primary_energy')
         combined_csv.reset_index(drop=True, inplace=True)
 
-    # Case 2: Remove first HET channel
+    # Remove first HET channel
     if leave_out_1st_het_chan and len(data_name_list) > 2:
         het = data_name_list[-1]
 
@@ -97,27 +88,21 @@ def combine_data(
         combined_csv = combined_csv.drop(columns='Energy_channel', errors='ignore')
 
     # Apply significance filter
-    rows_to_delete = combined_csv.index[
-        combined_csv[fit_to + '_significance'] < sigma
-    ].tolist()
+    rows_to_delete = combined_csv.index[combined_csv[fit_to + '_significance'] < sigma].tolist()
     combined_csv = combined_csv.drop(rows_to_delete, axis=0)
     combined_csv.reset_index(drop=True, inplace=True)
 
     # Apply relative error filter
     if rel_err is not None:
-        rows_to_delete = combined_csv.index[
-            combined_csv['rel_backsub_peak_err'] > rel_err
-        ].tolist()
+        rows_to_delete = combined_csv.index[combined_csv['rel_backsub_peak_err'] > rel_err].tolist()
         combined_csv = combined_csv.drop(rows_to_delete, axis=0)
         combined_csv.reset_index(drop=True, inplace=True)
 
     # Apply NaN fraction filter
-    rows_to_delete = combined_csv.index[
-        combined_csv['frac_nonan'] < frac_nan_threshold
-    ].tolist()
+    rows_to_delete = combined_csv.index[combined_csv['frac_nonan'] < frac_nan_threshold].tolist()
     combined_csv = combined_csv.drop(rows_to_delete, axis=0)
 
-    # --- Final sorting ---
+    # Final sorting
     combined_csv = combined_csv.sort_values('Primary_energy')
     combined_csv.reset_index(drop=True, inplace=True)
 
@@ -128,12 +113,7 @@ def combine_data(
     return combined_csv
 
 
-def extract_low_sigma_rows(
-    data_name_list,
-    sigma=3,
-    leave_out_1st_het_chan=False,
-    fit_to='Peak'
-):
+def extract_low_sigma_rows(data_name_list, sigma=3, leave_out_1st_het_chan=False, fit_to='Peak'):
     """
     Filter rows with significance <= sigma after combining input DataFrames.
 
@@ -165,20 +145,14 @@ def extract_low_sigma_rows(
 
     # Filter based on significance threshold (keep <= sigma)
     significance_col = f"{fit_to}_significance"
-    rows_to_delete = combined_csv.index[
-        combined_csv[significance_col] > sigma
-    ].tolist()
+    rows_to_delete = combined_csv.index[combined_csv[significance_col] > sigma].tolist()
 
     combined_csv = combined_csv.drop(rows_to_delete, axis=0)
     combined_csv.reset_index(drop=True, inplace=True)
 
     return combined_csv
 
-def extract_nan_heavy_rows(
-    data_name_list,
-    frac_nan_threshold=0.9,
-    leave_out_1st_het_chan=False
-):
+def extract_nan_heavy_rows(data_name_list, frac_nan_threshold=0.9, leave_out_1st_het_chan=False):
     """
     Extract rows with too many NaNs by removing rows with sufficiently
     high fraction of non-NaN values.
@@ -210,10 +184,8 @@ def extract_nan_heavy_rows(
         # Intentional side effect
         data_name_list[-1] = het
 
-    # Remove "good" rows → keep rows with many NaNs
-    rows_to_delete = combined_csv.index[
-        combined_csv['frac_nonan'] > frac_nan_threshold
-    ].tolist()
+    # Remove "good" rows and keep rows with many NaNs
+    rows_to_delete = combined_csv.index[combined_csv['frac_nonan'] > frac_nan_threshold].tolist()
 
     combined_csv = combined_csv.drop(rows_to_delete, axis=0)
     combined_csv.reset_index(drop=True, inplace=True)
@@ -221,11 +193,7 @@ def extract_nan_heavy_rows(
     return combined_csv
 
 
-def extract_high_rel_err_rows(
-    data_name_list,
-    rel_err=0.5,
-    leave_out_1st_het_chan=False
-):
+def extract_high_rel_err_rows(data_name_list, rel_err=0.5, leave_out_1st_het_chan=False):
     """
     Extract rows with high relative error by removing rows below the threshold.
 
@@ -255,10 +223,8 @@ def extract_high_rel_err_rows(
         # Intentional side effect
         data_name_list[-1] = het
 
-    # Remove "good" rows → keep high-error ones
-    rows_to_delete = combined_csv.index[
-        combined_csv['rel_backsub_peak_err'] < rel_err
-    ].tolist()
+    # Remove "good" rows and keep high-error ones
+    rows_to_delete = combined_csv.index[combined_csv['rel_backsub_peak_err'] < rel_err].tolist()
 
     combined_csv = combined_csv.drop(rows_to_delete, axis=0)
     combined_csv.reset_index(drop=True, inplace=True)
@@ -266,15 +232,7 @@ def extract_high_rel_err_rows(
     return combined_csv
 
 
-def delete_bad_data(
-    data,
-    sigma=3,
-    rel_err=0.5,
-    frac_nan_threshold=0.9,
-    leave_out_1st_het_chan=False,
-    fit_to='Peak',
-    channels_to_exclude=None
-):
+def delete_bad_data(data, sigma=3, rel_err=0.5, frac_nan_threshold=0.9, leave_out_1st_het_chan=False, fit_to='Peak', channels_to_exclude=None):
     """
     Remove rows that do not meet quality criteria.
 
