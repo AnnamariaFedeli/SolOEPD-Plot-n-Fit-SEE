@@ -7,6 +7,7 @@ import matplotlib.ticker as pltt
 from matplotlib import font_manager
 font_manager.fontManager.ttflist
 from matplotlib import rc
+import matplotlib.ticker as ticker
 #from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 from sunpy.coordinates import get_horizons_coord
 import make_the_fit_tripl as fitting
@@ -447,7 +448,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     step_shift_factor = shift_factor
 
     base_name = f"{path}{date_string}"
-    all_file = f"{base_name}-all-l2-{direction}-{averaging}.csv"
+    all_file = f"{base_name}-all-l2-{direction}-{averaging_str}_averaging.csv"
 
     # -------- LOAD DATA ----------
     step_data = None
@@ -493,12 +494,12 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
 
     # Telescope combinations
     if step and ept:
-        step_ept_file = f"{base_name}-step_ept-l2-{averaging}.csv"
+        step_ept_file = f"{base_name}-step_ept-l2-{averaging_str}_averaging.csv"
 
         step_ept_data = comb.combine_data([step_data, ept_data], step_ept_file, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb,channels_to_exclude=channels_to_exclude)
 
     if ept and het:
-        ept_het_file = f"{base_name}-ept_het-{direction}-l2-{averaging}.csv"
+        ept_het_file = f"{base_name}-ept_het-{direction}-l2-{averaging_str}_averaging.csv"
 
         ept_het_data = comb.combine_data([ept_data, het_data], ept_het_file, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb, channels_to_exclude=channels_to_exclude)
 
@@ -744,8 +745,10 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     # ------- FILE PATHS -------
     def build_path(suffix):
         """Helper to standardize file naming."""
-        return (f"{path}{folder_time}-{suffix}_{fit_type}-{fit_to}-{which_fit}-l2-{averaging}-{direction}{pix}")
-
+        return (
+            f"{path}{folder_time}-{suffix}_{fit_type}-{fit_to}-{which_fit}"
+            f"-l2-{averaging_str}_averaging-{direction}{pix}"
+        )
 
     pickle_path = build_path("pickle") + ".p" if save_pickle else None
     fit_var_path = build_path("fit-result-variables") + ".csv" if save_fit_variables else None
@@ -794,12 +797,12 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     # ------- FITTING -------
     if make_fit:
         fit_map = {
-            'step': (spec_energy_step, spec_flux_step, energy_err_step, flux_err_step, 'STEP'),
-            'ept': (spec_energy_ept, spec_flux_ept, energy_err_ept, flux_err_ept, 'EPT'),
-            'het': (spec_energy_het, spec_flux_het, energy_err_het, flux_err_het, 'HET'),
-            'step_ept': (spec_energy_step_ept, spec_flux_step_ept, energy_err_step_ept, flux_err_step_ept, 'STEP and EPT'),
-            'ept_het': (spec_energy_ept_het, spec_flux_ept_het, energy_err_ept_het, flux_err_ept_het, 'EPT and HET'),
-            'step_ept_het': (spec_energy, spec_flux, energy_err, flux_err, 'STEP, EPT and HET'),}
+            'step': (spec_energy_step, spec_flux_step, energy_err_step, flux_err_step, 'STEP') if step else None,
+            'ept': (spec_energy_ept, spec_flux_ept, energy_err_ept, flux_err_ept, 'EPT') if ept else None,
+            'het': (spec_energy_het, spec_flux_het, energy_err_het, flux_err_het, 'HET') if het else None,
+            'step_ept': (spec_energy_step_ept, spec_flux_step_ept, energy_err_step_ept, flux_err_step_ept, 'STEP and EPT') if (step and ept) else None,
+            'ept_het': (spec_energy_ept_het, spec_flux_ept_het, energy_err_ept_het, flux_err_ept_het, 'EPT and HET') if (ept and het) else None,
+            'step_ept_het': (spec_energy, spec_flux, energy_err, flux_err, 'STEP, EPT and HET') if (step and ept and het) else None,}
 
         if fit_type not in fit_map:
             raise ValueError(f"Unknown fit_type: {fit_type}")
@@ -889,7 +892,8 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
                         yerr=contaminated_data_rel_err['Bg_electron_uncertainty'], xerr=energy_err_c_rel_err,
                         marker='o', linestyle='', markersize=3, color='purple', alpha=0.3, zorder=-2)
 
-    # ------- AXIS -------
+    # ------- AXIS - LABELS - LEGEND -------
+
     step_energy_range = [0.004323343613, 0.07803193193]
     het_energy_range = [0.6859485403, 10.62300288]
 
@@ -899,26 +903,115 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     if do_not_plot_bad_channels:
         e_range_max = spec_energy[-1]
 
+    # Log axes
     ax.set_xscale('log')
     ax.set_yscale('log')
 
-    locmin = pltt.LogLocator(base=10.0, subs=(0.2, 0.4, 0.6, 0.8), numticks=12)
-    ax.set_xlim(e_range_min - e_range_min / 2, e_range_max + e_range_max / 2)
-    ax.yaxis.set_minor_locator(locmin)
-    ax.yaxis.set_minor_formatter(pltt.NullFormatter())
+    ax.set_xlim(
+        e_range_min / 2,
+        e_range_max * 1.5
+    )
 
-    ax.tick_params(which='major', width=1, length=4, color='black')
-    ax.tick_params(which='minor', width=1, length=4, color='black')
-        
-    ax.tick_params(labelsize=fsize + 2)
 
+    # Major ticks
+    ax.xaxis.set_major_locator(
+        ticker.LogLocator(
+            base=10.0
+        )
+    )
+
+    ax.yaxis.set_major_locator(
+        ticker.LogLocator(
+            base=10.0
+        )
+    )
+
+
+    # Minor ticks
+    # Use a separate locator for each axis
+    ax.xaxis.set_minor_locator(
+        ticker.LogLocator(
+            base=10.0,
+            subs=(2, 3, 4, 5, 6, 7, 8, 9),
+            numticks=200
+        )
+    )
+
+    ax.yaxis.set_minor_locator(
+        ticker.LogLocator(
+            base=10.0,
+            subs=(2, 3, 4, 5, 6, 7, 8, 9),
+            numticks=200
+        )
+    )
+
+
+    # Don't show labels for minor ticks
+    ax.xaxis.set_minor_formatter(ticker.NullFormatter())
+    ax.yaxis.set_minor_formatter(ticker.NullFormatter())
+
+
+    
+    # Major ticks
+    ax.tick_params(
+        axis='both',
+        which='major',
+        bottom=True,
+        top=False,
+        left=True,
+        right=False,
+        length=7,
+        width=1,
+        color='black',
+        labelsize=fsize + 2
+    )
+
+    # Minor ticks
+    ax.tick_params(
+        axis='both',
+        which='minor',
+        bottom=True,
+        top=False,
+        left=True,
+        right=False,
+        length=4,
+        width=1,
+        color='black'
+    )
+
+
+    # Force tick calculation
+    ax.figure.canvas.draw()
+
+
+    # ==========================================================
+    # DEBUG
+    # ==========================================================
+
+    print("X limits:", ax.get_xlim())
+    print("Y limits:", ax.get_ylim())
+    print("X major:", len(ax.xaxis.get_major_ticks()))
+    print("X minor:", len(ax.xaxis.get_minor_ticks()))
+    print("Y major:", len(ax.yaxis.get_major_ticks()))
+    print("Y minor:", len(ax.yaxis.get_minor_ticks()))
+    print("X limits:", ax.get_xlim())
+    print("Y limits:", ax.get_ylim())
+
+    # Spines
     for axis in ['top', 'bottom', 'left', 'right']:
         ax.spines[axis].set_linewidth(1)
 
 
-    # ------ LABELS + LEGEND -------
-    plt.xticks(fontsize=fsize)
-    plt.yticks(fontsize=fsize)
+    # Labels 
+    ax.set_ylabel(
+        intensity_label,
+        fontsize=fsize
+    )
+
+    ax.set_xlabel(
+        energy_label,
+        fontsize=fsize
+    )
 
     legend = None
     if not no_legend:
@@ -932,15 +1025,13 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
                                 fontsize=fsize - 2,
                                 title_fontsize=fsize)
 
-    plt.ylabel(intensity_label, fontsize=fsize)
-    plt.xlabel(energy_label, fontsize=fsize)
-
+    
 
     # ---- TITLE -----
     if title_of_plot is None:
         extra = 'centre pixels' if centre_pix else ''
         plt.title(plot_title + '  ' + peak_info + '\n' +
-                date_str + '  ' + str(averaging) + '  averaging ' + extra,
+                date_str + '  ' + averaging_str + '  averaging ' + extra,
                 fontsize=fsize + 2)
     else:
         plt.title(title_of_plot, fontsize=fsize + 2)
@@ -981,6 +1072,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
         else:
             combo = '_'.join([k for k, v in {'step': step, 'ept': ept, 'het': het}.items() if v])
             savefig_safe(base + f"-no_fit-{combo}" + pix + shift_string)
+
 
 
     plt.show()

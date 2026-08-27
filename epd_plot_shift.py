@@ -1419,7 +1419,8 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
 
             ax.get_xaxis().set_visible(True)
             ax.set_xlabel("Time", labelpad=45)
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%y-%m-%d\n%H:%M"))
+            ax.tick_params(axis="x", labelrotation=45)
 
         n += 1
 
@@ -1461,7 +1462,7 @@ def plot_channels(args, bg_subtraction=False, savefig=False, sigma=3, path='', k
 
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
 
-        plt.tick_params(axis='x', which='major', labelsize=size - 2)
+        plt.tick_params(axis='x', which='major', labelsize=size - 2, labelrotation=45)
 
         plt.tick_params(axis='y', which='major', labelsize=size - 2)
 
@@ -1675,7 +1676,10 @@ def plot_some_channels(args, bg_subtraction=False, savefig=False, sigma=3, path=
         if n == len(channels) and not plot_pa:
             ax.get_xaxis().set_visible(True)
             plt.xlabel("")
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%y-%m-%d\n%H:%M"))
+            ax.tick_params(axis="x", labelrotation=45)
+            
+
 
     # Optional pitch-angle panel.
     if plot_pa:
@@ -1707,9 +1711,9 @@ def plot_some_channels(args, bg_subtraction=False, savefig=False, sigma=3, path=
         ax.yaxis.set_ticks(np.arange(0, 180 + 45, 45))
         ax.set_ylabel('PA / °', size=f_size)
 
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%y-%m-%d\n%H:%M"))
 
-        plt.tick_params(axis='x', which='major', labelsize=f_size)
+        plt.tick_params(axis='x', which='major', labelsize=f_size, labelrotation=45)
         plt.tick_params(axis='y', which='major', labelsize=f_size)
 
         ax.set_xlabel("Time", labelpad=45, size=f_size)

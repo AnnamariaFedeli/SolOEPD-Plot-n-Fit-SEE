@@ -1326,9 +1326,9 @@ def plot_channels(args,species='electron', bg_subtraction=False, savefig=False, 
 
         ax.yaxis.set_ticks(np.arange(0, 180 + 45, 45))
         ax.set_ylabel('PA [°]', size=size - 2)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%y-%m-%d\n%H:%M"))
 
-        plt.tick_params(axis='x', which='major', labelsize=size - 2)
+        plt.tick_params(axis='x', which='major', labelsize=size - 2, labelrotation = 45)
         plt.tick_params(axis='y', which='major', labelsize=size - 2)
 
         ax.set_xlabel("Time", labelpad=45, size=size)
@@ -1535,7 +1535,8 @@ def plot_channels_protons(args, bg_subtraction=False, savefig=False, sigma=3, pa
 
             ax.get_xaxis().set_visible(True)
             ax.set_xlabel("Time", labelpad=45)
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%y-%m-%d\n%H:%M"))
+            ax.tick_params(axis="x", labelrotation=45)
 
         n += 1
 
@@ -1567,9 +1568,9 @@ def plot_channels_protons(args, bg_subtraction=False, savefig=False, sigma=3, pa
         ax.set_ylim([0, 180])
         ax.yaxis.set_ticks(np.arange(0, 180 + 45, 45))
         ax.set_ylabel('PA [°]', size=size - 2)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%y-%m-%d\n%H:%M"))
 
-        plt.tick_params(axis='x', which='major', labelsize=size - 2)
+        plt.tick_params(axis='x', which='major', labelsize=size - 2, labelrotation = 45)
         plt.tick_params(axis='y', which='major', labelsize=size - 2)
 
         ax.set_xlabel("Time", labelpad=45, size=size)
@@ -1836,7 +1837,8 @@ species='electron', centre_pix=False ):
         if n == len(channels) and not plot_pa:
             ax.get_xaxis().set_visible(True)
             plt.xlabel("")
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%y-%m-%d\n%H:%M"))
+            ax.tick_params(axis="x", labelrotation=45)
 
     # Optional pitch-angle panel.
     if plot_pa:
@@ -1871,9 +1873,9 @@ species='electron', centre_pix=False ):
 
         ax.set_ylabel('PA / °', size=f_size)
 
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y\n%H:%M"))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%y-%m-%d\n%H:%M"))
 
-        plt.tick_params(axis='x', which='major', labelsize=f_size)
+        plt.tick_params(axis='x', which='major', labelsize=f_size, labelrotation = 45)
         plt.tick_params(axis='y', which='major', labelsize=f_size)
 
         ax.set_xlabel( "Time", labelpad=45, size=f_size)
