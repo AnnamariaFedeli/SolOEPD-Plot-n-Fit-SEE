@@ -78,7 +78,7 @@ def _break_energy_interval(spec_e, e_err, break_energy):
             + e_err[smallest_difference_index + 1])
 
     return low, high
-
+           
 
 def check_redchi(
     spec_e,
@@ -171,18 +171,22 @@ def check_redchi(
             E_break_high=E_break_high,
             maxit=maxit,
             )
-        redchi_triple = result_triple.res_var
-        breakp_low = result_triple.beta[6]
-        breakp_high = result_triple.beta[7]
-        difference_triple = np.abs(breakp_high - breakp_low)
 
-        alpha = result_triple.beta[4]
-        beta = result_triple.beta[5]
+        if _is_valid_fit(result_triple):
+            redchi_triple = result_triple.res_var
+            breakp_low = result_triple.beta[6]
+            breakp_high = result_triple.beta[7]
+            difference_triple = np.abs(breakp_high - breakp_low)
 
-        if alpha > 0:
-            gamma1 = result_triple.beta[1]
-        elif alpha <= 0:
-            gamma1 = result_triple.beta[2]
+            alpha = result_triple.beta[4]
+            beta = result_triple.beta[5]
+
+            if alpha > 0:
+                gamma1 = result_triple.beta[1]
+            elif alpha <= 0:
+                gamma1 = result_triple.beta[2]
+        else:
+            redchi_triple = np.inf
 
         result_cut_break = pl_fit.cut_break_pl_fit(
             x=spec_e,
@@ -199,12 +203,19 @@ def check_redchi(
             print_report=False,
             maxit=maxit,
             )
-        
-        redchi_cut_break = result_cut_break.res_var
-        breakp_cut = result_cut_break.beta[4]
-        cut_b = result_cut_break.beta[5]
-        difference_cut = np.abs(breakp_cut - cut_b)
-        exponent_cut_break = result_cut_break.beta[6]
+
+        if _is_valid_fit(result_cut_break):
+            redchi_cut_break = result_cut_break.res_var
+            breakp_cut = result_cut_break.beta[4]
+            cut_b = result_cut_break.beta[5]
+            difference_cut = np.abs(breakp_cut - cut_b)
+            exponent_cut_break = result_cut_break.beta[6]
+        else:
+            redchi_cut_break = np.inf
+            breakp_cut = None
+            cut_b = None
+            difference_cut = None
+            exponent_cut_break = None
 
         result_cut = pl_fit.cut_pl_fit(
             x=spec_e,
@@ -217,10 +228,15 @@ def check_redchi(
             exponent=exponent,
             maxit=maxit,
             )
-        
-        redchi_cut = result_cut.res_var
-        cut = result_cut.beta[2]
-        exponent_cut = result_cut.beta[3]
+
+        if _is_valid_fit(result_cut):
+            redchi_cut = result_cut.res_var
+            cut = result_cut.beta[2]
+            exponent_cut = result_cut.beta[3]
+        else:
+            redchi_cut = np.inf
+            cut = None
+            exponent_cut = None
 
         result_double = pl_fit.double_pl_fit(
             x=spec_e,
@@ -234,9 +250,13 @@ def check_redchi(
             E_break=E_break_low,
             maxit=maxit,
             )
-        
-        redchi_double = result_double.res_var
-        breakp = result_double.beta[4]
+
+        if _is_valid_fit(result_double):
+            redchi_double = result_double.res_var
+            breakp = result_double.beta[4]
+        else:
+            redchi_double = np.inf
+            breakp = None
 
         result_single_pl = pl_fit.power_law_fit(
             x=spec_e,
@@ -246,7 +266,11 @@ def check_redchi(
             gamma1=gamma1,
             c1=c1,
             )
-        redchi_single = result_single_pl.res_var
+
+        if _is_valid_fit(result_single_pl):
+            redchi_single = result_single_pl.res_var
+        else:
+            redchi_single = np.inf
 
         chis = {
             "triple": redchi_triple,
@@ -265,16 +289,19 @@ def check_redchi(
             sorted_chis.pop("double_cut")
 
         # Check whether the ODR fits converged successfully.
-        if pl_fit.check_odr_output(result_triple) is False:
+        if not _is_valid_fit(result_triple):
             sorted_chis.pop("triple")
 
-        if pl_fit.check_odr_output(result_cut_break) is False:
+        if not _is_valid_fit(result_cut_break):
             sorted_chis.pop("double_cut")
 
-        if pl_fit.check_odr_output(result_double) is False:
+        if not _is_valid_fit(result_cut):
+            sorted_chis.pop("cut")
+
+        if not _is_valid_fit(result_double):
             sorted_chis.pop("double")
 
-        if pl_fit.check_odr_output(result_single_pl) is False:
+        if not _is_valid_fit(result_single_pl):
             sorted_chis.pop("single")
 
         # Check if there are values with zero chi-squared.
@@ -284,7 +311,6 @@ def check_redchi(
         for model_name in sorted_chis:
             if sorted_chis[model_name] == 0.0:
                 list_zero_chi.append(model_name)
-
 
         for model_name in list_zero_chi:
             sorted_chis.pop(model_name)
@@ -316,12 +342,13 @@ def check_redchi(
                     # the meaning of the parameters of the fit.
 
                     if (difference_triple > difference_triple_energy
-                        and gamma1 < 0 ):
+                        and gamma1 < 0):
+
                         if alpha > 0 or beta > 0:
-                            return ["triple", redchi_triple, result_triple]
+                            return [ "triple", redchi_triple, result_triple]
                         else:
                             smallest_value = list(sorted_chis.keys())[i]
-                           
+
                     else:
                         smallest_value = list(sorted_chis.keys())[i]
                 else:
@@ -339,6 +366,7 @@ def check_redchi(
 
                     if (gamma1 < 0
                         and difference_cut > difference_cut_energy):
+
                         return ["double_cut", redchi_cut_break, result_cut_break,]
                     else:
                         smallest_value = list(sorted_chis.keys())[i]
@@ -360,7 +388,7 @@ def check_redchi(
             if smallest_value == "single":
                 return ["single", redchi_single, result_single_pl]
 
-       
+
     # ------------------------------------------------------------------
     # Explicit triple power law fit
     # ------------------------------------------------------------------
@@ -380,29 +408,35 @@ def check_redchi(
             E_break_high=E_break_high,
             maxit=maxit,
             )
-        redchi_triple = result_triple.res_var
-        breakp_low = result_triple.beta[6]
-        breakp_high = result_triple.beta[7]
-        difference_triple = breakp_high - breakp_low
 
-        if (breakp_low < emax
-            and breakp_low > emin
-            and breakp_high < emax
-            and breakp_high > emin):
+        # Check ODR convergence BEFORE accessing result parameters.
+        if not _is_valid_fit(result_triple):
+            fit = "double_cut"
+        else:
+            redchi_triple = result_triple.res_var
+            breakp_low = result_triple.beta[6]
+            breakp_high = result_triple.beta[7]
+            difference_triple = breakp_high - breakp_low
 
-            low, high = _break_energy_interval(spec_e, e_err, breakp_low)
-            difference_triple_energy = high - low
+            if (breakp_low < emax
+                and breakp_low > emin
+                and breakp_high < emax
+                and breakp_high > emin):
 
-            if (breakp_high > breakp_low 
-                and difference_triple > difference_triple_energy):
+                low, high = _break_energy_interval(spec_e, e_err, breakp_low)
+                difference_triple_energy = high - low
 
-                return ["triple", redchi_triple, result_triple]
+                if (breakp_high > breakp_low
+                    and difference_triple > difference_triple_energy):
+
+                    return [ "triple", redchi_triple, result_triple]
+
+                else:
+                    fit = "double_cut"
 
             else:
                 fit = "double_cut"
 
-        else:
-            fit = "double_cut"
 
     # ------------------------------------------------------------------
     # Explicit double power law with exponential cutoff
@@ -423,29 +457,37 @@ def check_redchi(
             print_report=False,
             maxit=maxit,
             )
-        redchi_cut_break = result_cut_break.res_var
-        breakp_cut = result_cut_break.beta[4]
 
-        # The cut of the break + cutoff.
-        cut_b = result_cut_break.beta[5]
-        difference_cut = breakp_cut - cut_b
+        # Check ODR convergence BEFORE accessing result parameters.
+        if not _is_valid_fit(result_cut_break):
+            fit = "best_cb"
+        else:
+            redchi_cut_break = result_cut_break.res_var
+            breakp_cut = result_cut_break.beta[4]
 
-        if (breakp_cut <= emax
-            and breakp_cut > emin
-            and cut_b <= emax
-            and cut_b > emin):
-            low, high = _break_energy_interval(spec_e, e_err, breakp_cut)
-            difference_cut_energy = high - low
+            # The cut of the break + cutoff.
+            cut_b = result_cut_break.beta[5]
+            difference_cut = breakp_cut - cut_b
 
-            if (cut_b > breakp_cut
-                and difference_cut > difference_cut_energy):
-                return ["double_cut", redchi_cut_break, result_cut_break]
+            if (breakp_cut <= emax
+                and breakp_cut > emin
+                and cut_b <= emax
+                and cut_b > emin):
+
+                low, high = _break_energy_interval(spec_e, e_err, breakp_cut)
+                difference_cut_energy = high - low
+
+                if (cut_b > breakp_cut
+                    and difference_cut > difference_cut_energy):
+
+                    return [ "double_cut", redchi_cut_break, result_cut_break]
+
+                else:
+                    fit = "best_cb"
 
             else:
                 fit = "best_cb"
 
-        else:
-            fit = "best_cb"
 
     # ------------------------------------------------------------------
     # Select between a single and double power law
@@ -459,7 +501,6 @@ def check_redchi(
             gamma1=gamma1,
             c1=c1,
             )
-        redchi_single = result_single_pl.res_var
 
         result_double = pl_fit.double_pl_fit(
             x=spec_e,
@@ -473,10 +514,31 @@ def check_redchi(
             E_break=E_break_low,
             maxit=maxit,
             )
-        redchi_double = result_double.res_var
-        breakp = result_double.beta[4]
+
+        # Check convergence of BOTH fits.
+        single_valid = _is_valid_fit(result_single_pl)
+        double_valid = _is_valid_fit(result_double)
+
+        if single_valid:
+            redchi_single = result_single_pl.res_var
+        else:
+            redchi_single = np.inf
+
+        if double_valid:
+            redchi_double = result_double.res_var
+            breakp = result_double.beta[4]
+        else:
+            redchi_double = np.inf
+            breakp = None
+
+        # If neither fit converged, there is no valid result.
+        if not single_valid and not double_valid:
+            return None
 
         if redchi_double <= redchi_single:
+            if not double_valid:
+                return ["single", redchi_single, result_single_pl]
+
             if breakp < emin or breakp > emax:
                 return ["single", redchi_single, result_single_pl]
 
@@ -484,7 +546,11 @@ def check_redchi(
                 return ["double", redchi_double, result_double]
 
         if redchi_double > redchi_single:
-            return ["single", redchi_single, result_single_pl]
+            if single_valid:
+                return ["single", redchi_single, result_single_pl]
+
+            return ["double", redchi_double, result_double]
+
 
     # ------------------------------------------------------------------
     # Select between a single PL + exp cutoff and double power law
@@ -501,11 +567,6 @@ def check_redchi(
             exponent=exponent,
             maxit=maxit,
             )
-        redchi_cut = result_cut.res_var
-
-        # Should maybe make distinction between cut from cut PL
-        # and cut from cut double PL.
-        cut = result_cut.beta[2]
 
         result_double = pl_fit.double_pl_fit(
             x=spec_e,
@@ -519,22 +580,57 @@ def check_redchi(
             E_break=E_break_low,
             maxit=maxit,
             )
-        redchi_double = result_double.res_var
-        breakp = result_double.beta[4]
+
+        # Check convergence of BOTH fits.
+        cut_valid = _is_valid_fit(result_cut)
+        double_valid = _is_valid_fit(result_double)
+
+        if cut_valid:
+            redchi_cut = result_cut.res_var
+            cut = result_cut.beta[2]
+        else:
+            redchi_cut = np.inf
+            cut = None
+
+        if double_valid:
+            redchi_double = result_double.res_var
+            breakp = result_double.beta[4]
+        else:
+            redchi_double = np.inf
+            breakp = None
+
+        # If neither fit converged, there is no valid result.
+        if not cut_valid and not double_valid:
+            return None
 
         if redchi_double <= redchi_cut:
+            if not double_valid:
+                if cut_valid and cut >= emin and cut <= emax:
+                    return ["cut", redchi_cut, result_cut]
+                return None
+
             if breakp < emin or breakp > emax:
-                fit = "single"
+                if cut_valid and cut >= emin and cut <= emax:
+                    return ["cut", redchi_cut, result_cut]
+                return None
 
             if breakp >= emin and breakp <= emax:
                 return ["double", redchi_double, result_double]
 
         if redchi_double > redchi_cut:
+            if not cut_valid:
+                if double_valid and breakp >= emin and breakp <= emax:
+                    return ["double", redchi_double, result_double]
+                return None
+
             if cut < emin or cut > emax:
-                fit = "single"
+                if double_valid and breakp >= emin and breakp <= emax:
+                    return ["double", redchi_double, result_double]
+                return None
 
             if cut >= emin and cut <= emax:
                 return ["cut", redchi_cut, result_cut]
+
 
     # ------------------------------------------------------------------
     # Explicit single PL + exponential cutoff fit
@@ -551,17 +647,27 @@ def check_redchi(
             exponent=exponent,
             maxit=maxit,
             )
-        redchi_cut = result_cut.res_var
 
-        # Should maybe make distinction between cut from cut PL
-        # and cut from cut double PL.
-        cut = result_cut.beta[2]
-
-        if cut < emin or cut > emax:
+        # Check ODR convergence BEFORE accessing result parameters.
+        if not _is_valid_fit(result_cut):
             fit = "single"
+        else:
+            redchi_cut = result_cut.res_var
 
-        if cut >= emin and cut <= emax:
-            return ["cut", redchi_cut, result_cut]
+            # Should maybe make distinction between cut from cut PL
+            # and cut from cut double PL.
+            cut = result_cut.beta[2]
+
+            if cut < emin or cut > emax:
+                fit = "single"
+
+            if cut >= emin and cut <= emax:
+                return [
+                    "cut",
+                    redchi_cut,
+                    result_cut
+                ]
+
 
     # ------------------------------------------------------------------
     # Explicit double power-law fit
@@ -579,14 +685,20 @@ def check_redchi(
             E_break=E_break_low,
             maxit=maxit,
             )
-        redchi_double = result_double.res_var
-        breakp = result_double.beta[4]
 
-        if breakp < emin or breakp > emax:
+        # Check ODR convergence BEFORE accessing result parameters.
+        if not _is_valid_fit(result_double):
             fit = "single"
+        else:
+            redchi_double = result_double.res_var
+            breakp = result_double.beta[4]
 
-        if breakp >= emin and breakp <= emax:
-            return ["double", redchi_double, result_double]
+            if breakp < emin or breakp > emax:
+                fit = "single"
+
+            if breakp >= emin and breakp <= emax:
+                return ["double", redchi_double, result_double]
+
 
     # ------------------------------------------------------------------
     # Single power-law
@@ -600,11 +712,16 @@ def check_redchi(
             gamma1=gamma1,
             c1=c1,
         )
+
+        # Check ODR convergence.
+        if not _is_valid_fit(result_single_pl):
+            return None
+
         redchi_single = result_single_pl.res_var
 
-        return ["single", redchi_single, result_single_pl]        
-    
-        
+        return ["single", redchi_single, result_single_pl]
+
+
 
 def _get_fit_errors(result):
     """
@@ -1188,11 +1305,10 @@ def MAKE_THE_FIT(
 
                 redchi_random = which_fit_random[1]
                 result_random = which_fit_random[2]
+                #convergence is checked by check_redchi
+                #convergence = _is_valid_fit(result_random)
 
-                convergence = _is_valid_fit(result_random)
-
-                if (redchi_random < redchi_final
-                    and convergence):
+                if (redchi_random < redchi_final):
 
                     result_final = result_random
                     redchi_final = redchi_random
@@ -1277,11 +1393,8 @@ def MAKE_THE_FIT(
                 redchi_random = which_fit_random[1]
                 result_random = which_fit_random[2]
 
-                convergence = _is_valid_fit(result_random)
-
-                if (redchi_random < redchi_final
-                    and convergence):
-
+                
+                if (redchi_random < redchi_final):
                     result_final = result_random
                     redchi_final = redchi_random
                     which_fit_final = which_fit_random[0]
@@ -1351,13 +1464,8 @@ def MAKE_THE_FIT(
                 redchi_random = which_fit_random[1]
                 result_random = which_fit_random[2]
 
-                convergence = _is_valid_fit(result_random)
-
-                if (redchi_random < redchi_final
-                    and convergence
-                    and which_fit_random[0]
-                    in ("single", "double", "cut")):
-
+                
+                if (redchi_random < redchi_final):
                     result_final = result_random
                     redchi_final = redchi_random
                     which_fit_final = which_fit_random[0]
@@ -1422,13 +1530,7 @@ def MAKE_THE_FIT(
                 redchi_random = which_fit_random[1]
                 result_random = which_fit_random[2]
 
-                convergence = _is_valid_fit(result_random)
-
-                if (redchi_random < redchi_final
-                    and convergence
-                    and which_fit_random[0]
-                    in ("single", "double")):
-
+                if (redchi_random < redchi_final):
                     result_final = result_random
                     redchi_final = redchi_random
                     which_fit_final = which_fit_random[0]
@@ -1439,86 +1541,28 @@ def MAKE_THE_FIT(
 
     if which_fit == "double_cut":
 
-        result_cut_guess = pl_fit.cut_break_pl_fit(
-            x=spec_e,
-            y=spec_flux,
-            xerr=e_err,
-            yerr=flux_err,
-            gamma1=g1_guess,
-            gamma2=g2_guess,
+        result_cut_guess = check_redchi(
+            spec_e,
+            spec_flux,
+            e_err,
+            flux_err,
             c1=c1_guess,
             alpha=alpha_guess,
-            E_break=break_low_guess,
+            gamma1=g1_guess,
+            gamma2=g2_guess,
+            E_break_low=break_low_guess,
             E_cut=cut_guess,
             exponent=exponent_guess,
-            print_report=False,
+            fit="double_cut",
             maxit=maxit,
+            e_min=e_min,
+            e_max=e_max,
             )
-
-        breakp_cut = result_cut_guess.beta[4]
-        cut_b = result_cut_guess.beta[5]
-
-        if breakp_cut < e_min or breakp_cut > e_max:
-
-            print("The break point is outside of the energy range")
-
-            which_fit_guess = check_redchi(
-                spec_e,
-                spec_flux,
-                e_err,
-                flux_err,
-                c1=c1_guess,
-                alpha=alpha_guess,
-                beta=beta_guess,
-                gamma1=g1_guess,
-                gamma2=g2_guess,
-                E_break_low=break_low_guess,
-                E_cut=cut_guess,
-                exponent=exponent_guess,
-                fit="best_cb",
-                maxit=maxit,
-                e_min=e_min,
-                e_max=e_max,
-                )
-
-            if which_fit_guess is not None:
-                redchi_final = which_fit_guess[1]
-                which_fit_final = which_fit_guess[0]
-                result_final = which_fit_guess[2]
-
-        elif e_min <= breakp_cut <= e_max:
-
-            if cut_b <= e_min or cut_b >= e_max:
-
-                which_fit_guess = check_redchi(
-                    spec_e,
-                    spec_flux,
-                    e_err,
-                    flux_err,
-                    c1=c1_guess,
-                    alpha=alpha_guess,
-                    beta=beta_guess,
-                    gamma1=g1_guess,
-                    gamma2=g2_guess,
-                    E_break_low=break_low_guess,
-                    E_cut=cut_b,
-                    exponent=exponent_guess,
-                    fit="double_cut",
-                    maxit=maxit,
-                    e_min=e_min,
-                    e_max=e_max,
-                    )
-
-                if which_fit_guess is not None:
-                    redchi_final = which_fit_guess[1]
-                    which_fit_final = which_fit_guess[0]
-                    result_final = which_fit_guess[2]
-
-            elif e_min < cut_b < e_max:
-
-                which_fit_final = "double_cut"
-                result_final = result_cut_guess
-                redchi_final = result_cut_guess.res_var
+        
+        if result_cut_guess is not None:
+            redchi_final = which_fit_guess[1]
+            which_fit_final = which_fit_guess[0]
+            result_final = which_fit_guess[2]
 
         if use_random:
 
@@ -1555,13 +1599,8 @@ def MAKE_THE_FIT(
                 redchi_random = which_fit_random[1]
                 result_random = which_fit_random[2]
 
-                convergence = _is_valid_fit(result_random)
-
-                if (redchi_random < redchi_final
-                    and convergence
-                    and which_fit_random[0]
-                    in ("single", "double", "cut", "double_cut")):
-
+                
+                if (redchi_random < redchi_final):
                     result_final = result_random
                     redchi_final = redchi_random
                     which_fit_final = which_fit_random[0]
@@ -1572,43 +1611,27 @@ def MAKE_THE_FIT(
 
     if which_fit == "double":
 
-        result_double_guess = pl_fit.double_pl_fit(
-            x=spec_e,
-            y=spec_flux,
-            xerr=e_err,
-            yerr=flux_err,
-            gamma1=g1_guess,
-            gamma2=g2_guess,
+        result_double_guess = check_redchi(
+            spec_e,
+            spec_flux,
+            e_err,
+            flux_err,
             c1=c1_guess,
             alpha=alpha_guess,
-            E_break=break_low_guess,
+            gamma1=g1_guess,
+            gamma2=g2_guess,
+            E_break_low=break_low_guess,
+            exponent=exponent_guess,
+            fit="double",
             maxit=maxit,
-            )
+            e_min=e_min,
+            e_max=e_max,
+        )
 
-        breakp_1 = result_double_guess.beta[4]
-
-        if breakp_1 < e_min or breakp_1 > e_max:
-
-            print("The break point is outside of the energy range")
-
-            which_fit_final = "single"
-
-            result_final = pl_fit.power_law_fit(
-                x=spec_e,
-                y=spec_flux,
-                xerr=e_err,
-                yerr=flux_err,
-                gamma1=g1_guess,
-                c1=c1_guess,
-                )
-
-            redchi_final = result_final.res_var
-
-        else:
-
-            which_fit_final = "double"
-            result_final = result_double_guess
-            redchi_final = result_double_guess.res_var
+        if result_double_guess is not None:
+            redchi_final = result_double_guess[1]
+            which_fit_final = result_double_guess[0]
+            result_final = result_double_guess[2]
 
         if use_random:
 
@@ -1620,56 +1643,33 @@ def MAKE_THE_FIT(
                 break_low_random = np.random.choice(break_array_low, 1)[0]
                 c1_random = np.random.choice(c1_array, 1)[0]
 
-                result_double_random = pl_fit.double_pl_fit(
-                    x=spec_e,
-                    y=spec_flux,
-                    xerr=e_err,
-                    yerr=flux_err,
-                    gamma1=g1_random,
-                    gamma2=g2_random,
+                which_fit_random = check_redchi(
+                    spec_e,
+                    spec_flux,
+                    e_err,
+                    flux_err,
                     c1=c1_random,
                     alpha=alpha_random,
-                    E_break=break_low_random,
+                    gamma1=g1_random,
+                    gamma2=g2_random,
+                    E_break_low=break_low_random,
+                    exponent=exponent_guess,
+                    fit="double",
                     maxit=maxit,
+                    e_min=e_min,
+                    e_max=e_max,
                     )
 
-                breakp_1 = result_double_random.beta[4]
+                if which_fit_random is None:
+                    continue
 
-                convergence_double = _is_valid_fit(result_double_random)
+                redchi_random = which_fit_random[1]
+                result_random = which_fit_random[2]
 
-                if breakp_1 < e_min or breakp_1 > e_max:
-
-                    result_single_pl_random = pl_fit.power_law_fit(
-                        x=spec_e,
-                        y=spec_flux,
-                        xerr=e_err,
-                        yerr=flux_err,
-                        gamma1=g1_random,
-                        c1=c1_random,
-                        )
-
-                    redchi_random = (result_single_pl_random.res_var)
-
-                    convergence_single = _is_valid_fit(result_single_pl_random)
-
-                    if (redchi_random < redchi_final
-                        and convergence_single):
-
-                        which_fit_final = "single"
-                        redchi_final = redchi_random
-                        result_final = result_single_pl_random
-
-                elif (breakp_1 >= e_min
-                    and breakp_1 <= e_max
-                    and convergence_double):
-
-                    redchi_random = (result_double_random.res_var)
-
-                    if redchi_random < redchi_final:
-
-                        which_fit_final = "double"
-                        redchi_final = redchi_random
-                        result_final = result_double_random
+                if (redchi_random < redchi_final):
+                    which_fit_final = which_fit_random[0]
+                    redchi_final = redchi_random
+                    result_final = result_random
 
     # ========================================================================
     # 11. CUT
@@ -1677,42 +1677,25 @@ def MAKE_THE_FIT(
 
     if which_fit == "cut":
 
-        result_cut_guess = pl_fit.cut_pl_fit(
-            x=spec_e,
-            y=spec_flux,
-            xerr=e_err,
-            yerr=flux_err,
-            gamma1=g1_guess,
+        result_cut_guess = check_redchi(
+            spec_e,
+            spec_flux,
+            e_err,
+            flux_err,
             c1=c1_guess,
+            gamma1=g1_guess,
             E_cut=cut_guess,
             exponent=exponent_guess,
+            fit="cut",
             maxit=maxit,
+            e_min=e_min,
+            e_max=e_max,
             )
 
-        cut = result_cut_guess.beta[2]
-
-        if cut < e_min or cut > e_max:
-
-            print("The cutoff point is outside of the energy range")
-
-            which_fit_final = "single"
-
-            result_final = pl_fit.power_law_fit(
-                x=spec_e,
-                y=spec_flux,
-                xerr=e_err,
-                yerr=flux_err,
-                gamma1=g1_guess,
-                c1=c1_guess,
-                )
-
-            redchi_final = result_final.res_var
-
-        else:
-
-            which_fit_final = "cut"
-            result_final = result_cut_guess
-            redchi_final = result_cut_guess.res_var
+        if result_cut_guess is not None:
+            redchi_final = result_cut_guess[1]
+            which_fit_final = result_cut_guess[0]
+            result_final = result_cut_guess[2]
 
         if use_random:
 
@@ -1722,74 +1705,56 @@ def MAKE_THE_FIT(
                 cut_random = np.random.choice(cut_array, 1)[0]
                 c1_random = np.random.choice(c1_array, 1)[0]
 
-                result_cut_random = pl_fit.cut_pl_fit(
-                    x=spec_e,
-                    y=spec_flux,
-                    xerr=e_err,
-                    yerr=flux_err,
-                    gamma1=g1_random,
+                which_fit_random = check_redchi(
+                    spec_e,
+                    spec_flux,
+                    e_err,
+                    flux_err,
                     c1=c1_random,
+                    gamma1=g1_random,
                     E_cut=cut_random,
                     exponent=exponent_guess,
+                    fit="cut",
                     maxit=maxit,
+                    e_min=e_min,
+                    e_max=e_max,
                     )
 
-                cut = result_cut_random.beta[2]
+                if which_fit_random is None:
+                    continue
 
-                convergence_cut = _is_valid_fit(result_cut_random)
+                redchi_random = which_fit_random[1]
+                result_random = which_fit_random[2]
 
-                if cut < e_min or cut > e_max:
+                if (redchi_random < redchi_final):
+                    which_fit_final = which_fit_random[0]
+                    redchi_final = redchi_random
+                    result_final = result_random
 
-                    result_single_pl_random = (
-                        pl_fit.power_law_fit(
-                            x=spec_e,
-                            y=spec_flux,
-                            xerr=e_err,
-                            yerr=flux_err,
-                            gamma1=g1_random,
-                            c1=c1_random,
-                            ))
-
-                    redchi_random = (result_single_pl_random.res_var)
-
-                    convergence_single = _is_valid_fit(result_single_pl_random)
-
-                    if (redchi_random < redchi_final
-                        and convergence_single):
-
-                        which_fit_final = "single"
-                        redchi_final = redchi_random
-                        result_final = result_single_pl_random
-
-                elif (e_min <= cut <= e_max
-                    and convergence_cut):
-
-                    redchi_random = (result_cut_random.res_var)
-
-                    if redchi_random < redchi_final:
-
-                        which_fit_final = "cut"
-                        redchi_final = redchi_random
-                        result_final = result_cut_random
-
+                    
     # ========================================================================
     # 12. SINGLE
     # ========================================================================
 
     if which_fit == "single":
 
-        which_fit_final = "single"
-
-        result_final = pl_fit.power_law_fit(
-            x=spec_e,
-            y=spec_flux,
-            xerr=e_err,
-            yerr=flux_err,
-            gamma1=g1_guess,
+        result_single_guess = check_redchi(
+            spec_e,
+            spec_flux,
+            e_err,
+            flux_err,
             c1=c1_guess,
+            gamma1=g1_guess,
+            fit="single",
+            maxit=maxit,
+            e_min=e_min,
+            e_max=e_max,
             )
 
-        redchi_final = result_final.res_var
+        if result_single_guess is not None:
+            redchi_final = result_single_guess[1]
+            which_fit_final = result_single_guess[0]
+            result_final = result_single_guess[2]
 
         if use_random:
 
@@ -1798,26 +1763,31 @@ def MAKE_THE_FIT(
                 g1_random = np.random.choice(gamma1_array, 1)[0]
                 c1_random = np.random.choice(c1_array, 1)[0]
 
-                result_single_pl_random = (
-                    pl_fit.power_law_fit(
-                        x=spec_e,
-                        y=spec_flux,
-                        xerr=e_err,
-                        yerr=flux_err,
-                        gamma1=g1_random,
-                        c1=c1_random,
-                        ))
+                which_fit_random = check_redchi(
+                    spec_e,
+                    spec_flux,
+                    e_err,
+                    flux_err,
+                    c1=c1_random,
+                    gamma1=g1_random,
+                    fit="single",
+                    maxit=maxit,
+                    e_min=e_min,
+                    e_max=e_max,
+                )
 
-                redchi_random = (result_single_pl_random.res_var)
+                if which_fit_random is None:
+                    continue
 
-                convergence_single = _is_valid_fit(result_single_pl_random)
+                redchi_random = which_fit_random[1]
+                result_random = which_fit_random[2]
 
-                if (redchi_random < redchi_final
-                    and convergence_single):
+                if redchi_random < redchi_final:
 
                     redchi_final = redchi_random
-                    result_final = result_single_pl_random
-
+                    which_fit_final = which_fit_random[0]
+                    result_final = result_random
+                    
     # ========================================================================
     # 13. Check that something was actually fitted
     # ========================================================================
@@ -2456,3 +2426,8 @@ def MAKE_THE_FIT(
         result_dataframe.to_csv(path2, sep=";")
 
     return result
+
+
+
+
+
