@@ -36,7 +36,8 @@ def excluded_channels_from_fit(data_name_list, channel_list):
     return combined_csv
 
 
-def combine_data(data_name_list, path=None, sigma=3, rel_err=0.5, frac_nan_threshold=0.9, leave_out_1st_het_chan=False, fit_to='Peak', channels_to_exclude=None):
+def combine_data(data_name_list, path=None, sigma=3, rel_err=0.5, frac_nan_threshold=0.9, 
+                 leave_out_1st_het_chan=False, fit_to='Peak', channels_to_exclude=None):
     """
     Combine and filter multiple DataFrames according to significance,
     relative error, and NaN thresholds, with optional channel exclusions.
@@ -232,7 +233,8 @@ def extract_high_rel_err_rows(data_name_list, rel_err=0.5, leave_out_1st_het_cha
     return combined_csv
 
 
-def delete_bad_data(data, sigma=3, rel_err=0.5, frac_nan_threshold=0.9, leave_out_1st_het_chan=False, fit_to='Peak', channels_to_exclude=None):
+def delete_bad_data(data, sigma=3, rel_err=0.5, frac_nan_threshold=0.9, leave_out_1st_het_chan=False, 
+                    fit_to='Peak', channels_to_exclude=None):
     """
     Remove rows that do not meet quality criteria.
 
