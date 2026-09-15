@@ -248,6 +248,10 @@ def extract_particle_data(df_electrons_or_protons, df_energies, plotstart, plote
                 if 'Electron_Sectors_Bins_Text' in df_energies.keys():
                     energy_prefix = 'Electron_Sectors_'
 
+                elif 'Electron_Bins_Text' in df_energies.keys():
+                    # Post-October-2021 electron data.
+                    energy_prefix = 'Electron_'
+
                 else:
                     raise ValueError('Centre-pixel electron STEP energy information could not be found.')
 

@@ -703,8 +703,8 @@ def extract_particle_data(df_electrons_or_protons, df_energies, plotstart, plote
             if df_protons is None:
                 raise ValueError("df_protons must be provided when ion_conta_corr=True.")
 
-            df_proton_fluxes = (df_protons['Proton_Flux'][plotstart:plotend])
-            df_proton_uncertainties = (df_protons['Proton_Uncertainty'][plotstart:plotend])
+            df_proton_fluxes = (df_protons['Ion_Flux'][plotstart:plotend])
+            df_proton_uncertainties = (df_protons['Ion_Uncertainty'][plotstart:plotend])
 
     # Determine energy bins and standardise flux column names
     # ------------------------------------------------------
@@ -715,12 +715,12 @@ def extract_particle_data(df_electrons_or_protons, df_energies, plotstart, plote
 
             channels = range(len(df_energies['Electron_Bins_Low_Energy'])
                 if species == 'electron'
-                else len(df_energies['Proton_Bins_Low_Energy']))
+                else len(df_energies['Ion_Bins_Low_Energy']))
 
             if species == 'electron':
                 e_low = df_energies['Electron_Bins_Low_Energy']
             else:
-                e_low = df_energies['Proton_Bins_Low_Energy']
+                e_low = df_energies['Ion_Bins_Low_Energy']
 
             e_high = []
 
@@ -737,10 +737,10 @@ def extract_particle_data(df_electrons_or_protons, df_energies, plotstart, plote
                 else:
                     e_high.append(e_low[i] + df_energies['Ion_Bins_Width'][i])
 
-                    df_particle_fluxes = (df_particle_fluxes.rename(columns={f'H_Flux_{i}': f'Proton_Flux_{i}'}))
+                    df_particle_fluxes = (df_particle_fluxes.rename(columns={f'H_Flux_{i}': f'Ion_Flux_{i}'}))
 
                     df_particle_uncertainties = (df_particle_uncertainties.rename(columns={
-                        f'H_Flux_Sigma_{i}':f'Proton_Uncertainty_{i}'}))
+                        f'H_Flux_Sigma_{i}':f'Ion_Uncertainty_{i}'}))
 
         elif data_type == 'l2':
 
@@ -776,10 +776,10 @@ def extract_particle_data(df_electrons_or_protons, df_energies, plotstart, plote
 
                 if species == 'proton':
 
-                    df_particle_fluxes = (df_particle_fluxes.rename(columns={f'H_Flux_{i}':f'Proton_Flux_{i}'}))
+                    df_particle_fluxes = (df_particle_fluxes.rename(columns={f'H_Flux_{i}':f'Ion_Flux_{i}'}))
 
                     df_particle_uncertainties = (df_particle_uncertainties.rename(columns={
-                                f'H_Uncertainty_{i}':f'Proton_Uncertainty_{i}'}))
+                                f'H_Uncertainty_{i}':f'Ion_Uncertainty_{i}'}))
 
     # STEP
     # ------------------------------------------------------------------
@@ -792,6 +792,11 @@ def extract_particle_data(df_electrons_or_protons, df_energies, plotstart, plote
 
                 if 'Electron_Sectors_Bins_Text' in df_energies.keys():
                     energy_prefix = 'Electron_Sectors_'
+
+                elif 'Electron_Bins_Text' in df_energies.keys():
+                                    # Post-October-2021 electron data.
+                                    energy_prefix = 'Electron_'
+                
 
                 else:
                     raise ValueError('Centre-pixel electron STEP energy information could not be found.')
@@ -850,9 +855,9 @@ def extract_particle_data(df_electrons_or_protons, df_energies, plotstart, plote
 
                     e_high.append(e_low[i] + df_energies['Bins_Width'][i])
 
-                    df_particle_fluxes[f'Proton_Flux_{i}'] = (df_electrons_or_protons[f'Magnet_Avg_Flux_{i}'][plotstart:plotend])
+                    df_particle_fluxes[f'Ion_Flux_{i}'] = (df_electrons_or_protons[f'Magnet_Avg_Flux_{i}'][plotstart:plotend])
 
-                    df_particle_uncertainties[f'Proton_Uncertainty_{i}'] = (df_electrons_or_protons[f'Magnet_Avg_Uncertainty_{i}'][plotstart:plotend])
+                    df_particle_uncertainties[f'Ion_Uncertainty_{i}'] = (df_electrons_or_protons[f'Magnet_Avg_Uncertainty_{i}'][plotstart:plotend])
 
         # Remove negative fluxes
         df_particle_fluxes[df_particle_fluxes < 0] = np.nan
@@ -1269,7 +1274,7 @@ def plot_channels(args,species='electron', bg_subtraction=False, savefig=False, 
         raise ValueError("species must be 'electron' or 'proton'.")
 
     # Column name used by the plotting dataframe.
-    flux_column_prefix = ('Electron_Flux' if species == 'electron' else 'Proton_Flux')
+    flux_column_prefix = ('Electron_Flux' if species == 'electron' else 'Ion_Flux')
 
     # Extract information from args
     # --------------------------------
@@ -1617,7 +1622,7 @@ species='electron', centre_pix=False ):
     flux_prefix = (
         'Electron_Flux'
         if species == 'electron'
-        else 'Proton_Flux'
+        else 'Ion_Flux'
     )
 
     peak_sig = args[1]['Peak_significance']
@@ -1703,10 +1708,10 @@ species='electron', centre_pix=False ):
     plt.xticks([], fontsize=f_size)
     plt.yticks([], fontsize=f_size)
 
-    plt.ylabel("Intensity \n [1/(s cm$^2$ sr MeV)] \n \n", size=f_size)
-    plt.xlabel("\n \n Time", size=f_size)
+    #plt.ylabel("Intensity \n [1/(s cm$^2$ sr MeV)] \n \n", size=f_size)
+    #plt.xlabel("\n \n Time", size=f_size)
 
-    plt.title(title_string, size=f_size)
+    #plt.title(title_string, size=f_size)
 
     # Loop through selected energy channels.
     for n, channel in enumerate(channels, start=1):
@@ -1750,9 +1755,12 @@ species='electron', centre_pix=False ):
         # if there is no pitch-angle panel.
         if n == len(channels) and not plot_pa:
             ax.get_xaxis().set_visible(True)
-            plt.xlabel("")
+            ax.xlabel("")
             ax.xaxis.set_major_formatter(mdates.DateFormatter("%y-%m-%d\n%H:%M"))
             ax.tick_params(axis="x", labelrotation=45)
+
+    fig.supylabel("Intensity \n [1/(s cm$^2$ sr MeV)] \n \n", size=f_size)
+    fig.suptitle(title_string, size=f_size)
 
     # Optional pitch-angle panel.
     if plot_pa:
@@ -2259,7 +2267,7 @@ def write_to_csv(args, date, species, path='', key='', direction=None, centre_pi
     # Use sun as the default viewing direction.
     viewing = 'sun' if direction is None else direction
 
-    filename = (f'{species}_data-{date}-{instrument.upper()}{viewing}-{data_type.upper()}')
+    filename = (f'{species}_data-{date}-{instrument.upper()}-{viewing}-{data_type.upper()}')
 
     # Add averaging information.
     if df_info['Averaging'][0] == 'Mean':
