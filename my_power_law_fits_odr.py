@@ -5,7 +5,7 @@ import numpy as np
 from scipy.odr import *
 
 
-def check_odr_output(result):
+def check_odr_output(result, printing = False):
     """Check whether an ODR fit converged successfully.
 
     Parameters
@@ -25,10 +25,10 @@ def check_odr_output(result):
 
     converged = any(message in result.stopreason[0] for message in success_messages)
 
-    if not converged:
+    if not converged and printing:
         print(f"Fit failed or did not converge: {result.stopreason}")
         print("Re-running the fit...")
-    else:
+    elif converged and printing:
         print("Fit converged successfully.")
 
     return converged
