@@ -1,7 +1,7 @@
 # solo_functions.py
 import numpy as np
 import pandas as pd
-import my_power_law_fits_odr as pl_fit
+import odrpack_functions as pl_fit
 from scipy.stats import t as studentt
 import pickle
 
@@ -730,7 +730,7 @@ def _get_fit_errors(result):
     This preserves the original behavior:
         errors = student_t * result.sd_beta
     """
-    dof = result.y.size - len(result.beta)
+    dof = result.yest.size - len(result.beta)
 
     t_val = studentt.interval(0.95, dof)[1]
     return t_val * result.sd_beta
@@ -2321,17 +2321,13 @@ def MAKE_THE_FIT(
         # The plotted function is the actual ODR mathematical model.
         # ================================================================
 
-        fit_plot = pl_fit.triple_pl_func(
-            result_triple.beta,
-            xplot,
-            )
+        fit_plot = pl_fit.triple_pl_func(result_triple.beta, xplot,)
 
         fit_plot[fit_plot == 0] = np.nan
 
         if detailed_legend:
 
-            ax.plot([], [], " ",
-                label="Triple pl",
+            ax.plot([], [], " ", label="Triple pl",
                 )
 
             ax.plot([], [], " ",
