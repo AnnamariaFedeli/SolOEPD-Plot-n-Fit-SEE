@@ -653,10 +653,9 @@ def extract_particle_data(df_electrons_or_protons, df_energies, plotstart, plote
         energy ranges, and instrument information.
     """
 
-    # ------------------------------------------------------------------
+    
     # Normalise and validate species.
-    # ------------------------------------------------------------------
-
+    # --------------------------------
     species = species.lower()
 
     if species in ['electron', 'electrons', 'e']:
@@ -676,6 +675,64 @@ def extract_particle_data(df_electrons_or_protons, df_energies, plotstart, plote
     particle_mass = {'electron': 2, 'proton': 1}[species]
 
     
+    # Normalise proton column names for EPT and HET.
+    if species == 'proton':
+
+        if instrument.lower() == 'ept':
+
+            # EPT proton data use Ion_* column names.
+            new_columns = []
+
+            for column in df_electrons_or_protons.columns:
+
+                if column[0] == 'Ion_Flux':
+                    new_columns.append(('Proton_Flux',
+                                        column[1].replace('Ion_Flux_', 'Proton_Flux_')))
+
+                elif column[0] == 'Ion_Uncertainty':
+                    new_columns.append(('Proton_Uncertainty',
+                                        column[1].replace('Ion_Uncertainty_', 'Proton_Uncertainty_')))
+
+                else:
+                    new_columns.append(column)
+
+            df_electrons_or_protons.columns = pd.MultiIndex.from_tuples(new_columns)
+
+            # EPT energy information is provided as a dictionary.
+            df_energies = pd.DataFrame({
+                'Proton_Bins_Text': df_energies['Ion_Bins_Text'],
+                'Proton_Bins_Low_Energy': df_energies['Ion_Bins_Low_Energy'],
+                'Proton_Bins_Width': df_energies['Ion_Bins_Width']
+            })
+
+
+        elif instrument.lower() == 'het':
+
+            # HET proton data use H_* column names.
+            new_columns = []
+
+            for column in df_electrons_or_protons.columns:
+
+                if column[0] == 'H_Flux':
+                    new_columns.append(('Proton_Flux',
+                                        column[1].replace('H_Flux_', 'Proton_Flux_')))
+
+                elif column[0] == 'H_Uncertainty':
+                    new_columns.append(('Proton_Uncertainty',
+                                        column[1].replace('H_Uncertainty_', 'Proton_Uncertainty_')))
+
+                else:
+                    new_columns.append(column)
+
+            df_electrons_or_protons.columns = pd.MultiIndex.from_tuples(new_columns)
+
+            # HET energy information is provided as a dictionary.
+            df_energies = pd.DataFrame({
+                'Proton_Bins_Text': df_energies['H_Bins_Text'],
+                'Proton_Bins_Low_Energy': df_energies['H_Bins_Low_Energy'],
+                'Proton_Bins_Width': df_energies['H_Bins_Width']
+            })
+        
     # Background definition
     # -----------------------
 
@@ -685,9 +742,7 @@ def extract_particle_data(df_electrons_or_protons, df_energies, plotstart, plote
 
     if bgstart is None or bgend is None:
         if (bg_distance_from_window is None or bg_period is None):
-            raise Exception("Please specify either bg_start and bg_end or bg_distance_from_window and bg_period.")
-
-    # Extract particle fluxes and uncertainties
+            raise Exception("Please specify either bg_start and bg_end or bg_distance_from_window and bg_period.")    # Extract particle fluxes and uncertainties
     # -----------------------------------------
 
     instrument = instrument.lower()
@@ -706,80 +761,24 @@ def extract_particle_data(df_electrons_or_protons, df_energies, plotstart, plote
             df_proton_fluxes = (df_protons['Ion_Flux'][plotstart:plotend])
             df_proton_uncertainties = (df_protons['Ion_Uncertainty'][plotstart:plotend])
 
-    # Determine energy bins and standardise flux column names
+    # Determine energy bins and standardise electron flux column names
     # ------------------------------------------------------
 
     if instrument in ['ept', 'het']:
 
-        if data_type == 'll':
+        e_low = df_energies[f'{particle_name}_Bins_Low_Energy']
+        e_high = []
 
-            channels = range(len(df_energies['Electron_Bins_Low_Energy'])
-                if species == 'electron'
-                else len(df_energies['Ion_Bins_Low_Energy']))
+        channels = range(len(e_low))
 
-            if species == 'electron':
-                e_low = df_energies['Electron_Bins_Low_Energy']
-            else:
-                e_low = df_energies['Ion_Bins_Low_Energy']
+        for i in channels:
+            width = df_energies[f'{particle_name}_Bins_Width'][i]
+            e_high.append(e_low[i] + width)
 
-            e_high = []
+            if species == 'electron' and data_type == 'l1':
+                df_particle_fluxes = (df_particle_fluxes.rename(columns={f'Ele_Flux_{i}': f'{particle_name}_Flux_{i}'}))
+                df_particle_uncertainties = (df_particle_uncertainties.rename(columns={f'Ele_Flux_Sigma_{i}':f'{particle_name}n_Uncertainty_{i}'}))
 
-            for i in channels:
-
-                if species == 'electron':
-                    e_high.append(e_low[i] + df_energies['Electron_Bins_Width'][i])
-
-                    df_particle_fluxes = (df_particle_fluxes.rename(columns={f'Ele_Flux_{i}': f'Electron_Flux_{i}'}))
-
-                    df_particle_uncertainties = (df_particle_uncertainties.rename(columns={
-                        f'Ele_Flux_Sigma_{i}':f'Electron_Uncertainty_{i}'}))
-
-                else:
-                    e_high.append(e_low[i] + df_energies['Ion_Bins_Width'][i])
-
-                    df_particle_fluxes = (df_particle_fluxes.rename(columns={f'H_Flux_{i}': f'Ion_Flux_{i}'}))
-
-                    df_particle_uncertainties = (df_particle_uncertainties.rename(columns={
-                        f'H_Flux_Sigma_{i}':f'Ion_Uncertainty_{i}'}))
-
-        elif data_type == 'l2':
-
-            if species == 'electron':
-
-                e_low = df_energies['Electron_Bins_Low_Energy']
-
-            else:
-                if instrument == 'ept':
-                    e_low = df_energies['Ion_Bins_Low_Energy']
-                else:
-                    e_low = df_energies['H_Bins_Low_Energy']
-
-            e_high = []
-
-            channels = range(len(e_low))
-
-            for i in channels:
-
-                if instrument == 'ept':
-
-                    width = df_energies['Electron_Bins_Width'
-                        if species == 'electron'
-                        else 'Ion_Bins_Width' ][i]
-
-                else:
-
-                    width = df_energies['Electron_Bins_Width'
-                        if species == 'electron'
-                        else 'H_Bins_Width'][i]
-
-                e_high.append(e_low[i] + width)
-
-                if species == 'proton':
-
-                    df_particle_fluxes = (df_particle_fluxes.rename(columns={f'H_Flux_{i}':f'Ion_Flux_{i}'}))
-
-                    df_particle_uncertainties = (df_particle_uncertainties.rename(columns={
-                                f'H_Uncertainty_{i}':f'Ion_Uncertainty_{i}'}))
 
     # STEP
     # ------------------------------------------------------------------
@@ -855,9 +854,9 @@ def extract_particle_data(df_electrons_or_protons, df_energies, plotstart, plote
 
                     e_high.append(e_low[i] + df_energies['Bins_Width'][i])
 
-                    df_particle_fluxes[f'Ion_Flux_{i}'] = (df_electrons_or_protons[f'Magnet_Avg_Flux_{i}'][plotstart:plotend])
+                    df_particle_fluxes[f'Proton_Flux_{i}'] = (df_electrons_or_protons[f'Magnet_Avg_Flux_{i}'][plotstart:plotend])
 
-                    df_particle_uncertainties[f'Ion_Uncertainty_{i}'] = (df_electrons_or_protons[f'Magnet_Avg_Uncertainty_{i}'][plotstart:plotend])
+                    df_particle_uncertainties[f'Proton_Uncertainty_{i}'] = (df_electrons_or_protons[f'Magnet_Avg_Uncertainty_{i}'][plotstart:plotend])
 
         # Remove negative fluxes
         df_particle_fluxes[df_particle_fluxes < 0] = np.nan
@@ -1274,7 +1273,7 @@ def plot_channels(args,species='electron', bg_subtraction=False, savefig=False, 
         raise ValueError("species must be 'electron' or 'proton'.")
 
     # Column name used by the plotting dataframe.
-    flux_column_prefix = ('Electron_Flux' if species == 'electron' else 'Ion_Flux')
+    flux_column_prefix = ('Electron_Flux' if species == 'electron' else 'Proton_Flux')
 
     # Extract information from args
     # --------------------------------
@@ -1622,7 +1621,7 @@ species='electron', centre_pix=False ):
     flux_prefix = (
         'Electron_Flux'
         if species == 'electron'
-        else 'Ion_Flux'
+        else 'Proton_Flux'
     )
 
     peak_sig = args[1]['Peak_significance']
