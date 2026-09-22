@@ -1,8 +1,6 @@
 import numpy as np
 from scipy.odr import *
 
-import numpy as np
-from scipy.odr import *
 
 
 def check_odr_output(result, printing = False):

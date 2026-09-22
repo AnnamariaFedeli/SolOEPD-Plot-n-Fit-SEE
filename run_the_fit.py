@@ -13,6 +13,7 @@ from sunpy.coordinates import get_horizons_coord
 import make_the_fit_tripl as fitting
 import savecsv as save
 import combining_files as comb
+import run_associated_functions as runn
 import os
 from tabulate import tabulate
 import shutil
@@ -264,7 +265,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     if step and ept and shift_step_data:
 
         if auto_shift:
-            step_shift_factor = calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_threshold, fit_to)
+            step_shift_factor = runn.calculate_shift_factor(step_data, ept_data, sigma, rel_err, frac_nan_threshold, fit_to)
         else:
             step_shift_factor = shift_factor
 
