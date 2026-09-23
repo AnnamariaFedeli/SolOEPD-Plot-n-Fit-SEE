@@ -14,9 +14,7 @@ import make_the_fit_tripl as fitting
 import savecsv as save
 import combining_files as comb
 import os
-from tabulate import tabulate
 import shutil
-#import matplotlib.font_manager
 from IPython.core.display import HTML
 
 def make_html(fontname):
@@ -31,6 +29,7 @@ if __name__ == "__main__":
 
 
 def quality_factor_PA_coverage(data, coverage, direction = 'sun', angle = 180): 
+    # TO DO: need to add min and max into the calculation and pixels for STEP
     qf = [] 
 
     for j in range(0, len(data[1])): 
@@ -53,15 +52,18 @@ def quality_factor_PA_coverage(data, coverage, direction = 'sun', angle = 180):
             else: 
                 factors.append(0) 
 
-        qf.append(sum(factors)/len(factors)) 
-                #qf = sum(factors)/len(factors) 
-                #print(factors) 
+        if len(factors) > 0:
+            qf.append(sum(factors) / len(factors))
+        else:
+            qf.append(np.nan)
         
-    quality_factor = sum(qf)/len(qf) 
+    quality_factor = np.nanmean(qf) 
     return [qf, quality_factor]
 
 
-def compute_quality_factors(plot_pa, step, ept, het, pixels, data_step, data_step_pix, data_ept, data_het, coverage_ept, coverage_het, direction, angle):
+def compute_quality_factors(plot_pa, step, ept, het, data_step = None, data_ept = None, data_het = None, 
+                            coverage_step = None, coverage_ept = None, coverage_het = None, direction = 'sun', 
+                            angle = 0, data_step_pix = None, pixels = False):
     if not plot_pa:
         return None, None, None, None
 
@@ -78,10 +80,10 @@ def compute_quality_factors(plot_pa, step, ept, het, pixels, data_step, data_ste
 
     # --- STEP ---
     if step:
-        process("STEP", data_step, coverage_ept)
+        process("STEP", data_step, coverage_step) # using ept because need to implement step calculation
 
         if pixels:
-            qf_vals, qf_avg = quality_factor_PA_coverage(data_step_pix, coverage_ept, direction=direction, angle=angle)
+            qf_vals, qf_avg = quality_factor_PA_coverage(data_step_pix, coverage_step, direction=direction, angle=angle)
             results_pix["QF STEP average"] = qf_avg
             results_pix["QF STEP all channels"] = qf_vals
 

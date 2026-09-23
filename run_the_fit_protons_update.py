@@ -229,16 +229,13 @@ def FIT_DATA(path, date, averaging, fit_type, step=True, ept=True, het=True,
     # Saving the contaminated data so it can be plotted separately,
     # then deleting it from the data so it doesn't overlap.
     contaminated_data_sigma = comb.extract_low_sigma_rows(
-        data_list, sigma=sigma, fit_to=fit_to_comb,
-        channels_to_exclude=channels_to_exclude
+        data_list, sigma=sigma, fit_to=fit_to_comb
     )
     contaminated_data_nan = comb.extract_nan_heavy_rows(
-        data_list, frac_nan_threshold=frac_nan_threshold,
-        channels_to_exclude=channels_to_exclude
+        data_list, frac_nan_threshold=frac_nan_threshold
     )
     contaminated_data_rel_err = comb.extract_high_rel_err_rows(
-        data_list, rel_err=rel_err,
-        channels_to_exclude=channels_to_exclude
+        data_list, rel_err=rel_err
     )
 
     contaminated_data = pd.concat([
