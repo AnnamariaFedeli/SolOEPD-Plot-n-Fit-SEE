@@ -1,41 +1,21 @@
 import numpy as np
 from odrpack import odr_fit
 
-
 def check_odr_output(result, printing=False):
-    """Check whether an ODR fit converged successfully.
+    """Return True only for clean ODR convergence."""
 
-    Parameters
-    ----------
-    result : odrpack.OdrResult
-        ODR fit result containing the ``stopreason`` attribute.
-    printing : bool, default=False
-        If ``True``, print the convergence status.
+    # These are the ONLY acceptable ODRPACK return codes.
+    converged = result.info in (1, 2, 3)
 
-    Returns
-    -------
-    bool
-        ``True`` if the fit converged according to one of the recognised
-        ODR convergence messages, otherwise ``False``.
-    """
-    success_messages = [
-        "Sum of squares convergence",
-        "Parameter convergence",
-        "Sum of squares and parameter convergence",
-    ]
-
-    converged = any(
-        message in result.stopreason
-        for message in success_messages
-    )
-
-    if not converged and printing:
-        print(f"Fit failed or did not converge: {result.stopreason}")
-        print("Re-running the fit...")
-    elif converged and printing:
-        print("Fit converged successfully.")
+    if printing:
+        if converged:
+            print("Fit converged successfully.")
+        else:
+            print(f"Fit rejected: {result.stopreason}")
+            print(f"ODR info code: {result.info}")
 
     return converged
+
 
 def simple_pl(p, x):
     """Evaluate a simple power-law model.
@@ -196,6 +176,7 @@ def double_pl_fit(
     # Convert standard deviations to ODR weights.
     weight_x = 1 / np.asarray(xerr) ** 2
     weight_y = 1 / np.asarray(yerr) ** 2
+    
 
     beta0 = [c1, gamma1, gamma2, alpha, E_break]
 
