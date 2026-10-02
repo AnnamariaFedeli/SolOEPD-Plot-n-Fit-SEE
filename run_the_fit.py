@@ -36,7 +36,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     channels_to_exclude=None, sigma=3, rel_err=0.5,
     frac_nan_threshold=0.9, fit_to='peak', e_min=None,
     e_max=None, g1_guess=-1.9, g2_guess=-2.5, g3_guess=-4,
-    c1_guess=1000, alpha_guess=10, beta_guess=10, 
+    I0_guess=1000, E_0 = 0.1, alpha_guess=10, beta_guess=10, 
     break_guess_low=0.6, break_guess_high=1.2,
     cut_guess=1.2, exponent_guess=2, use_random=True,
     iterations=20, leave_out_1st_het_chan=True,
@@ -44,7 +44,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     shift_factor=None, save_fig=True,
     save_pickle=False, save_fit_variables=True,
     save_fitrun=True, legend_details=False, detailed_plot = False,        
-    ion_correction=True, bg_subtraction=True,
+    ion_correction=False, bg_subtraction=False,
     fit_to_separate_folder=False, centre_pix=False, quality_factor=None,
     fsize=12, legend_outside=False, no_legend=False,
     do_not_plot_bad_channels=False, title_of_plot=None,
@@ -102,8 +102,11 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     g1_guess, g2_guess, g3_guess : float
         Power-law slopes (ordered g1 > g2 > g3).
 
-    c1_guess : float
-        Flux normalization at 0.1 MeV.
+    I0_guess : float
+        Intensity normalization at 0.1 MeV.
+    
+    E_0 : float
+        The energy (in MeV) that corresponds to intensity at I_0. Defaults to E_0=0.1 (MeV).
 
     alpha_guess, beta_guess : float
         Smoothness parameters for breaks.
@@ -212,7 +215,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     het_file_name = (f"electron_data-{date_string}-HET-{direction}-L2-{averaging_str}_averaging.csv")
 
     # <------------------------------------------------------------------------------------->
-
+    
     make_fit = make_the_fit
 
     # Fit label formatting
@@ -260,7 +263,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     if het:
         het_data = pd.read_csv(f"{path}{het_file_name}", sep=separator)
 
-
+    
     # ------- SHIFT STEP DATA -------
     if step and ept and shift_step_data:
 
@@ -276,7 +279,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
         for col in columns_to_scale:
             if col in step_data.columns:  # safer
                 step_data[col] /= step_shift_factor
-
+    
     # ----- DATA ------
     # Build data list 
     for dataset in [step_data, ept_data, het_data]:
@@ -284,30 +287,40 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
             data_list.append(dataset)
 
     # Combine all data
-    data = comb.combine_data(data_list, all_file, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb,channels_to_exclude=channels_to_exclude)
+    data = comb.combine_data(data_list, all_file, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, 
+                             leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb,
+                             channels_to_exclude=channels_to_exclude, bg_subtraction=bg_subtraction)
     data = pd.read_csv(all_file, sep=separator)
-
+    
 
     # Telescope combinations
     if step and ept:
         step_ept_file = f"{base_name}-step_ept-l2-{averaging_str}_averaging.csv"
 
-        step_ept_data = comb.combine_data([step_data, ept_data], step_ept_file, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb,channels_to_exclude=channels_to_exclude)
+        step_ept_data = comb.combine_data([step_data, ept_data], step_ept_file, sigma=sigma, rel_err=rel_err, 
+                                          frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan, 
+                                          fit_to=fit_to_comb,channels_to_exclude=channels_to_exclude, bg_subtraction=bg_subtraction)
 
     if ept and het:
         ept_het_file = f"{base_name}-ept_het-{direction}-l2-{averaging_str}_averaging.csv"
 
-        ept_het_data = comb.combine_data([ept_data, het_data], ept_het_file, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb, channels_to_exclude=channels_to_exclude)
+        ept_het_data = comb.combine_data([ept_data, het_data], ept_het_file, sigma=sigma, rel_err=rel_err, 
+                                         frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan, 
+                                         fit_to=fit_to_comb, channels_to_exclude=channels_to_exclude, bg_subtraction=bg_subtraction)
 
-
+    
     # Contaminated data
-    contaminated_data_sigma = comb.extract_low_sigma_rows(data_list, sigma=sigma, leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb)
+    if bg_subtraction:
+        contaminated_data_sigma = comb.extract_low_sigma_rows(data_list, sigma=sigma, leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb)
+        contaminated_data_rel_err = comb.extract_high_rel_err_rows(data_list, rel_err=rel_err, leave_out_1st_het_chan=leave_out_1st_het_chan)
+        
+    else:
+        contaminated_data_sigma = None
+        contaminated_data_rel_err = None
 
     contaminated_data_nan = comb.extract_nan_heavy_rows(data_list, frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan)
 
-    contaminated_data_rel_err = comb.extract_high_rel_err_rows(data_list, rel_err=rel_err, leave_out_1st_het_chan=leave_out_1st_het_chan)
-
-
+    
     # ----- CHANNEL EXCLUSION ------
     step_channels_to_exclude = []
     ept_channels_to_exclude = []
@@ -332,20 +345,24 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
 
     else:
         contaminated_data = pd.concat([contaminated_data_sigma, contaminated_data_nan, contaminated_data_rel_err]).reset_index(drop=True)
-
-
+    
     # Clean data
     if step:
-        step_data = comb.delete_bad_data(step_data, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, fit_to=fit_to_comb, channels_to_exclude=step_channels_to_exclude)
+        step_data = comb.delete_bad_data(step_data, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, 
+                                         fit_to=fit_to_comb, channels_to_exclude=step_channels_to_exclude, bg_subtraction=bg_subtraction)
 
     if ept:
-        ept_data = comb.delete_bad_data(ept_data, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, fit_to=fit_to_comb, channels_to_exclude=ept_channels_to_exclude)
+        ept_data = comb.delete_bad_data(ept_data, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, 
+                                        fit_to=fit_to_comb, channels_to_exclude=ept_channels_to_exclude, bg_subtraction=bg_subtraction)
 
     if het:
         first_het_data = comb.extract_first_het_channel(het_data)
 
-        het_data = comb.delete_bad_data(het_data, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb, channels_to_exclude=het_channels_to_exclude)
-        
+        het_data = comb.delete_bad_data(het_data, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, 
+                                        leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb, 
+                                        channels_to_exclude=het_channels_to_exclude, bg_subtraction=bg_subtraction)
+    
+          
     # -------------------------------------------------------------------------------------------
     # -------------------------------------------------------------------------
     # LEGACY / FALLBACK BLOCK
@@ -371,7 +388,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
         
     #	save.save_info_fit(fitrun_path, date_string, averaging, direction, data_product, dist, step, ept, het,
     #	sigma, rel_err, frac_nan_threshold, leave_out_1st_het_chan, shift_factor, fit_type, fit_to,
-    #	which_fit, e_min, e_max, g1_guess, g2_guess, c1_guess, alpha_guess, break_guess_low, cut_guess,
+    #	which_fit, e_min, e_max, g1_guess, g2_guess, I0_guess, alpha_guess, break_guess_low, cut_guess,
     #	use_random, iterations)
 
     # <---------------------------------------------------------DATA--------------------------------------------------------->
@@ -379,14 +396,18 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     # ---- HELPERS -----
     def extract_energy(df):
         """Return energy and asymmetric errors."""
+        if df is None:
+            return None, None
         return (df['Primary_energy'], [df['Energy_error_low'], df['Energy_error_high']])
-
-
+    
+    
     def extract_flux(df, flux_col, err_col):
         """Return flux and uncertainty."""
+        if df is None:
+            return None, None
         return df[flux_col], df[err_col]
 
-
+    
     # ----- ENERGY DATA -----
     spec_energy, energy_err = extract_energy(data)
 
@@ -561,7 +582,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
             leave_out_1st_het_chan, step_shift_factor,
             fit_type, fit_to, which_fit,
             min_energy, max_energy,
-            g1_guess, g2_guess, c1_guess,
+            g1_guess, g2_guess, I0_guess, E_0,
             alpha_guess, break_guess_low, cut_guess,
             use_random, iterations,
             qf_step_av, qf_ept_av, qf_het_av,
@@ -588,8 +609,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
 
         if shift_step_data:
             ax.plot([], [], ' ', label="Shift factor (STEP) " + str(np.round(step_shift_factor, 2)))
-
-
+    
     # ------- FITTING -------
     if make_fit:
         fit_map = {
@@ -605,11 +625,11 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
 
         energy, flux, energy_err_local, flux_err_local, label = fit_map[fit_type]
         plot_title = f'Solar Orbiter {distance} {label}'
-
+        
         fitting.MAKE_THE_FIT(energy, flux,energy_err_local[1],flux_err_local,ax, direction=direction, e_min=e_min, e_max=e_max,
         which_fit='single' if fit_type == 'het' else which_fit, g1_guess=g1_guess, g2_guess=g2_guess, g3_guess=g3_guess,
         alpha_guess=alpha_guess, beta_guess=beta_guess, break_low_guess=break_guess_low, break_high_guess=break_guess_high,
-        cut_guess=cut_guess, c1_guess=c1_guess, exponent_guess=exponent_guess, use_random=use_random, iterations=iterations,
+        cut_guess=cut_guess, I0_guess=I0_guess, E_0 = E_0, exponent_guess=exponent_guess, use_random=use_random, iterations=iterations,
         path=pickle_path, path2=fit_var_path, detailed_legend=legend_details)
 
     # ------- PLOTTING DATA ------

@@ -18,16 +18,17 @@ import savecsv as save
 def FIT_DATA(path, date, averaging, fit_type, step=True, ept=True, het=True,
              direction='sun', which_fit='best', sigma=3, rel_err=0.5,
              frac_nan_threshold=0.9, fit_to='peak', e_min=None, e_max=None,
-             g1_guess=-1.9, g2_guess=-2.5, g3_guess=-4, c1_guess=1000,
+             g1_guess=-1.9, g2_guess=-2.5, g3_guess=-4, I0_guess=1000, E_0 = 0.1,
              alpha_guess=10, beta_guess=10, break_guess_low=0.6,
              break_guess_high=1.2, cut_guess=1.2, exponent_guess=2,
              use_random=True, iterations=20, shift_step_data=False,
              auto_shift=False, shift_factor=None, save_fig=True,
              save_pickle=False, save_fit_variables=True, save_fitrun=True,
-             legend_details=False, bg_subtraction=True,
+             legend_details=False, legend_outside=False, no_legend=False,
+             bg_subtraction=True,
              fit_to_separate_folder=False, centre_pix=False, fsize=12,
              channels_to_exclude=None, detailed_plot=False,
-             legend_outside=False, no_legend=False,
+            
              do_not_plot_bad_channels=False, title_of_plot=None,
              make_the_fit=True, quality_factor=None):
     """Fit Solar Orbiter proton data.
@@ -59,7 +60,8 @@ def FIT_DATA(path, date, averaging, fit_type, step=True, ept=True, het=True,
         g1_guess (float, optional): Initial guess for the first spectral slope.
         g2_guess (float, optional): Initial guess for the second spectral slope.
         g3_guess (float, optional): Initial guess for the third spectral slope.
-        c1_guess (float, optional): Initial flux value at 0.1 MeV.
+        I0_guess (float, optional): Initial intensity value at 0.1 MeV.
+        E_0 (float, optional): The energy (in MeV) that corresponds to intensity at I_0. Defaults to E_0=0.1 (MeV).
         alpha_guess (float, optional): Smoothness of the transition between
             gamma1 and gamma2.
         beta_guess (float, optional): Smoothness of the transition between
@@ -436,7 +438,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True, ept=True, het=True,
             fitrun_path, date_string, averaging, direction, data_product, dist,
             step, ept, het, sigma, rel_err, frac_nan_threshold,
             False, step_shift_factor, fit_type, fit_to, which_fit,
-            min_energy, max_energy, g1_guess, g2_guess, c1_guess,
+            min_energy, max_energy, g1_guess, g2_guess, I0_guess, E_0,
             alpha_guess, break_guess_low, cut_guess,
             use_random, iterations,
             qf_step_av, qf_ept_av, qf_het_av, centre_pix
@@ -514,7 +516,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True, ept=True, het=True,
             alpha_guess=alpha_guess, beta_guess=beta_guess,
             break_low_guess=break_guess_low,
             break_high_guess=break_guess_high,
-            cut_guess=cut_guess, c1_guess=c1_guess,
+            cut_guess=cut_guess, I0_guess=I0_guess, E_0= E_0,
             exponent_guess=exponent_guess, use_random=use_random,
             iterations=iterations, path=pickle_path, path2=fit_var_path,
             detailed_legend=legend_details

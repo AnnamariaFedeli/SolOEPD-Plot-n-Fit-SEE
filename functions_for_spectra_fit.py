@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as pltt
 from decimal import Decimal
+
 def exclude_channels(data, channels_to_exclude):
 	"""This function excludes chosen channels from a dataframe and outputs two dataframes: one with the channels that should not be excluded from the fit and one with the excluded channles.
 	One will be the input to mske the fit, the other one is just for plotting the excluded channels in gray.
@@ -97,8 +98,9 @@ def plot_spectrum(data, energy_unit="MeV", intensity_unit=r"1/(cm^2 sr s MeV)"):
 	# The spectra tool returns not anymore a single error column for energy, but two columns: E_err_minus and E_err_plus.
 	# Until this if fully implemented here, we calculate the old E_err here as it has been done before in the spectra tool.
 	# This is not ideal, but provides a working code for now.
-	if 'E_err_minus' in data and 'E_err_plus' in data:
-		data['E_err'] = (data['E_err_plus'] + data['E_err_minus'])/2.
+	#if 'E_err_minus' in data and 'E_err_plus' in data:
+#		data['E_err'] = (data['E_err_plus'] + data['E_err_minus'])/2.
+		
 
 	if 'E_err' in data:
 		x_err = data['E_err']
@@ -108,7 +110,9 @@ def plot_spectrum(data, energy_unit="MeV", intensity_unit=r"1/(cm^2 sr s MeV)"):
 		y_err = data['I_err'] 
 		if y_err.isnull().all():
 			y_err = None
-
+	if 'E_err_minus' in data and 'E_err_plus' in data:
+			x_err = [data['E_err_minus'],data['E_err_plus']]
+		
 	f, ax = plt.subplots(1, figsize=(5, 4), dpi=300)
 
 	ax.errorbar(x_data, y_data, xerr=x_err, yerr=y_err, marker='o', markersize=3 , linestyle='', color='red', alpha=0.5, label='data points', zorder=-1)

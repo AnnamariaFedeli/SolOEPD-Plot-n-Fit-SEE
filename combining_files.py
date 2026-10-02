@@ -37,7 +37,8 @@ def excluded_channels_from_fit(data_name_list, channel_list):
 
 
 def combine_data(data_name_list, path=None, sigma=3, rel_err=0.5, frac_nan_threshold=0.9, 
-                 leave_out_1st_het_chan=False, fit_to='Peak', channels_to_exclude=None):
+                 leave_out_1st_het_chan=False, fit_to='Peak', 
+                 channels_to_exclude=None, bg_subtraction = False):
     """
     Combine and filter multiple DataFrames according to significance,
     relative error, and NaN thresholds, with optional channel exclusions.
@@ -89,15 +90,16 @@ def combine_data(data_name_list, path=None, sigma=3, rel_err=0.5, frac_nan_thres
         combined_csv = combined_csv.drop(columns='Energy_channel', errors='ignore')
 
     # Apply significance filter
-    rows_to_delete = combined_csv.index[combined_csv[fit_to + '_significance'] < sigma].tolist()
-    combined_csv = combined_csv.drop(rows_to_delete, axis=0)
-    combined_csv.reset_index(drop=True, inplace=True)
-
-    # Apply relative error filter
-    if rel_err is not None:
-        rows_to_delete = combined_csv.index[combined_csv['rel_backsub_peak_err'] > rel_err].tolist()
+    if bg_subtraction:
+        rows_to_delete = combined_csv.index[combined_csv[fit_to + '_significance'] < sigma].tolist()
         combined_csv = combined_csv.drop(rows_to_delete, axis=0)
         combined_csv.reset_index(drop=True, inplace=True)
+
+        # Apply relative error filter
+        if rel_err is not None:
+            rows_to_delete = combined_csv.index[combined_csv['rel_backsub_peak_err'] > rel_err].tolist()
+            combined_csv = combined_csv.drop(rows_to_delete, axis=0)
+            combined_csv.reset_index(drop=True, inplace=True)
 
     # Apply NaN fraction filter
     rows_to_delete = combined_csv.index[combined_csv['frac_nonan'] < frac_nan_threshold].tolist()
@@ -234,7 +236,7 @@ def extract_high_rel_err_rows(data_name_list, rel_err=0.5, leave_out_1st_het_cha
 
 
 def delete_bad_data(data, sigma=3, rel_err=0.5, frac_nan_threshold=0.9, leave_out_1st_het_chan=False, 
-                    fit_to='Peak', channels_to_exclude=None):
+                    fit_to='Peak', channels_to_exclude=None, bg_subtraction = False):
     """
     Remove rows that do not meet quality criteria.
 
@@ -246,6 +248,8 @@ def delete_bad_data(data, sigma=3, rel_err=0.5, frac_nan_threshold=0.9, leave_ou
         leave_out_1st_het_chan (bool, optional): Whether to exclude low-energy channels.
         fit_to (str, optional): Prefix for significance column.
         channels_to_exclude (list, optional): Row indices to drop before filtering.
+        bg_subtraction (bool, optional): If the bg subtraction is False, the significance
+        over the bg (sigma and rel error) should not be taken into account
 
     Returns:
         pd.DataFrame: Cleaned dataset with only "good" rows.
@@ -261,14 +265,15 @@ def delete_bad_data(data, sigma=3, rel_err=0.5, frac_nan_threshold=0.9, leave_ou
     data.reset_index(drop=True, inplace=True)
 
     # Remove low significance rows
-    rows_to_delete = data.index[data[f'{fit_to}_significance'] < sigma].tolist()
-    data = data.drop(rows_to_delete, axis=0)
-    data.reset_index(drop=True, inplace=True)
-
-    # Remove high relative error rows
-    rows_to_delete = data.index[data['rel_backsub_peak_err'] > rel_err].tolist()
-    data = data.drop(rows_to_delete, axis=0)
-    data.reset_index(drop=True, inplace=True)
+    if bg_subtraction:
+        rows_to_delete = data.index[data[f'{fit_to}_significance'] < sigma].tolist()
+        data = data.drop(rows_to_delete, axis=0)
+        data.reset_index(drop=True, inplace=True)
+        if rel_err is not None:
+            # Remove high relative error rows
+            rows_to_delete = data.index[data['rel_backsub_peak_err'] > rel_err].tolist()
+            data = data.drop(rows_to_delete, axis=0)
+            data.reset_index(drop=True, inplace=True)
 
     # Remove rows with too many NaNs
     rows_to_delete = data.index[data['frac_nonan'] < frac_nan_threshold].tolist()

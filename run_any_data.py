@@ -22,7 +22,8 @@ def run_all(
     g1_guess=-1.9,
     g2_guess=-2.5,
     g3_guess=-4,
-    c1_guess=1000,
+    I0_guess=1000,
+    E_0 = 0.1,
     alpha_guess=10,
     beta_guess=10,
     break_guess_low=0.6,
@@ -79,8 +80,11 @@ def run_all(
     g1_guess, g2_guess, g3_guess : float
         Initial power-law slope guesses.
 
-    c1_guess : float
-        Initial normalization guess.
+    I0_guess : float
+        The intensity/flux value at E_0. Defaults to 1000. 
+    
+    E_0 : float
+        The energy (in MeV) that corresponds to intensity at I_0. Defaults to E_0=0.1 (MeV).
 
     alpha_guess, beta_guess : float
         Initial smoothness parameter guesses.
@@ -226,7 +230,8 @@ def run_all(
         break_low_guess=break_guess_low,
         break_high_guess=break_guess_high,
         cut_guess=cut_guess,
-        c1_guess=c1_guess,
+        I0_guess=I0_guess,
+        E_0= E_0,
         exponent_guess=exponent_guess,
         use_random=use_random,
         iterations=iterations,

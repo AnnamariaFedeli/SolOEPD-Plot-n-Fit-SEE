@@ -33,7 +33,7 @@ def quality_factor_PA_coverage(data, coverage, direction = 'sun', angle = 180):
     qf = [] 
 
     for j in range(0, len(data[1])): 
-        df = coverage[direction] 
+        df = coverage.loc[:, direction] 
         df = df.reset_index() 
         df = df.drop(np.where(df['EPOCH'] < data[2][0][j])[0]) 
         df.reset_index(drop = True, inplace = True) 

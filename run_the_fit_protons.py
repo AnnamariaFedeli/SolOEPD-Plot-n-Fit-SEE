@@ -19,7 +19,17 @@ import shutil
 # <--------------------------------------------------------------- ALL NECESSARY INPUTS HERE ----------------------------------------------------------------->
 
 	
-def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, direction='sun', which_fit = 'best', sigma = 3, rel_err = 0.5, frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, auto_shift = False,  shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, bg_subtraction = True, fit_to_separate_folder = False, centre_pix = False, fsize = 12):
+def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = True, 
+             direction='sun', which_fit = 'best', sigma = 3, rel_err = 0.5, 
+			 frac_nan_threshold = 0.9, fit_to = 'peak', e_min = None, e_max = None, 
+			 g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, 
+			 alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, 
+			 break_guess_high = 1.2, cut_guess = 1.2, exponent_guess = 2, 
+			 use_random = True, iterations = 20, leave_out_1st_het_chan = True, 
+			 shift_step_data = False, auto_shift = False,  shift_factor = None, 
+			 save_fig = True, save_pickle = False, save_fit_variables = True, 
+			 save_fitrun = True, legend_details = False, bg_subtraction = True, 
+			 fit_to_separate_folder = False, centre_pix = False, fsize = 12):
 
 	     # slope (float, optional): The type of slope used to find the peak (for the title). Defaults to None.
 		 # #slope = None, e_min = None, e_max = None, g1_guess = -1.9, g2_guess = -2.5, g3_guess = -4, c1_guess = 1000, alpha_guess = 10, beta_guess = 10, break_guess_low = 0.6, break_guess_high = 1.2, cut_guess = 1.2, use_random = True, iterations = 20, leave_out_1st_het_chan = True, shift_step_data = False, shift_factor = None, save_fig = True, save_pickle = False, save_fit_variables = True, save_fitrun = True, legend_details = False, ion_correction = True, bg_subtraction = True):

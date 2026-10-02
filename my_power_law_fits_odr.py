@@ -31,14 +31,14 @@ def check_odr_output(result, printing = False):
 
     return converged
 
-def simple_pl(p, x):
+def simple_pl(p, x, E_0):
     """Evaluate a simple power-law model.
 
     Parameters
     ----------
     p : sequence of float
-        Model parameters ``(c1, gamma1)``, where ``c1`` is the
-        normalization at ``x = 0.1`` and ``gamma1`` is the power-law
+        Model parameters ``(I_0, gamma1)``, where ``I_0`` is the
+        normalization at ``x = E_0`` and ``gamma1`` is the power-law
         index.
     x : float or array-like
         Independent variable.
@@ -46,13 +46,13 @@ def simple_pl(p, x):
     Returns
     -------
     float or array-like
-        Model value calculated as ``c1 * (x / 0.1) ** gamma1``.
+        Model value calculated as ``I_0 * (x / E_0) ** gamma1``.
     """
-    c1, gamma1 = p
-    return c1 * (x / 0.1) ** gamma1
+    I_0, gamma1 = p
+    return I_0 * (x / E_0) ** gamma1
 
 
-def power_law_fit(x, y, xerr, yerr, gamma1=-1.8, c1=None, print_report=False):
+def power_law_fit(x, y, xerr, yerr, gamma1=-1.8, I_0=None, E_0 = 0.1, print_report=False):
     """Fit a power-law model to data using scipy.odr.
 
     Parameters
@@ -63,7 +63,7 @@ def power_law_fit(x, y, xerr, yerr, gamma1=-1.8, c1=None, print_report=False):
         Uncertainties in ``x`` and ``y``, respectively.
     gamma1 : float, default=-1.8
         Initial guess for the power-law index.
-    c1 : float or None, default=None
+    I_0 : float or None, default=None
         Initial guess for the normalization. If ``None``, the last
         value of ``y`` is used.
     print_report : bool, default=False
@@ -74,13 +74,13 @@ def power_law_fit(x, y, xerr, yerr, gamma1=-1.8, c1=None, print_report=False):
     scipy.odr.Output
         The result returned by the ODR fit.
     """
-    c1 = y[-1] if c1 is None else c1
+    I_0 = y[-1] if I_0 is None else I_0
 
     plmodel = Model(simple_pl)
     data = RealData(x, y, sx=xerr, sy=yerr)
 
     # Set up ODR with the initial parameter guesses.
-    odr = ODR(data, plmodel, beta0=[c1, gamma1])
+    odr = ODR(data, plmodel, beta0=[I_0, gamma1])
 
     # Run the regression.
     result = odr.run()
@@ -96,7 +96,7 @@ def power_law_fit(x, y, xerr, yerr, gamma1=-1.8, c1=None, print_report=False):
     return result
 
 
-def double_pl_func(p, x):
+def double_pl_func(p, x, E_0):
     """Evaluate a smoothly broken double power-law model.
 
     This is based on function 25 from Prinsloo (2019), without the
@@ -105,7 +105,7 @@ def double_pl_func(p, x):
     Parameters
     ----------
     p : sequence of float
-        Model parameters ``(c1, gamma1, gamma2, alpha, E_break)``.
+        Model parameters ``(I_0, gamma1, gamma2, alpha, E_break)``.
     x : float or array-like
         Independent variable.
 
@@ -114,15 +114,15 @@ def double_pl_func(p, x):
     float or array-like
         Model value.
     """
-    c1, gamma1, gamma2, alpha, E_break = p
+    I_0, gamma1, gamma2, alpha, E_break = p
 
-    y = (c1 * (x / 0.1) ** gamma1 
+    y = (I_0 * (x / E_0) ** gamma1 
          * ((x**alpha + E_break**alpha)
-         / (0.1**alpha + E_break**alpha)) ** ((gamma2 - gamma1) / alpha))
+         / (E_0**alpha + E_break**alpha)) ** ((gamma2 - gamma1) / alpha))
 
     return y
 
-def double_pl_fit(x, y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None, E_break=0.1,  print_report=False, maxit=200,):
+def double_pl_fit(x, y, xerr, yerr, gamma1=-1.8, gamma2=-2, I_0=None, E_0 = 0.1, alpha=None, E_break=0.1,  print_report=False, maxit=200,):
     """Fit a smoothly broken double power-law model using scipy.odr.
 
     Parameters
@@ -135,13 +135,13 @@ def double_pl_fit(x, y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None,
         Initial guess for the first power-law index.
     gamma2 : float, default=-2
         Initial guess for the second power-law index.
-    c1 : float or None, default=None
+    I_0 : float or None, default=None
         Initial guess for the normalization. If ``None``, the fourth
         value of ``y`` is used.
     alpha : float or None, default=None
         Initial guess for the smoothness parameter. If ``None``,
-        ``0.1`` is used.
-    E_break : float, default=0.1
+        ``E_0`` is used.
+    E_break : float, default=E_0
         Initial guess for the break energy.
     print_report : bool, default=False
         If ``True``, print the ODR fit report.
@@ -153,7 +153,7 @@ def double_pl_fit(x, y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None,
     scipy.odr.Output
         The result returned by the ODR fit.
     """
-    c1 = y[3] if c1 is None else c1
+    I_0 = y[3] if I_0 is None else I_0
     alpha = 0.1 if alpha is None else alpha
 
     plmodel = Model(double_pl_func)
@@ -163,7 +163,7 @@ def double_pl_fit(x, y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None,
 
     # Set up ODR with the initial parameter guesses.
     odr = ODR( data, plmodel, 
-              beta0=[c1, gamma1, gamma2, alpha, E_break], 
+              beta0=[I_0, gamma1, gamma2, alpha, E_break], 
               ifixb=[1, 1, 1, 1, 1], maxit=maxit,)
 
     # Run the regression
@@ -179,14 +179,14 @@ def double_pl_fit(x, y, xerr, yerr, gamma1=-1.8, gamma2=-2, c1=None, alpha=None,
 
     return result
 
-def triple_pl_func(p, x):
+def triple_pl_func(p, x, E_0):
     """Evaluate a triple power-law model.
 
     Parameters
     ----------
     p : sequence of float
         Model parameters
-        ``(c1, gamma1, gamma2, gamma3, alpha, beta,
+        ``(I_0, gamma1, gamma2, gamma3, alpha, beta,
         E_break_low, E_break_high)``.
     x : float or array-like
         Independent variable.
@@ -196,18 +196,18 @@ def triple_pl_func(p, x):
     float or array-like
         Model value.
     """
-    c1, gamma1, gamma2, gamma3, alpha, beta, E_break_low, E_break_high = p
+    I_0, gamma1, gamma2, gamma3, alpha, beta, E_break_low, E_break_high = p
 
-    y = (c1
-        * (x / 0.1) ** gamma1
+    y = (I_0
+        * (x / E_0) ** gamma1
         * ((x**alpha + E_break_low**alpha)
-            / (0.1**alpha + E_break_low**alpha)) ** ((gamma2 - gamma1) / alpha)
+            / (E_0**alpha + E_break_low**alpha)) ** ((gamma2 - gamma1) / alpha)
         * ((x**beta + E_break_high**beta)
-            / (0.1**beta + E_break_high**beta)) ** ((gamma3 - gamma2) / beta))
+            / (E_0**beta + E_break_high**beta)) ** ((gamma3 - gamma2) / beta))
     
     return y
 
-def triple_pl_fit(x, y, xerr, yerr, gamma1=-1.8, gamma2=-2, gamma3=-3, c1=None,
+def triple_pl_fit(x, y, xerr, yerr, gamma1=-1.8, gamma2=-2, gamma3=-3, I_0=None, E_0 = 0.1,
  alpha=None, beta=None, E_break_low=0.06, E_break_high=0.12, print_report=False, maxit=200,):
     """Fit a smoothly broken triple power-law model using scipy.odr.
 
@@ -223,18 +223,18 @@ def triple_pl_fit(x, y, xerr, yerr, gamma1=-1.8, gamma2=-2, gamma3=-3, c1=None,
         Initial guess for the second power-law index.
     gamma3 : float, default=-3
         Initial guess for the third power-law index.
-    c1 : float or None, default=None
+    I_0 : float or None, default=None
         Initial guess for the normalization. If ``None``, the fourth
         value of ``y`` is used.
     alpha : float or None, default=None
         Initial guess for the first smoothness parameter. If ``None``,
-        ``0.1`` is used.
+        ``E_0`` is used.
     beta : float or None, default=None
         Initial guess for the second smoothness parameter. If ``None``,
-        ``0.1`` is used.
+        ``E_0`` is used.
     E_break_low : float, default=0.06
         Initial guess for the lower break energy.
-    E_break_high : float, default=0.12
+    E_break_high : float, default=E_02
         Initial guess for the upper break energy.
     print_report : bool, default=False
         If ``True``, print the ODR fit report.
@@ -246,7 +246,7 @@ def triple_pl_fit(x, y, xerr, yerr, gamma1=-1.8, gamma2=-2, gamma3=-3, c1=None,
     scipy.odr.Output
         The result returned by the ODR fit.
     """
-    c1 = y[3] if c1 is None else c1
+    I_0 = y[3] if I_0 is None else I_0
     alpha = 0.1 if alpha is None else alpha
     beta = 0.1 if beta is None else beta
 
@@ -257,7 +257,7 @@ def triple_pl_fit(x, y, xerr, yerr, gamma1=-1.8, gamma2=-2, gamma3=-3, c1=None,
 
     # Set up ODR with the initial parameter guesses.
     odr = ODR(data, plmodel, 
-              beta0=[c1, gamma1, gamma2, gamma3, alpha, beta, 
+              beta0=[I_0, gamma1, gamma2, gamma3, alpha, beta, 
                      E_break_low, E_break_high,], 
                      ifixb=[1, 1, 1, 1, 1, 1, 1, 1], 
                      maxit=maxit,)
@@ -275,13 +275,13 @@ def triple_pl_fit(x, y, xerr, yerr, gamma1=-1.8, gamma2=-2, gamma3=-3, c1=None,
 
     return result
 
-def cut_pl_func(p, x):
+def cut_pl_func(p, x, E_0):
     """Evaluate a power law with an exponential cut-off.
 
     Parameters
     ----------
     p : sequence of float
-        Model parameters ``(c1, gamma1, E_cut, exponent)``.
+        Model parameters ``(I_0, gamma1, E_cut, exponent)``.
     x : float or array-like
         Independent variable.
 
@@ -290,13 +290,13 @@ def cut_pl_func(p, x):
     float or array-like
         Model value.
     """
-    c1, gamma1, E_cut, exponent = p
+    I_0, gamma1, E_cut, exponent = p
 
-    y = c1 * (x / 0.1) ** gamma1 * np.exp(-(x / E_cut) ** exponent)
+    y = I_0 * (x / E_0) ** gamma1 * np.exp(-(x / E_cut) ** exponent)
 
     return y
 	
-def cut_pl_fit(x, y, xerr, yerr, gamma1=-1.8, c1=None,
+def cut_pl_fit(x, y, xerr, yerr, gamma1=-1.8, I_0=None, E_0 = 0.1,
 E_cut=0.35, exponent=2, print_report=False, maxit=200,):
     """Fit a power law with an exponential cut-off using scipy.odr.
 
@@ -308,7 +308,7 @@ E_cut=0.35, exponent=2, print_report=False, maxit=200,):
         Uncertainties in ``x`` and ``y``, respectively.
     gamma1 : float, default=-1.8
         Initial guess for the power-law index.
-    c1 : float or None, default=None
+    I_0 : float or None, default=None
         Initial guess for the normalization. If ``None``, the fifth
         value of ``y`` is used.
     E_cut : float, default=0.35
@@ -325,7 +325,7 @@ E_cut=0.35, exponent=2, print_report=False, maxit=200,):
     scipy.odr.Output
         The result returned by the ODR fit.
     """
-    c1 = y[4] if c1 is None else c1
+    I_0 = y[4] if I_0 is None else I_0
 
     plmodel = Model(cut_pl_func)
 
@@ -334,7 +334,7 @@ E_cut=0.35, exponent=2, print_report=False, maxit=200,):
 
     # Set up ODR with the initial parameter guesses.
     odr = ODR( data, plmodel, 
-              beta0=[c1, gamma1, E_cut, exponent], 
+              beta0=[I_0, gamma1, E_cut, exponent], 
               ifixb=[1, 1, 1, 1], 
               maxit=maxit,)
 
@@ -352,14 +352,14 @@ E_cut=0.35, exponent=2, print_report=False, maxit=200,):
     return result
 
 
-def cut_break_pl_func(p, x):
+def cut_break_pl_func(p, x, E_0):
     """Evaluate a smoothly broken power law with an exponential cut-off.
 
     Parameters
     ----------
     p : sequence of float
         Model parameters
-        ``(c1, gamma1, gamma2, alpha, E_break, E_cut, exponent)``.
+        ``(I_0, gamma1, gamma2, alpha, E_break, E_cut, exponent)``.
     x : float or array-like
         Independent variable.
 
@@ -368,18 +368,18 @@ def cut_break_pl_func(p, x):
     float or array-like
         Model value.
     """
-    c1, gamma1, gamma2, alpha, E_break, E_cut, exponent = p
+    I_0, gamma1, gamma2, alpha, E_break, E_cut, exponent = p
 
-    y = (c1
-        * (x / 0.1) ** gamma1
+    y = (I_0
+        * (x / E_0) ** gamma1
         * ((x**alpha + E_break**alpha)
-            / (0.1**alpha + E_break**alpha)) ** ((gamma2 - gamma1) / alpha)
+            / (E_0**alpha + E_break**alpha)) ** ((gamma2 - gamma1) / alpha)
         * np.exp(-(x / E_cut) ** exponent))
 
     return y
 
 def cut_break_pl_fit(x, y, xerr, yerr, gamma1=-1.8, gamma2=-2,
-c1=None, alpha=None, E_break=0.1, E_cut=0.35, exponent=2,
+I_0=None, E_0 = 0.1, alpha=None, E_break=0.1, E_cut=0.35, exponent=2,
 print_report=False, maxit=200,):
     """Fit a smoothly broken power law with an exponential cut-off using scipy.odr.
 
@@ -393,13 +393,13 @@ print_report=False, maxit=200,):
         Initial guess for the first power-law index.
     gamma2 : float, default=-2
         Initial guess for the second power-law index.
-    c1 : float or None, default=None
+    I_0 : float or None, default=None
         Initial guess for the normalization. If ``None``, the fifth
         value of ``y`` is used.
     alpha : float or None, default=None
         Initial guess for the smoothness parameter. If ``None``,
-        ``0.1`` is used.
-    E_break : float, default=0.1
+        ``E_0`` is used.
+    E_break : float, default=E_0
         Initial guess for the break energy.
     E_cut : float, default=0.35
         Initial guess for the cut-off energy.
@@ -415,7 +415,7 @@ print_report=False, maxit=200,):
     scipy.odr.Output
         The result returned by the ODR fit.
     """
-    c1 = y[4] if c1 is None else c1
+    I_0 = y[4] if I_0 is None else I_0
     alpha = 0.1 if alpha is None else alpha
 
     plmodel = Model(cut_break_pl_func)
@@ -425,7 +425,7 @@ print_report=False, maxit=200,):
 
     # Set up ODR with the initial parameter guesses.
     odr = ODR(data, plmodel,
-        beta0=[c1, gamma1, gamma2, alpha,
+        beta0=[I_0, gamma1, gamma2, alpha,
             E_break, E_cut, exponent,],
         ifixb=[1, 1, 1, 1, 1, 1, 1],
         maxit=maxit,)
@@ -449,7 +449,7 @@ def line(p, x):
     Parameters
     ----------
     p : sequence of float
-        Model parameters ``(c1, gamma1)``, where ``c1`` is the
+        Model parameters ``(I_0, gamma1)``, where ``I_0`` is the
         intercept and ``gamma1`` is the slope.
     x : float or array-like
         Independent variable.
@@ -459,15 +459,15 @@ def line(p, x):
     float or array-like
         Model value.
     """
-    c1, gamma1 = p
-    return c1 + x * gamma1
+    I_0, gamma1 = p
+    return I_0 + x * gamma1
 
-def line_intersect(g1, c1, g2, c2):
+def line_intersect(g1, I_0, g2, c2):
     """Find the intersection point of two lines.
 
     Parameters
     ----------
-    g1, c1 : float
+    g1, I_0 : float
         Slope and intercept of the first line.
     g2, c2 : float
         Slope and intercept of the second line.
@@ -482,8 +482,8 @@ def line_intersect(g1, c1, g2, c2):
         print("These lines are parallel!!!")
         return None
 
-    x = (c2 - c1) / (g1 - g2)
-    y = g1 * x + c1
+    x = (c2 - I_0) / (g1 - g2)
+    y = g1 * x + I_0
 
     return x, y
 
@@ -494,7 +494,7 @@ def double_line(p, x):
     Parameters
     ----------
     p : sequence of float
-        Model parameters ``(c1, c2, gamma1, gamma2, E_break)``.
+        Model parameters ``(I_0, c2, gamma1, gamma2, E_break)``.
     x : array-like
         Independent variable.
 
@@ -504,14 +504,14 @@ def double_line(p, x):
         Model values. For ``x < E_break``, the first linear model is
         used; for ``x >= E_break``, the second linear model is used.
     """
-    c1, c2, gamma1, gamma2, E_break = p
+    I_0, c2, gamma1, gamma2, E_break = p
 
     Xmaskd = x < E_break
     Xmasku = x >= E_break
 
     y = np.zeros(x.shape)
 
-    y[Xmaskd] = c1 + gamma1 * x[Xmaskd]
+    y[Xmaskd] = I_0 + gamma1 * x[Xmaskd]
     y[Xmasku] = c2 + gamma2 * x[Xmasku]
 
     return y

@@ -107,7 +107,8 @@ def save_info_fit(
     e_max,
     g1_guess,
     g2_guess,
-    c1_guess,
+    I0_guess,
+    E_0,
     alpha_guess,
     break_guess,
     cut_guess,
@@ -142,7 +143,7 @@ def save_info_fit(
         e_max: Maximum energy used for the fit.
         g1_guess: Initial guess for gamma 1.
         g2_guess: Initial guess for gamma 2.
-        c1_guess: Initial guess for c1.
+        I0_guess: Initial guess for I_0.
         alpha_guess: Initial guess for alpha.
         break_guess: Initial guess for the break energy, in MeV.
         cut_guess: Initial guess for the cutoff point, in MeV.
@@ -177,7 +178,8 @@ def save_info_fit(
             "Max energy": e_max,
             "Gamma1 guess": g1_guess,
             "Gamma2 guess": g2_guess,
-            "c1 guess": c1_guess,
+            "I_0 guess": I0_guess,
+            "E_0": E_0,
             "Alpha guess": alpha_guess,
             "Break guess [MeV]": break_guess,
             "Cutoff point guess [MeV]": cut_guess,
