@@ -25,7 +25,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True, ept=True, het=True,
              auto_shift=False, shift_factor=None, save_fig=True,
              save_pickle=False, save_fit_variables=True, save_fitrun=True,
              legend_details=False, legend_outside=False, no_legend=False,
-             bg_subtraction=True,
+             bg_subtraction=True,  ignore_bg = False,
              fit_to_separate_folder=False, centre_pix=False, fsize=12,
              channels_to_exclude=None, detailed_plot=False,
             
@@ -126,16 +126,13 @@ def FIT_DATA(path, date, averaging, fit_type, step=True, ept=True, het=True,
 
     step_file_name = (
         f'proton_data-{date_string}-STEP-{direction}-L2-'
-        f'{averaging_str}_averaging{pix}.csv'
-    )
+        f'{averaging_str}_averaging{pix}.csv')
     ept_file_name = (
         f'proton_data-{date_string}-EPT-{direction}-L2-'
-        f'{averaging_str}_averaging.csv'
-    )
+        f'{averaging_str}_averaging.csv')
     het_file_name = (
         f'proton_data-{date_string}-HET-{direction}-L2-'
-        f'{averaging_str}_averaging.csv'
-    )
+        f'{averaging_str}_averaging.csv')
 
     make_fit = make_the_fit
 
@@ -200,8 +197,8 @@ def FIT_DATA(path, date, averaging, fit_type, step=True, ept=True, het=True,
         sigma=sigma, rel_err=rel_err,
         frac_nan_threshold=frac_nan_threshold,
         fit_to=fit_to_comb,
-        channels_to_exclude=channels_to_exclude
-    )
+        channels_to_exclude=channels_to_exclude,
+        ignore_bg=ignore_bg)
     data = pd.read_csv(all_file, sep=separator)
 
     if step and ept:
@@ -212,8 +209,8 @@ def FIT_DATA(path, date, averaging, fit_type, step=True, ept=True, het=True,
             sigma=sigma, rel_err=rel_err,
             frac_nan_threshold=frac_nan_threshold,
             fit_to=fit_to_comb,
-            channels_to_exclude=channels_to_exclude
-        )
+            channels_to_exclude=channels_to_exclude,
+            ignore_bg=ignore_bg)
         step_ept_data = pd.read_csv(step_ept_file, sep=separator)
 
     if ept and het:
@@ -224,28 +221,44 @@ def FIT_DATA(path, date, averaging, fit_type, step=True, ept=True, het=True,
             sigma=sigma, rel_err=rel_err,
             frac_nan_threshold=frac_nan_threshold,
             fit_to=fit_to_comb,
-            channels_to_exclude=channels_to_exclude
-        )
+            channels_to_exclude=channels_to_exclude,
+            ignore_bg=ignore_bg)
         ept_het_data = pd.read_csv(ept_het_file, sep=separator)
 
     # Saving the contaminated data so it can be plotted separately,
     # then deleting it from the data so it doesn't overlap.
-    contaminated_data_sigma = comb.extract_low_sigma_rows(
-        data_list, sigma=sigma, fit_to=fit_to_comb
-    )
-    contaminated_data_nan = comb.extract_nan_heavy_rows(
-        data_list, frac_nan_threshold=frac_nan_threshold
-    )
-    contaminated_data_rel_err = comb.extract_high_rel_err_rows(
-        data_list, rel_err=rel_err
-    )
+    if not ignore_bg:
+        contaminated_data_sigma = comb.extract_low_sigma_rows(data_list, sigma=sigma, fit_to=fit_to_comb)
+        contaminated_data_rel_err = comb.extract_high_rel_err_rows( data_list, rel_err=rel_err)
+    else:
+        contaminated_data_sigma = None
+        contaminated_data_rel_err = None
+    contaminated_data_nan = comb.extract_nan_heavy_rows(data_list, frac_nan_threshold=frac_nan_threshold)
 
-    contaminated_data = pd.concat([
-        contaminated_data_sigma,
-        contaminated_data_nan,
-        contaminated_data_rel_err
-    ])
-    contaminated_data.reset_index(drop=True, inplace=True)
+    if channels_to_exclude is not None:
+    
+            excluded_channels = comb.excluded_channels_from_fit(data_list, channels_to_exclude)
+    
+            contaminated_data = pd.concat([contaminated_data_sigma, contaminated_data_nan, 
+                                           contaminated_data_rel_err, excluded_channels])
+    
+            for i in list(channels_to_exclude):
+    
+                if step and i <= len(step_data):
+                    step_channels_to_exclude.append(i)
+    
+                elif ept and i <= len(step_data) + len(ept_data):
+                    ept_channels_to_exclude.append(i - len(step_data))
+    
+                elif het:
+                    het_channels_to_exclude.append(i - (len(step_data) + len(ept_data)))
+    
+    else:
+        contaminated_data = pd.concat([contaminated_data_sigma, contaminated_data_nan, 
+                                       contaminated_data_rel_err]).reset_index(drop=True, inplace = True)
+    
+    
+
 
     # Deleting bad data so it doesn't overplot.
     if step:
@@ -253,24 +266,24 @@ def FIT_DATA(path, date, averaging, fit_type, step=True, ept=True, het=True,
             step_data, sigma=sigma, rel_err=rel_err,
             frac_nan_threshold=frac_nan_threshold,
             fit_to=fit_to_comb,
-            channels_to_exclude=channels_to_exclude
-        )
+            channels_to_exclude=channels_to_exclude,
+            ignore_bg=ignore_bg)
 
     if ept:
         ept_data = comb.delete_bad_data(
             ept_data, sigma=sigma, rel_err=rel_err,
             frac_nan_threshold=frac_nan_threshold,
             fit_to=fit_to_comb,
-            channels_to_exclude=channels_to_exclude
-        )
+            channels_to_exclude=channels_to_exclude,
+            ignore_bg=ignore_bg)
 
     if het:
         het_data = comb.delete_bad_data(
             het_data, sigma=sigma, rel_err=rel_err,
             frac_nan_threshold=frac_nan_threshold,
             fit_to=fit_to_comb,
-            channels_to_exclude=channels_to_exclude
-        )
+            channels_to_exclude=channels_to_exclude,
+            ignore_bg=ignore_bg)
 
     # <---------------------------------------------------------------------DATA--------------------------------------------------------------------->
 

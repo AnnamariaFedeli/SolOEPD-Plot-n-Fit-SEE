@@ -44,7 +44,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     shift_factor=None, save_fig=True,
     save_pickle=False, save_fit_variables=True,
     save_fitrun=True, legend_details=False, detailed_plot = False,        
-    ion_correction=False, bg_subtraction=False,
+    ion_correction=False, bg_subtraction=False, ignore_bg = False,
     fit_to_separate_folder=False, centre_pix=False, quality_factor=None,
     fsize=12, legend_outside=False, no_legend=False,
     do_not_plot_bad_channels=False, title_of_plot=None,
@@ -153,6 +153,9 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     ion_correction, bg_subtraction : bool
         Apply corrections.
 
+    ignore_bg: bool
+        sigma values and rel_erros are calculated but not applied
+    
     fit_to_separate_folder : bool
         Save plots in separate directory.
 
@@ -289,7 +292,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     # Combine all data
     data = comb.combine_data(data_list, all_file, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, 
                              leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb,
-                             channels_to_exclude=channels_to_exclude, bg_subtraction=bg_subtraction)
+                             channels_to_exclude=channels_to_exclude, ignore_bg=ignore_bg)
     data = pd.read_csv(all_file, sep=separator)
     
 
@@ -299,18 +302,18 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
 
         step_ept_data = comb.combine_data([step_data, ept_data], step_ept_file, sigma=sigma, rel_err=rel_err, 
                                           frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan, 
-                                          fit_to=fit_to_comb,channels_to_exclude=channels_to_exclude, bg_subtraction=bg_subtraction)
+                                          fit_to=fit_to_comb,channels_to_exclude=channels_to_exclude, ignore_bg=ignore_bg)
 
     if ept and het:
         ept_het_file = f"{base_name}-ept_het-{direction}-l2-{averaging_str}_averaging.csv"
 
         ept_het_data = comb.combine_data([ept_data, het_data], ept_het_file, sigma=sigma, rel_err=rel_err, 
                                          frac_nan_threshold=frac_nan_threshold, leave_out_1st_het_chan=leave_out_1st_het_chan, 
-                                         fit_to=fit_to_comb, channels_to_exclude=channels_to_exclude, bg_subtraction=bg_subtraction)
+                                         fit_to=fit_to_comb, channels_to_exclude=channels_to_exclude, ignore_bg=ignore_bg)
 
     
     # Contaminated data
-    if bg_subtraction:
+    if not ignore_bg:
         contaminated_data_sigma = comb.extract_low_sigma_rows(data_list, sigma=sigma, leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb)
         contaminated_data_rel_err = comb.extract_high_rel_err_rows(data_list, rel_err=rel_err, leave_out_1st_het_chan=leave_out_1st_het_chan)
         
@@ -349,18 +352,18 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     # Clean data
     if step:
         step_data = comb.delete_bad_data(step_data, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, 
-                                         fit_to=fit_to_comb, channels_to_exclude=step_channels_to_exclude, bg_subtraction=bg_subtraction)
+                                         fit_to=fit_to_comb, channels_to_exclude=step_channels_to_exclude, ignore_bg=ignore_bg)
 
     if ept:
         ept_data = comb.delete_bad_data(ept_data, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, 
-                                        fit_to=fit_to_comb, channels_to_exclude=ept_channels_to_exclude, bg_subtraction=bg_subtraction)
+                                        fit_to=fit_to_comb, channels_to_exclude=ept_channels_to_exclude, ignore_bg=ignore_bg)
 
     if het:
         first_het_data = comb.extract_first_het_channel(het_data)
 
         het_data = comb.delete_bad_data(het_data, sigma=sigma, rel_err=rel_err, frac_nan_threshold=frac_nan_threshold, 
                                         leave_out_1st_het_chan=leave_out_1st_het_chan, fit_to=fit_to_comb, 
-                                        channels_to_exclude=het_channels_to_exclude, bg_subtraction=bg_subtraction)
+                                        channels_to_exclude=het_channels_to_exclude, ignore_bg=ignore_bg)
     
           
     # -------------------------------------------------------------------------------------------
