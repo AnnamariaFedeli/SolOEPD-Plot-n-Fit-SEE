@@ -115,10 +115,14 @@ def FIT_DATA(path, date, averaging, fit_type, step=True, ept=True, het=True,
     folder_time = date
 
     if isinstance(date, str):
-        date_string = date[:-5]
+        date_string = date#[:-5]
     else:
         date_string = str(date.date())
-        folder_time = str(date)[:-3].replace(' ', '-').replace(':', '')
+        folder_time = str(date).replace(' ', '-').replace(':', '')
+                
+        #date_string = str(date.date())
+        #folder_time = str(date)[:-3].replace(' ', '-').replace(':', '')
+        
 
     separator = ';'
     averaging_str = 'no' if averaging is None else str(averaging)
@@ -279,7 +283,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True, ept=True, het=True,
 
     if het:
         het_data = comb.delete_bad_data(
-            het_data, sigma=sigma, rel_err=rel_err,
+            het_data, sigma=sigma, rel_ersr=rel_err,
             frac_nan_threshold=frac_nan_threshold,
             fit_to=fit_to_comb,
             channels_to_exclude=channels_to_exclude,

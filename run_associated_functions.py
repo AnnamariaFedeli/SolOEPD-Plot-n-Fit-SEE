@@ -94,38 +94,6 @@ def quality_factor_PA_coverage(data, coverage, telescope,
 
     return [qf, quality_factor]
 
-def quality_factor_PA_coverage_old(data, coverage, direction = 'sun', angle = 180): 
-    # TO DO: need to add min and max into the calculation and pixels for STEP
-    qf = [] 
-
-    for j in range(0, len(data[1])): 
-        df = coverage.loc[:, direction] 
-        df = df.reset_index() 
-        df = df.drop(np.where(df['EPOCH'] < data[2][0][j])[0]) 
-        df.reset_index(drop = True, inplace = True) 
-        df = df.drop(np.where(df['EPOCH'] > data[2][1][j])[0]) 
-        df.reset_index(drop = True, inplace = True) 
-        factors = [] 
-        for i in range(0,len(df)): 
-            r = df.center[i] 
-            if angle == 180: 
-                r = 180-r 
-            if r <=15.: 
-                factors.append(100) 
-            elif r>15: 
-                f = np.exp(-np.square(r-12)/2*0.0007)*100 
-                factors.append(f) 
-            else: 
-                factors.append(0) 
-
-        if len(factors) > 0:
-            qf.append(sum(factors) / len(factors))
-        else:
-            qf.append(np.nan)
-        
-    quality_factor = np.nanmean(qf) 
-    return [qf, quality_factor]
-
 
 def compute_quality_factors(plot_pa, step, ept, het, data_step = None, data_ept = None, data_het = None, 
                             coverage_step = None, coverage_ept = None, coverage_het = None, direction = 'sun', 
@@ -143,13 +111,7 @@ def compute_quality_factors(plot_pa, step, ept, het, data_step = None, data_ept 
         results[f"QF {name} all channels"] = qf_vals
 
         return qf_vals, qf_avg
-    def process(name, data, coverage):
-        qf_vals, qf_avg = quality_factor_PA_coverage(data, coverage, direction=direction, angle=angle)
-
-        results[f"QF {name} average"] = qf_avg
-        results[f"QF {name} all channels"] = qf_vals
-
-        return qf_vals, qf_avg
+    
 
     # --- STEP ---
     if step:

@@ -29,6 +29,7 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 			 shift_step_data = False, auto_shift = False,  shift_factor = None, 
 			 save_fig = True, save_pickle = False, save_fit_variables = True, 
 			 save_fitrun = True, legend_details = False, bg_subtraction = True, 
+			 ignore_bg = False,
 			 fit_to_separate_folder = False, centre_pix = False, fsize = 12):
 
 	     # slope (float, optional): The type of slope used to find the peak (for the title). Defaults to None.
@@ -87,10 +88,12 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 	folder_time = date
 
 	if type(date) is str:
-		date_string = date[:-5]
+		date_string = date#[:-5]
 	else:
 		date_string = str(date.date())
-		folder_time = str(date)[:-3].replace(' ', '-').replace(':', '')
+		#folder_time = str(date)[:-3].replace(' ', '-').replace(':', '')
+		folder_time = str(date).replace(' ', '-').replace(':', '')
+		
 
 	# #quick change if submin av
 	# av = averaging
@@ -170,25 +173,39 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		het_data = pd.read_csv(path+het_file_name, sep = separator)
 		data_list.append(het_data)
 
-	data = comb.combine_data(data_list, path+date_string+'-all-l2-'+direction+'-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
+	data = comb.combine_data(data_list, path+date_string+'-all-l2-'+direction+'-'+averaging+'.csv', 
+	                         sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, 
+							 leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb, ignore_bg = ignore_bg)
 	data = pd.read_csv(path+date_string+'-all-l2-'+direction+'-'+averaging+'.csv', sep = separator)
 
 	if step and ept:
-		step_ept_data = comb.combine_data([step_data, ept_data], path+date_string+'-step_ept-l2-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
+		step_ept_data = comb.combine_data([step_data, ept_data], path+date_string+'-step_ept-l2-'+averaging+'.csv', 
+		                                  sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, 
+										  leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb, ignore_bg = ignore_bg)
 		step_ept_data = pd.read_csv(path+date_string+'-step_ept-l2-'+averaging+'.csv', sep = separator)
 
 	if ept and het:
-		ept_het_data = comb.combine_data([ept_data, het_data], path+date_string+'-ept_het-'+direction+'-l2-'+averaging+'.csv', sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
+		ept_het_data = comb.combine_data([ept_data, het_data], path+date_string+'-ept_het-'+direction+'-l2-'+averaging+'.csv', 
+		                                 sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, 
+										 leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb,ignore_bg = ignore_bg)
 		ept_het_data = pd.read_csv(path+date_string+'-ept_het-'+direction+'-l2-'+averaging+'.csv', sep = separator)
 
 	# saving the contaminated data so it can be plotted separately
 	# then deleting it from the data so it doesn't overlap
-	contaminated_data_sigma = comb.low_sigma_threshold(data_list, sigma = sigma, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
-	contaminated_data_nan   = comb.too_many_nans(data_list, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan)
-	contaminated_data_rel_err = comb.high_rel_err(data_list, rel_err = rel_err, leave_out_1st_het_chan = leave_out_1st_het_chan)
+	if not ignore_bg:
+		contaminated_data_sigma = comb.low_sigma_threshold(data_list, sigma = sigma, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
+		contaminated_data_rel_err = comb.high_rel_err(data_list, rel_err = rel_err, leave_out_1st_het_chan = leave_out_1st_het_chan)
+	else:
+		contaminated_data_sigma = None
+		contaminated_data_rel_err = None
+			
+	
+	contaminated_data_nan   = comb.too_many_nans(data_list, frac_nan_threshold = frac_nan_threshold, 
+	                                             leave_out_1st_het_chan = leave_out_1st_het_chan)
 	contaminated_data = pd.concat([contaminated_data_sigma, contaminated_data_nan, contaminated_data_rel_err ])
 	contaminated_data.reset_index(drop=True, inplace=True)
 
+   
 	#deleting low sigma data so it doesn't overplot 
 
 	if step:
@@ -202,13 +219,6 @@ def FIT_DATA(path, date, averaging, fit_type, step = True, ept = True, het = Tru
 		het_data = comb.delete_bad_data(het_data, sigma = sigma, rel_err = rel_err, frac_nan_threshold = frac_nan_threshold, leave_out_1st_het_chan = leave_out_1st_het_chan, fit_to = fit_to_comb)
 	
 	
-	#if e_min is None:
-#		e_min = min(data['Primary_energy'])
-
-#	if e_max is None:
-#		e_max = max(data['Primary_energy'])
-	
-
 
 
 	# <---------------------------------------------------------------------DATA--------------------------------------------------------------------->

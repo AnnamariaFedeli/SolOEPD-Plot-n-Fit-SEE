@@ -58,7 +58,7 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
         Directory where input data is stored and outputs will be saved.
 
     date : datetime or str
-        Either datetime object or string in format 'yyyy-mm-dd-HHMM'.
+        Either datetime object or string in format 'yyyy-mm-dd-HHMM' or .
 
     averaging : int
         Averaging applied to the data.
@@ -190,10 +190,13 @@ def FIT_DATA(path, date, averaging, fit_type, step=True,
     separator = ';'
 
     if isinstance(date, str):
-        date_string = date[:-5]
+        date_string = date#[:-5]
     else:
         date_string = str(date.date())
-        folder_time = str(date)[:-3].replace(' ', '-').replace(':', '')
+        folder_time = str(date).replace(' ', '-').replace(':', '')
+        #date_string = str(date.date())
+        #folder_time = str(date)[:-3].replace(' ', '-').replace(':', '')
+        
 
 
     #  Averaging handling 
