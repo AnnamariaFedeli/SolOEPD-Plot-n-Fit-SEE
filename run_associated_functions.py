@@ -116,9 +116,9 @@ def compute_quality_factors(plot_pa, step, ept, het, data_step = None, data_ept 
     # --- STEP ---
     if step:
         process("STEP", data_step, coverage_step) # using ept because need to implement step calculation
-
+        
         if pixels:
-            qf_vals, qf_avg = quality_factor_PA_coverage(data_step_pix, coverage_step, direction=direction, angle=angle)
+            qf_vals, qf_avg = quality_factor_PA_coverage(data_step_pix, coverage_step, telescope="STEP", direction=direction, angle=angle)
             results_pix["QF STEP average"] = qf_avg
             results_pix["QF STEP all channels"] = qf_vals
 
